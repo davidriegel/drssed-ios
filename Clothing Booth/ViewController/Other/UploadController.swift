@@ -6,11 +6,14 @@
 //
 
 import UIKit
+import SkeletonView
+import SDWebImage
 
 class UploadController: UIViewController {
     
     var activeTextField: UITextField?
     let clothingType: [String] = ["clothing type", "hat/cap", "top", "bottom", "shoes"]
+    var fileExtension: String = ""
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -25,6 +28,8 @@ class UploadController: UIViewController {
     lazy var uploadImageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.isSkeletonable = true
+        iv.skeletonCornerRadius = 12
         iv.image = UIImage(named: "upload_placeholder")
         iv.isUserInteractionEnabled = true
         iv.heightAnchor.constraint(equalToConstant: view.frame.width - (2 * (view.frame.width / 6))).isActive = true
@@ -463,12 +468,25 @@ class UploadController: UIViewController {
 extension UploadController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         Task {
-            guard let image = info[.editedImage] as? UIImage else { return }
-            
-            //try await APIHandler.shared.removeBackground(image)
-            uploadImageView.image = image
-            
             dismiss(animated: true)
+            
+            guard let image = info[.editedImage] as? UIImage else { return }
+            let assetPath = info[.imageURL] as! NSURL
+            self.fileExtension = (assetPath.absoluteString ?? "").components(separatedBy: ".").last ?? ""
+            
+            guard ["png", "jpg", "jpeg"].contains(fileExtension) else {
+                let alert = UIAlertController(title: "", message: "Unsupported file type for your profile picture. [\(fileExtension)]", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
+                    self.dismiss(animated: true)
+                }))
+                present(alert, animated: true)
+                return
+            }
+            
+            uploadImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
+            let clothingURL = try await APIHandler.shared.removeClothingBackground(from: image, self.fileExtension)
+            uploadImageView.sd_setImage(with: clothingURL)
+            uploadImageView.hideSkeleton()
         }
     }
 }

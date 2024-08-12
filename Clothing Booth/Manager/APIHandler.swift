@@ -46,13 +46,13 @@ class APIHandler {
         return request
     }
     
-    func _createPUTRequest(to endpoint: String, withImage image: UIImage, andFileName fileName: String) -> URLRequest? {
+    func _createImageRequest(_ method: String, to endpoint: String, withImage image: UIImage, andFileName fileName: String) -> URLRequest? {
         let endpointURL = URL(string: "http://192.168.2.201:5000/api\(endpoint)")!
         var request = URLRequest(url: endpointURL)
         let boundary = UUID().uuidString
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.setValue(UserDefaults.standard.string(forKey: "authToken"), forHTTPHeaderField: "Authorization")
-        request.httpMethod = "PUT"
+        request.httpMethod = method
         
         var data = Data()
         
@@ -120,7 +120,7 @@ class APIHandler {
     }
     
     func setProfilePicture(with image: UIImage, _ fileExtension: String) async throws {
-        let request = _createPUTRequest(to: "/users/me/setProfilePicture", withImage: image, andFileName: "profilePicture.png")
+        let request = _createImageRequest("PUT", to: "/users/me/setProfilePicture", withImage: image, andFileName: "profilePicture.\(fileExtension)")
         let (_, response) = try await URLSession.shared.data(for: request!)
         let statusCode = _getStatusCode(response)
         
@@ -150,7 +150,15 @@ class APIHandler {
         let statusCode = _getStatusCode(response)
         guard statusCode != 404 else { throw NetworkingError.notFound }
         
-        let fetchedData = try JSONDecoder().decode(ProfilePicture.self, from: data)
+        let fetchedData = try JSONDecoder().decode(ImageResponse.self, from: data)
         return URL(string: "http://192.168.2.201:5000" + fetchedData.url)!
+    }
+    
+    func removeClothingBackground(from image: UIImage, _ fileExtension: String) async throws -> URL {
+        let request = _createImageRequest("POST", to: "/clothing/backgroundRemover", withImage: image, andFileName: "clothingPictrue.\(fileExtension)")
+        let (data, _) = try await URLSession.shared.data(for: request!)
+        
+        let fetchedData = try JSONDecoder().decode(ImageResponse.self, from: data)
+        return URL(string: "http://192.168.2.201:5000/api" + fetchedData.url)!
     }
 }

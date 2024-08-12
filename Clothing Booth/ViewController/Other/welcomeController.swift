@@ -242,7 +242,6 @@ extension welcomeController: UIImagePickerControllerDelegate, UINavigationContro
             guard let image = info[.editedImage] as? UIImage else { return }
             let assetPath = info[.imageURL] as! NSURL
             self.fileExtension = (assetPath.absoluteString ?? "").components(separatedBy: ".").last ?? ""
-            print(self.fileExtension)
             
             guard ["png", "jpg", "jpeg"].contains(fileExtension) else {
                 let alert = UIAlertController(title: "", message: "Unsupported file type for your profile picture. [\(fileExtension)]", preferredStyle: .alert)

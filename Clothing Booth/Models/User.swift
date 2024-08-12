@@ -13,6 +13,6 @@ struct User: Codable {
     let email: String?
 }
 
-struct ProfilePicture: Codable {
+struct ImageResponse: Codable {
     let url: String
 }
