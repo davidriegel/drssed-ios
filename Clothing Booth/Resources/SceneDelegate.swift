@@ -16,11 +16,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
         
-        if UserDefaults.standard.string(forKey: "authToken") == nil {
+        if UserDefaults.standard.string(forKey: "access_token") == nil {
             window.rootViewController = UINavigationController(rootViewController: SignUpController())
             window.makeKeyAndVisible()
             self.window = window
             return
+        }
+        
+        Task {
+            await APIHandler.shared._getAccessToken()
         }
         
         window.rootViewController = TabBarController()

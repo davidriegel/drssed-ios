@@ -16,7 +16,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         let window = UIWindow(frame: UIScreen.main.bounds)
         
-        if UserDefaults.standard.string(forKey: "authToken") == nil {
+        if UserDefaults.standard.string(forKey: "access_token") == nil {
             window.rootViewController = UINavigationController(rootViewController: SignUpController())
             window.makeKeyAndVisible()
             self.window = window

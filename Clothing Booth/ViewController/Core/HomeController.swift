@@ -14,14 +14,9 @@ class HomeController: UIViewController {
         
         configureViewComponents()
     }
-    
-    @objc
-    func addClothingPiece() {
-        navigationController?.pushViewController(UploadController(), animated: true)
-    }
 
     func configureViewComponents() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .background
         title = "home"
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
@@ -29,7 +24,6 @@ class HomeController: UIViewController {
         
         navigationItem.largeTitleDisplayMode = .never
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "arrow.up.forward.square.fill", withConfiguration: UIImage.SymbolConfiguration(paletteColors: [.systemBackground, .label])), style: .plain, target: self, action: #selector(addClothingPiece))
     }
 }
 

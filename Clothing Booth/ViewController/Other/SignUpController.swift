@@ -8,10 +8,13 @@
 import UIKit
 
 class SignUpController: UIViewController {
-
+    
+    var nextController: welcomeController? = nil
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+        self.nextController = welcomeController()
         configureViewComponents()
     }
     
@@ -36,6 +39,8 @@ class SignUpController: UIViewController {
         tf.isSecureTextEntry = false
         tf.autocorrectionType = .no
         tf.autocapitalizationType = .none
+        tf.keyboardType = .emailAddress
+        tf.textContentType = .emailAddress
         tf.returnKeyType = .next
         tf.delegate = self
         tf.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
@@ -53,6 +58,7 @@ class SignUpController: UIViewController {
         tf.isSecureTextEntry = true
         tf.autocorrectionType = .no
         tf.autocapitalizationType = .none
+        tf.textContentType = .newPassword
         tf.returnKeyType = .continue
         tf.delegate = self
         tf.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
@@ -64,10 +70,10 @@ class SignUpController: UIViewController {
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.alpha = 0.2
         bt.isEnabled = false
-        bt.backgroundColor = .label
+        bt.backgroundColor = .accent
         bt.layer.cornerRadius = 5
         bt.setTitle("Sign Up", for: .normal)
-        bt.setTitleColor(UIColor.systemBackground, for: .normal)
+        bt.setTitleColor(UIColor.label, for: .normal)
         bt.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .black)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(handleSignUp), for: .touchUpInside)
@@ -78,7 +84,7 @@ class SignUpController: UIViewController {
         var bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
         var title = NSMutableAttributedString(string: "Already have an Account? ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
-        title.append(NSAttributedString(string: "Sign In", attributes: [NSAttributedString.Key.foregroundColor : UIColor.link, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
+        title.append(NSAttributedString(string: "Sign In", attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
         bt.setAttributedTitle(title, for: .normal)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(pushSignIn), for: .touchUpInside)
@@ -96,25 +102,14 @@ class SignUpController: UIViewController {
     
     @objc
     func handleSignUp() {
-        Task {
-            do {
-                let signInToken = try await APIHandler.shared.signUpWith(email: emailTextField.text!, andPassword: passwordTextField.text!)
-                UserDefaults.standard.set(signInToken, forKey: "authToken")
-                self.navigationController?.pushViewController(welcomeController(), animated: true)
-            } catch signUpError.emailAlreadyInUse {
-                signUpButton.alpha = 0.2
-                signUpButton.isEnabled = false
-                let alert = UIAlertController(title: "", message: "This email adress is already in use.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default))
-                present(alert, animated: true)
-            } catch NetworkingError.rateLimiting {
-                signUpButton.alpha = 0.2
-                signUpButton.isEnabled = false
-                let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default))
-                present(alert, animated: true)
-            }
-        }
+        // nextController can't be nil here due to not being able to click the sign up button without nextController to be initiated first
+        
+        signUpButton.alpha = 0.2
+        signUpButton.isEnabled = false
+        
+        self.nextController!.email = emailTextField.text!
+        self.nextController!.password = passwordTextField.text!
+        self.navigationController?.pushViewController(self.nextController!, animated: true)
     }
     
     @objc
@@ -133,7 +128,7 @@ class SignUpController: UIViewController {
     }
     
     func configureViewComponents() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .background
         title = ""
         
         navigationItem.largeTitleDisplayMode = .never

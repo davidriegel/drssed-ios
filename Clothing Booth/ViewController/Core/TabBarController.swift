@@ -17,23 +17,23 @@ class TabBarController: UITabBarController, UITabBarControllerDelegate {
 
     func setupViewController() {
         let HomeController = HomeController()
-        let GeneratorController = GeneratorController()
+        let OutfitsController = OutfitsController()
+        let ClothesController = ClothesController()
         let MyProfileController = MyProfileController()
         
         let navHomeController = UINavigationController(rootViewController: HomeController)
-        let navGeneratorController = UINavigationController(rootViewController: GeneratorController)
+        let navOutfitsController = UINavigationController(rootViewController: OutfitsController)
+        let navClothesController = UINavigationController(rootViewController: ClothesController)
         let navMyProfileController = UINavigationController(rootViewController: MyProfileController)
         
         navHomeController.tabBarItem = UITabBarItem(title: "home", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
-        navGeneratorController.tabBarItem = UITabBarItem(title: "create", image: UIImage(systemName: "plus.app"), selectedImage: UIImage(systemName: "plus.app.fill"))
+        navOutfitsController.tabBarItem = UITabBarItem(title: "outfits", image: UIImage(systemName: "cabinet"), selectedImage: UIImage(systemName: "cabinet.fill"))
+        navClothesController.tabBarItem = UITabBarItem(title: "clothes", image: UIImage(systemName: "tshirt"), selectedImage: UIImage(systemName: "tshirt.fill"))
         navMyProfileController.tabBarItem = UITabBarItem(title: "profile", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
         
-        //navHomeController.tabBarItem.badgeColor = .label
-        //navProfileViewController.tabBarItem.badgeColor = .label
-        
         tabBar.tintColor = .label
-        tabBar.backgroundColor = .systemBackground
+        tabBar.backgroundColor = .background
         
-        setViewControllers([navHomeController, navGeneratorController, navMyProfileController], animated: false)
+        setViewControllers([navHomeController, navOutfitsController, navClothesController, navMyProfileController], animated: false)
     }
 }

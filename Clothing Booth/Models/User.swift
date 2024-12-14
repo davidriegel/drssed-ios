@@ -7,12 +7,15 @@
 
 import Foundation
 
-struct User: Codable {
-    let userid: String
+struct privateUser: Codable {
+    let user_id: String
     let username: String
-    let email: String?
+    let email: String
+    let profile_picture: String?
+    let created_at: String
+    let updated_at: String
 }
 
-struct ImageResponse: Codable {
-    let url: String
+struct imageResponse: Codable {
+    let path: String
 }

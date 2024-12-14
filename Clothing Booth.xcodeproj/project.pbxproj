@@ -12,7 +12,10 @@
 		635A6CB32C65858100142784 /* SignUpController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB22C65858100142784 /* SignUpController.swift */; };
 		635A6CB52C65859000142784 /* SignInController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB42C65859000142784 /* SignInController.swift */; };
 		635A6CB72C6585A000142784 /* welcomeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB62C6585A000142784 /* welcomeController.swift */; };
-		635A6CBA2C65958E00142784 /* TokenResp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB92C65958E00142784 /* TokenResp.swift */; };
+		635A6CBA2C65958E00142784 /* TokenModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB92C65958E00142784 /* TokenModel.swift */; };
+		63743F1F2CEB7A7600646541 /* OutfitsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63743F1E2CEB7A7600646541 /* OutfitsController.swift */; };
+		63743F212CEB7B2500646541 /* ClothesController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63743F202CEB7B2500646541 /* ClothesController.swift */; };
+		63743F232CEB7F9F00646541 /* ClothingViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63743F222CEB7F9F00646541 /* ClothingViewCell.swift */; };
 		637D85EC2BE94CC90010BDBF /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637D85EB2BE94CC90010BDBF /* AppDelegate.swift */; };
 		637D85EE2BE94CC90010BDBF /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637D85ED2BE94CC90010BDBF /* SceneDelegate.swift */; };
 		637D85F02BE94CC90010BDBF /* HomeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637D85EF2BE94CC90010BDBF /* HomeController.swift */; };
@@ -24,8 +27,11 @@
 		637D86212BE955D90010BDBF /* TabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637D86202BE955D90010BDBF /* TabBarController.swift */; };
 		637D86232BE957070010BDBF /* MyProfileController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637D86222BE957070010BDBF /* MyProfileController.swift */; };
 		637D86252BED05CD0010BDBF /* GeneratorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637D86242BED05CD0010BDBF /* GeneratorController.swift */; };
+		63903ABA2CE292BC00459A13 /* ErrorResponses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63903AB92CE292BC00459A13 /* ErrorResponses.swift */; };
+		63A096932CE63C6000537455 /* Clothing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A096922CE63C6000537455 /* Clothing.swift */; };
+		63C82C582C935B3A00E85243 /* UploadController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C82C572C935B3A00E85243 /* UploadController.swift */; };
 		63E010222BED31C3007F38F2 /* APIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E010212BED31C3007F38F2 /* APIHandler.swift */; };
-		63E010242BED33B3007F38F2 /* UploadController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E010232BED33B3007F38F2 /* UploadController.swift */; };
+		63E010242BED33B3007F38F2 /* UploadController2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E010232BED33B3007F38F2 /* UploadController2.swift */; };
 		63E8747B2C67F0F300A907FD /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8747A2C67F0F300A907FD /* SkeletonView */; };
 		63E8747D2C67FA8D00A907FD /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E8747C2C67FA8D00A907FD /* Extensions.swift */; };
 		63E8747F2C68069900A907FD /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E8747E2C68069900A907FD /* User.swift */; };
@@ -55,7 +61,10 @@
 		635A6CB22C65858100142784 /* SignUpController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpController.swift; sourceTree = "<group>"; };
 		635A6CB42C65859000142784 /* SignInController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInController.swift; sourceTree = "<group>"; };
 		635A6CB62C6585A000142784 /* welcomeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeController.swift; sourceTree = "<group>"; };
-		635A6CB92C65958E00142784 /* TokenResp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenResp.swift; sourceTree = "<group>"; };
+		635A6CB92C65958E00142784 /* TokenModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenModel.swift; sourceTree = "<group>"; };
+		63743F1E2CEB7A7600646541 /* OutfitsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitsController.swift; sourceTree = "<group>"; };
+		63743F202CEB7B2500646541 /* ClothesController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothesController.swift; sourceTree = "<group>"; };
+		63743F222CEB7F9F00646541 /* ClothingViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingViewCell.swift; sourceTree = "<group>"; };
 		637D85E82BE94CC90010BDBF /* Clothing Booth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Clothing Booth.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		637D85EB2BE94CC90010BDBF /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		637D85ED2BE94CC90010BDBF /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -71,8 +80,11 @@
 		637D86202BE955D90010BDBF /* TabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarController.swift; sourceTree = "<group>"; };
 		637D86222BE957070010BDBF /* MyProfileController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyProfileController.swift; sourceTree = "<group>"; };
 		637D86242BED05CD0010BDBF /* GeneratorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratorController.swift; sourceTree = "<group>"; };
+		63903AB92CE292BC00459A13 /* ErrorResponses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorResponses.swift; sourceTree = "<group>"; };
+		63A096922CE63C6000537455 /* Clothing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clothing.swift; sourceTree = "<group>"; };
+		63C82C572C935B3A00E85243 /* UploadController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadController.swift; sourceTree = "<group>"; };
 		63E010212BED31C3007F38F2 /* APIHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIHandler.swift; sourceTree = "<group>"; };
-		63E010232BED33B3007F38F2 /* UploadController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadController.swift; sourceTree = "<group>"; };
+		63E010232BED33B3007F38F2 /* UploadController2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadController2.swift; sourceTree = "<group>"; };
 		63E8747C2C67FA8D00A907FD /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		63E8747E2C68069900A907FD /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -111,6 +123,9 @@
 				637D85EF2BE94CC90010BDBF /* HomeController.swift */,
 				637D86222BE957070010BDBF /* MyProfileController.swift */,
 				637D86242BED05CD0010BDBF /* GeneratorController.swift */,
+				63743F1E2CEB7A7600646541 /* OutfitsController.swift */,
+				63743F202CEB7B2500646541 /* ClothesController.swift */,
+				63743F222CEB7F9F00646541 /* ClothingViewCell.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -119,10 +134,11 @@
 			isa = PBXGroup;
 			children = (
 				6321954C2C5C4B38003EE6E4 /* CloPieceController.swift */,
-				63E010232BED33B3007F38F2 /* UploadController.swift */,
+				63E010232BED33B3007F38F2 /* UploadController2.swift */,
 				635A6CB22C65858100142784 /* SignUpController.swift */,
 				635A6CB42C65859000142784 /* SignInController.swift */,
 				635A6CB62C6585A000142784 /* welcomeController.swift */,
+				63C82C572C935B3A00E85243 /* UploadController.swift */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -130,9 +146,11 @@
 		635A6CB82C65957500142784 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				635A6CB92C65958E00142784 /* TokenResp.swift */,
+				635A6CB92C65958E00142784 /* TokenModel.swift */,
 				631B405D2C663B820018C5FF /* NetworkingError.swift */,
 				63E8747E2C68069900A907FD /* User.swift */,
+				63903AB92CE292BC00459A13 /* ErrorResponses.swift */,
+				63A096922CE63C6000537455 /* Clothing.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -353,21 +371,27 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				63743F1F2CEB7A7600646541 /* OutfitsController.swift in Sources */,
+				63C82C582C935B3A00E85243 /* UploadController.swift in Sources */,
 				63E010222BED31C3007F38F2 /* APIHandler.swift in Sources */,
+				63A096932CE63C6000537455 /* Clothing.swift in Sources */,
 				637D86232BE957070010BDBF /* MyProfileController.swift in Sources */,
 				635A6CB72C6585A000142784 /* welcomeController.swift in Sources */,
-				63E010242BED33B3007F38F2 /* UploadController.swift in Sources */,
+				63E010242BED33B3007F38F2 /* UploadController2.swift in Sources */,
 				63E8747F2C68069900A907FD /* User.swift in Sources */,
 				637D85F02BE94CC90010BDBF /* HomeController.swift in Sources */,
 				637D86212BE955D90010BDBF /* TabBarController.swift in Sources */,
 				635A6CB32C65858100142784 /* SignUpController.swift in Sources */,
+				63743F212CEB7B2500646541 /* ClothesController.swift in Sources */,
 				637D85EC2BE94CC90010BDBF /* AppDelegate.swift in Sources */,
 				6321954D2C5C4B38003EE6E4 /* CloPieceController.swift in Sources */,
+				63903ABA2CE292BC00459A13 /* ErrorResponses.swift in Sources */,
 				637D85EE2BE94CC90010BDBF /* SceneDelegate.swift in Sources */,
+				63743F232CEB7F9F00646541 /* ClothingViewCell.swift in Sources */,
 				63E8747D2C67FA8D00A907FD /* Extensions.swift in Sources */,
 				631B405E2C663B820018C5FF /* NetworkingError.swift in Sources */,
 				637D86252BED05CD0010BDBF /* GeneratorController.swift in Sources */,
-				635A6CBA2C65958E00142784 /* TokenResp.swift in Sources */,
+				635A6CBA2C65958E00142784 /* TokenModel.swift in Sources */,
 				635A6CB52C65859000142784 /* SignInController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

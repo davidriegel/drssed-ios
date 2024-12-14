@@ -83,6 +83,22 @@ class MyProfileController: UIViewController {
         return button
     }()
     
+    @objc
+    func signOut() {
+        let alert = UIAlertController(title: "Are you sure?", message: "Do you want to sign out?", preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Yes", style: .destructive, handler: { _ in
+            for key in UserDefaults.standard.dictionaryRepresentation().keys {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+            UserDefaults.standard.synchronize()
+            
+            UIApplication.shared.windows.first?.rootViewController = UINavigationController(rootViewController: SignUpController())
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        self.present(alert, animated: true)
+    }
+    
     func updateData() {
         Task {
             let profile = await getMyProfile()
@@ -97,7 +113,7 @@ class MyProfileController: UIViewController {
         }
     }
     
-    func getMyProfile() async -> User? {
+    func getMyProfile() async -> privateUser? {
         do {
             return try await APIHandler.shared.getMyUserProfile()
         } catch let e {
@@ -118,13 +134,16 @@ class MyProfileController: UIViewController {
     }
 
     func configureViewComponents() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .background
         title = "profile"
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
         
         navigationItem.largeTitleDisplayMode = .never
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "door.left.hand.open", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.systemRed, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(signOut))
+
         
         view.addSubview(profilePictureImageView)
         profilePictureImageView.heightAnchor.constraint(equalToConstant: 100).isActive = true

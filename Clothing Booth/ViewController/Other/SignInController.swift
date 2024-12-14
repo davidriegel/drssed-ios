@@ -36,6 +36,8 @@ class SignInController: UIViewController {
         tf.isSecureTextEntry = false
         tf.autocorrectionType = .no
         tf.autocapitalizationType = .none
+        tf.keyboardType = .emailAddress
+        tf.textContentType = .emailAddress
         tf.returnKeyType = .next
         tf.delegate = self
         tf.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
@@ -53,6 +55,7 @@ class SignInController: UIViewController {
         tf.isSecureTextEntry = true
         tf.autocorrectionType = .no
         tf.autocapitalizationType = .none
+        tf.textContentType = .password
         tf.returnKeyType = .continue
         tf.delegate = self
         tf.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
@@ -64,10 +67,10 @@ class SignInController: UIViewController {
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.alpha = 0.2
         bt.isEnabled = false
-        bt.backgroundColor = .label
+        bt.backgroundColor = .accent
         bt.layer.cornerRadius = 5
         bt.setTitle("Sign In", for: .normal)
-        bt.setTitleColor(UIColor.systemBackground, for: .normal)
+        bt.setTitleColor(UIColor.label, for: .normal)
         bt.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .black)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(handleSignIn), for: .touchUpInside)
@@ -78,7 +81,7 @@ class SignInController: UIViewController {
         var bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
         var title = NSMutableAttributedString(string: "Don't have an account? ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
-        title.append(NSAttributedString(string: "Sign Up", attributes: [NSAttributedString.Key.foregroundColor : UIColor.link, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
+        title.append(NSAttributedString(string: "Sign Up", attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
         bt.setAttributedTitle(title, for: .normal)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(pushSignUp), for: .touchUpInside)
@@ -96,8 +99,10 @@ class SignInController: UIViewController {
     func handleSignIn() {
         Task {
             do {
-                let signInToken = try await APIHandler.shared.signInWith(signInName: signInNameTextField.text!, andPassword: passwordTextField.text!)
-                UserDefaults.standard.set(signInToken, forKey: "authToken")
+                let tokenResponse = try await APIHandler.shared.signInWith(signInName: signInNameTextField.text!, andPassword: passwordTextField.text!)
+                UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
+                UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
+                UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
                 self.view.window?.rootViewController = TabBarController()
             } catch NetworkingError.unauthorized {
                 signInButton.alpha = 0.2
@@ -136,7 +141,7 @@ class SignInController: UIViewController {
     }
     
     func configureViewComponents() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .background
         title = ""
         
         navigationItem.largeTitleDisplayMode = .never

@@ -15,6 +15,17 @@ class welcomeController: UIViewController {
         configureViewComponents()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        guard email != nil, password != nil else {
+            navigationController?.popViewController(animated: true)
+            return
+        }
+    }
+    
+    var email: String? = nil
+    var password: String? = nil
     var changedPicture: Bool = false
     var fileExtension: String = ""
     
@@ -82,15 +93,20 @@ class welcomeController: UIViewController {
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.alpha = 0.2
         bt.isEnabled = false
-        bt.backgroundColor = .label
+        bt.backgroundColor = .accent
         bt.layer.cornerRadius = 5
         bt.setTitle("Sign Up", for: .normal)
-        bt.setTitleColor(UIColor.systemBackground, for: .normal)
+        bt.setTitleColor(UIColor.label, for: .normal)
         bt.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .black)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(proceed), for: .touchUpInside)
         return bt
     }()
+    
+    @objc
+    func cancelTapped() {
+        navigationController?.popViewController(animated: true)
+    }
     
     @objc
     func checkTextFieldInputs(_ textField: UITextField) {
@@ -122,62 +138,54 @@ class welcomeController: UIViewController {
     @objc
     func proceed() {
         Task {
-            let success1 = await setUsername()
-            var success2 = true
+            do {
+                let tokenResponse = try await APIHandler.shared.signUpWith(email: self.email!, username: self.usernameTextField.text!, andPassword: self.password!)
+                UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
+                UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
+                UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
+            } catch AuthenticationError.emailAlreadyInUse {
+                let alert = UIAlertController(title: "", message: "This email adress is already in use.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Ok", style: .default))
+                
+                return present(alert, animated: true)
+            } catch AuthenticationError.usernameAlreadyInUse {
+                let alert = UIAlertController(title: "", message: "This username is already in use.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Ok", style: .default))
+                
+                return present(alert, animated: true)
+            } catch NetworkingError.rateLimiting {
+                let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "Ok", style: .default))
+                
+                return present(alert, animated: true)
+            }
+            
             if changedPicture {
-                success2 = await setProfilePicture()
+                do {
+                    let _ = try await APIHandler.shared.setProfilePicture(with: profilePictureImageView.image!, fileExtension)
+                } catch NetworkingError.badRequest {
+                    let alert = UIAlertController(title: "", message: "Unsupported file type for your profile picture. (Don't worry you can pick a profile picture later.)", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "Ok", style: .default))
+                    present(alert, animated: true)
+                } catch let e {
+                    print(e)
+                    let alert = UIAlertController(title: "", message: "An unexpected error happened. (Don't worry you can pick a profile picture later.)", preferredStyle: .alert)
+                    alert.addAction(UIAlertAction(title: "Ok", style: .default))
+                    present(alert, animated: true)
+                }
             }
             
-            
-            if success1 && success2 {
-                view.window?.rootViewController = TabBarController()
-            }
-        }
-    }
-    
-    func setProfilePicture() async -> Bool {
-        do {
-            try await APIHandler.shared.setProfilePicture(with: profilePictureImageView.image!, fileExtension)
-            return true
-        } catch NetworkingError.badRequest {
-            let alert = UIAlertController(title: "", message: "Unsupported file type for your profile picture. []", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Ok", style: .default))
-            present(alert, animated: true)
-            return false
-        } catch let e {
-            print(e)
-            let alert = UIAlertController(title: "", message: "An unexpected error happened.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Ok", style: .default))
-            present(alert, animated: true)
-            return false
-        }
-    }
-    
-    func setUsername() async -> Bool {
-        do {
-            try await APIHandler.shared.setUsername(username: usernameTextField.text ?? "")
-            return true
-        } catch NetworkingError.badRequest {
-            return true
-        } catch NetworkingError.conflict {
-            let alert = UIAlertController(title: "", message: "This username is already in use.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Ok", style: .default))
-            present(alert, animated: true)
-            return false
-        } catch let e {
-            print(e)
-            let alert = UIAlertController(title: "", message: "An unexpected error happened.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Ok", style: .default))
-            present(alert, animated: true)
-            return false
+            view.window?.rootViewController = TabBarController()
         }
     }
     
     func configureViewComponents() {
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .background
         title = ""
         
         navigationItem.largeTitleDisplayMode = .never
+        
+        navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.label, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(cancelTapped))
         
         view.addSubview(profilePictureImageView)
         profilePictureImageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 150).isActive = true
