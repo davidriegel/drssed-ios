@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		631B405E2C663B820018C5FF /* NetworkingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 631B405D2C663B820018C5FF /* NetworkingError.swift */; };
-		6321954D2C5C4B38003EE6E4 /* CloPieceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6321954C2C5C4B38003EE6E4 /* CloPieceController.swift */; };
+		6321954D2C5C4B38003EE6E4 /* ClothingDetailsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */; };
 		635A6CB32C65858100142784 /* SignUpController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB22C65858100142784 /* SignUpController.swift */; };
 		635A6CB52C65859000142784 /* SignInController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB42C65859000142784 /* SignInController.swift */; };
 		635A6CB72C6585A000142784 /* welcomeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB62C6585A000142784 /* welcomeController.swift */; };
@@ -57,7 +57,7 @@
 
 /* Begin PBXFileReference section */
 		631B405D2C663B820018C5FF /* NetworkingError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkingError.swift; sourceTree = "<group>"; };
-		6321954C2C5C4B38003EE6E4 /* CloPieceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloPieceController.swift; sourceTree = "<group>"; };
+		6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingDetailsController.swift; sourceTree = "<group>"; };
 		635A6CB22C65858100142784 /* SignUpController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpController.swift; sourceTree = "<group>"; };
 		635A6CB42C65859000142784 /* SignInController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInController.swift; sourceTree = "<group>"; };
 		635A6CB62C6585A000142784 /* welcomeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeController.swift; sourceTree = "<group>"; };
@@ -133,7 +133,7 @@
 		635A6CB12C65855900142784 /* Other */ = {
 			isa = PBXGroup;
 			children = (
-				6321954C2C5C4B38003EE6E4 /* CloPieceController.swift */,
+				6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */,
 				63E010232BED33B3007F38F2 /* UploadController2.swift */,
 				635A6CB22C65858100142784 /* SignUpController.swift */,
 				635A6CB42C65859000142784 /* SignInController.swift */,
@@ -384,7 +384,7 @@
 				635A6CB32C65858100142784 /* SignUpController.swift in Sources */,
 				63743F212CEB7B2500646541 /* ClothesController.swift in Sources */,
 				637D85EC2BE94CC90010BDBF /* AppDelegate.swift in Sources */,
-				6321954D2C5C4B38003EE6E4 /* CloPieceController.swift in Sources */,
+				6321954D2C5C4B38003EE6E4 /* ClothingDetailsController.swift in Sources */,
 				63903ABA2CE292BC00459A13 /* ErrorResponses.swift in Sources */,
 				637D85EE2BE94CC90010BDBF /* SceneDelegate.swift in Sources */,
 				63743F232CEB7F9F00646541 /* ClothingViewCell.swift in Sources */,
