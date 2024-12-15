@@ -28,7 +28,7 @@ class ClothesController: UIViewController {
     var dataSource: [Clothing] = [] {
         didSet {
             searchDataSource = dataSource
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
+            sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
     
@@ -49,25 +49,25 @@ class ClothesController: UIViewController {
     
     var clothingSortSelected: sortOptions = .Date {
         didSet {
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
+            sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
     
     var clothingTypesSelected: clothingTypes? = nil {
         didSet {
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
+            sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
     
     var clothingSeasonsSelected: [clothingSeasons] = [] {
         didSet {
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
+            sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
     
     var clothingTagsSelected: [clothingTags] = [] {
         didSet {
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
+            sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
 
@@ -417,6 +417,14 @@ class ClothesController: UIViewController {
                 return true
             }
         }
+    }
+    
+    func sortAndFilterDataSource(source: [Clothing]? = nil) -> [Clothing] {
+        let filterForTags: [Clothing] = filterClothesTags(source: source != nil ? source! : dataSource)
+        let filterForSeasons: [Clothing] = filterClothesSeason(source: filterForTags)
+        let filterForType: [Clothing] = filterClothesType(source: filterForSeasons)
+        let sortClothesBy: [Clothing] = sortClothes(source: filterForType)
+        return sortClothesBy
     }
     
     // MARK: --
