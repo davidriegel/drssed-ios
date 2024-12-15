@@ -128,7 +128,6 @@ class SignInController: UIViewController {
     @objc
     func checkTextFieldInputs(_ textField: UITextField) {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let validEmail = NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: signInNameTextField.text ?? "")
         
         if !(signInNameTextField.text?.count ?? 0 > 2) || !(passwordTextField.text?.count ?? 0 > 7) {
             signInButton.alpha = 0.2
