@@ -27,17 +27,33 @@ class ClothesController: UIViewController {
     var dataSource: [Clothing] = [] {
         didSet {
             filteredDataSource = dataSource
+            sortedDataSource = dataSource
         }
     }
+    
+    var sortedDataSource: [Clothing] = [] {
+        didSet {
+            clothingCollectionView.reloadData()
+        }
+    }
+    
     var filteredDataSource: [Clothing] = [] {
         didSet {
             clothingCollectionView.reloadData()
         }
     }
+    
+    var isSearching: Bool = false
     let placeholders: [String] = ["super cool t-shirt", "fav hoodie", "zipper"]
     var sortNameToggle: Bool = false
     var sortDateToggle: Bool = true
     var sortEditToggle: Bool = false
+    
+    enum sortOptions {
+        case name
+        case date
+        case edit
+    }
     
     // MARK: --
     
@@ -92,23 +108,36 @@ class ClothesController: UIViewController {
         return bt
     }()
     
-    func toggleSortFalse(sender: Int) {
-        if sender != 1 {
+    func toggleSortOptions(_ sender: sortOptions) {
+        if sender != .name {
             sortNameToggle = false
         }
-        if sender != 2 {
+        if sender != .date {
             sortDateToggle = false
         }
-        if sender != 3 {
+        if sender != .edit {
             sortEditToggle = false
+        }
+        
+        switch sender {
+        case .name:
+            sortNameToggle.toggle()
+        case .date:
+            sortDateToggle.toggle()
+        case .edit:
+            sortEditToggle.toggle()
         }
     }
     
     func generateSortMenu() -> UIMenu {
+        if sortNameToggle == false && sortDateToggle == false && sortEditToggle == false {
+            sortDateToggle = true
+        }
+        
         let menuItems: [UIAction] = [
-            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortNameToggle ? .on : .mixed, handler: { (_) in self.toggleSortFalse(sender: 1); self.sortNameToggle.toggle(); self.navigationItem.rightBarButtonItems?.last!.menu = self.generateSortMenu() }),
-            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortDateToggle ? .on : .mixed, handler: { (_) in self.toggleSortFalse(sender: 2); self.sortDateToggle.toggle(); self.navigationItem.rightBarButtonItems?.last!.menu = self.generateSortMenu()}),
-            UIAction(title: "Recently edited", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortEditToggle ? .on : .mixed, handler: { (_) in self.toggleSortFalse(sender: 3); self.sortEditToggle.toggle(); self.navigationItem.rightBarButtonItems?.last!.menu = self.generateSortMenu()})
+            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortNameToggle ? .on : .mixed, handler: { (_) in self.sortBy(.name) }),
+            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortDateToggle ? .on : .mixed, handler: { (_) in self.sortBy(.date) }),
+            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortEditToggle ? .on : .mixed, handler: { (_) in self.sortBy(.edit) })
         ]
         
         let menu = UIMenu(title: "Sort by (ascending)", image: nil, identifier: nil, options: [], children: menuItems)
@@ -136,6 +165,44 @@ class ClothesController: UIViewController {
         hover.repeatCount = Float.infinity
         
         return hover
+    }
+    
+    func sortClothes(_ by: sortOptions) -> [Clothing] {
+        switch by {
+        case .name:
+            return sortByName()
+        case .edit:
+            return sortByEdit()
+        default:
+            return sortByDate()
+        }
+    }
+    
+    private func sortByName() -> [Clothing] {
+        var tempSortedDataSource: [Clothing] = dataSource
+        tempSortedDataSource.sort {
+            return ($0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending)
+        }
+        
+        return tempSortedDataSource
+    }
+    
+    private func sortByDate() -> [Clothing] {
+        var tempSortedDataSource: [Clothing] = dataSource
+        tempSortedDataSource.sort {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "YYYY-MM-DD hh-mm-ss"
+            let first = formatter.date(from: $0.created_at) ?? Date()
+            let second = formatter.date(from: $1.created_at) ?? Date()
+            return first > second
+        }
+        
+        return tempSortedDataSource
+    }
+    
+    // sortByEdit currently not available due to API, edits date not being saved to database
+    private func sortByEdit() -> [Clothing] {
+        return dataSource
     }
     
     func levenshteinDistance(_ string1: String, _ string2: String) -> Int {
@@ -166,6 +233,16 @@ class ClothesController: UIViewController {
         }
         
         return current[s2.count]
+    }
+    
+    func sortBy(_ sortOption: sortOptions) {
+        guard sortOption != .date || (sortOption == .date && sortDateToggle != true) else {
+            return
+        }
+        self.toggleSortOptions(sortOption)
+        sortedDataSource = sortClothes(sortOption)
+        
+        self.navigationItem.rightBarButtonItems?.last!.menu = self.generateSortMenu()
     }
     
     @objc
@@ -227,9 +304,12 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
+            isSearching = false
             filteredDataSource = dataSource
             return
         }
+        
+        isSearching = true
         
         filteredDataSource = dataSource.filter { clothingPiece in
             let name = clothingPiece.name.lowercased()
@@ -274,7 +354,11 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
             return UICollectionViewCell()
         }
         
-        customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + filteredDataSource[indexPath.item].image)!, and: filteredDataSource[indexPath.item].name)
+        if isSearching {
+            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + filteredDataSource[indexPath.item].image)!, and: filteredDataSource[indexPath.item].name)
+        } else {
+            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + sortedDataSource[indexPath.item].image)!, and: sortedDataSource[indexPath.item].name)
+        }
         
         return customCell
     }
