@@ -23,6 +23,7 @@ class ClothesController: UIViewController {
         uploadButton.layer.add(createUploadButtonHover(), forKey: "hoverAnimation")
     }
     
+    // MARK: --
     
     var dataSource: [Clothing] = [] {
         didSet {
@@ -108,6 +109,23 @@ class ClothesController: UIViewController {
         return bt
     }()
     
+    // MARK: --
+    
+    func generateSortMenu() -> UIMenu {
+        if sortNameToggle == false && sortDateToggle == false && sortEditToggle == false {
+            sortDateToggle = true
+        }
+        
+        let menuItems: [UIAction] = [
+            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortNameToggle ? .on : .mixed, handler: { (_) in self.sortBy(.name) }),
+            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortDateToggle ? .on : .mixed, handler: { (_) in self.sortBy(.date) }),
+            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortEditToggle ? .on : .mixed, handler: { (_) in self.sortBy(.edit) })
+        ]
+        
+        let menu = UIMenu(title: "Sort by (ascending)", image: nil, identifier: nil, options: [], children: menuItems)
+        return menu
+    }
+    
     func toggleSortOptions(_ sender: sortOptions) {
         if sender != .name {
             sortNameToggle = false
@@ -127,44 +145,6 @@ class ClothesController: UIViewController {
         case .edit:
             sortEditToggle.toggle()
         }
-    }
-    
-    func generateSortMenu() -> UIMenu {
-        if sortNameToggle == false && sortDateToggle == false && sortEditToggle == false {
-            sortDateToggle = true
-        }
-        
-        let menuItems: [UIAction] = [
-            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortNameToggle ? .on : .mixed, handler: { (_) in self.sortBy(.name) }),
-            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortDateToggle ? .on : .mixed, handler: { (_) in self.sortBy(.date) }),
-            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortEditToggle ? .on : .mixed, handler: { (_) in self.sortBy(.edit) })
-        ]
-        
-        let menu = UIMenu(title: "Sort by (ascending)", image: nil, identifier: nil, options: [], children: menuItems)
-        return menu
-    }
-    
-    func generateFilterMenu() -> UIMenu {
-        let menuItems: [UIAction] = [
-        ]
-        
-        let menu = UIMenu(title: "Filter by", options: [], children: menuItems)
-        return menu
-    }
-    
-    func createUploadButtonHover() -> CABasicAnimation {
-        uploadButton.layer.removeAllAnimations()
-        
-        let hover = CABasicAnimation(keyPath: "position")
-            
-        hover.isAdditive = true
-        hover.fromValue = NSValue(cgPoint: CGPoint.zero)
-        hover.toValue = NSValue(cgPoint: CGPoint(x: 0.0, y: 10.0))
-        hover.autoreverses = true
-        hover.duration = 2
-        hover.repeatCount = Float.infinity
-        
-        return hover
     }
     
     func sortClothes(_ by: sortOptions) -> [Clothing] {
@@ -245,6 +225,31 @@ class ClothesController: UIViewController {
         self.navigationItem.rightBarButtonItems?.last!.menu = self.generateSortMenu()
     }
     
+    func generateFilterMenu() -> UIMenu {
+        let menuItems: [UIAction] = [
+        ]
+        
+        let menu = UIMenu(title: "Filter by", options: [], children: menuItems)
+        return menu
+    }
+    
+    func createUploadButtonHover() -> CABasicAnimation {
+        uploadButton.layer.removeAllAnimations()
+        
+        let hover = CABasicAnimation(keyPath: "position")
+            
+        hover.isAdditive = true
+        hover.fromValue = NSValue(cgPoint: CGPoint.zero)
+        hover.toValue = NSValue(cgPoint: CGPoint(x: 0.0, y: 10.0))
+        hover.autoreverses = true
+        hover.duration = 2
+        hover.repeatCount = Float.infinity
+        
+        return hover
+    }
+    
+    // MARK: --
+    
     @objc
     func addClothingPiece() {
         navigationController?.pushViewController(UploadController(), animated: true)
@@ -272,6 +277,8 @@ class ClothesController: UIViewController {
             clothingCollectionView.refreshControl?.endRefreshing()
         }
     }
+    
+    // MARK: --
     
     func configureViewComponents() {
         view.backgroundColor = .background
