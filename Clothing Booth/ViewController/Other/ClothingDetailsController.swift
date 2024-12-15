@@ -9,6 +9,13 @@ import UIKit
 
 class ClothingDetailsController: UIViewController {
     
+    private let clothing: Clothing
+    
+    init(_ clothing: Clothing) {
+        self.clothing = clothing
+        super.init(nibName: nil, bundle: nil)
+    }
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -21,12 +28,10 @@ class ClothingDetailsController: UIViewController {
         configureViewComponents()
     }
     
-    let clothing: Clothing
-    
     // MARK: --
     
     func configureViewComponents() {
         view.backgroundColor = .background
-        title = clothing.name
+        
     }
 }

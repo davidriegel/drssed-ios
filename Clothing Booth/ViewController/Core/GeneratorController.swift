@@ -135,7 +135,7 @@ class GeneratorController: UIViewController {
     
     @objc
     func presentClothingInformation() {
-        present(CloPieceController(), animated: true)
+        //present(CloPieceController(), animated: true)
     }
     
     func configureViewComponents() {

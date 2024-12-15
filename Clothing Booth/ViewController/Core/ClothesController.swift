@@ -248,6 +248,10 @@ class ClothesController: UIViewController {
         return hover
     }
     
+    func showClothingDetails(of clothing: Clothing) {
+        present(ClothingDetailsController(clothing), animated: true)
+    }
+    
     // MARK: --
     
     @objc
@@ -368,6 +372,14 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
         }
         
         return customCell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        showClothingDetails(of: isSearching ? filteredDataSource[indexPath.item] : sortedDataSource [indexPath.item])
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        showClothingDetails(of: isSearching ? filteredDataSource[indexPath.item] : sortedDataSource [indexPath.item])
     }
     
     func collectionSkeletonView(_ skeletonView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
