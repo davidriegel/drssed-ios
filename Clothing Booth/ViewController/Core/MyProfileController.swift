@@ -92,7 +92,13 @@ class MyProfileController: UIViewController {
             }
             UserDefaults.standard.synchronize()
             
-            UIApplication.shared.windows.first?.rootViewController = UINavigationController(rootViewController: SignUpController())
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first else {
+                let alert = UIAlertController(title: "An unexpected error occurred", message: "Please restart the app.", preferredStyle: .alert)
+                return
+            }
+            
+            window.rootViewController = UINavigationController(rootViewController: SignUpController())
+            window.makeKeyAndVisible()
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
