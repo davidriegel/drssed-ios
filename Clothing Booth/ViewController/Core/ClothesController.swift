@@ -27,18 +27,18 @@ class ClothesController: UIViewController {
     
     var dataSource: [Clothing] = [] {
         didSet {
-            filteredDataSource = dataSource
-            sortedDataSource = dataSource
+            searchDataSource = dataSource
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: dataSource))
         }
     }
     
-    var sortedDataSource: [Clothing] = [] {
+    var sortedAndFilteredDataSource: [Clothing] = [] {
         didSet {
             clothingCollectionView.reloadData()
         }
     }
     
-    var filteredDataSource: [Clothing] = [] {
+    var searchDataSource: [Clothing] = [] {
         didSet {
             clothingCollectionView.reloadData()
         }
@@ -46,14 +46,34 @@ class ClothesController: UIViewController {
     
     var isSearching: Bool = false
     let placeholders: [String] = ["super cool t-shirt", "fav hoodie", "zipper"]
-    var sortNameToggle: Bool = false
-    var sortDateToggle: Bool = true
-    var sortEditToggle: Bool = false
+    
+    var clothingSortSelected: sortOptions = .date {
+        didSet {
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: dataSource))
+        }
+    }
+    
+    var clothingTypesSelected: clothingTypes? = nil {
+        didSet {
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: dataSource))
+        }
+    }
     
     enum sortOptions {
         case name
         case date
         case edit
+    }
+    
+    enum clothingTypes: CaseIterable {
+        case Tops
+        case Bottoms
+        case Footwear
+        case Accessoires
+        
+        static func withLabel(_ label: String) -> clothingTypes? {
+            return self.allCases.first{ "\($0)" == label }
+        }
     }
     
     // MARK: --
@@ -92,6 +112,24 @@ class ClothesController: UIViewController {
         return rc
     }()
     
+    lazy var typeStackView: UIStackView = {
+        let sv = UIStackView()
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.axis = .horizontal
+        sv.distribution = .equalSpacing
+        sv.alignment = .leading
+        return sv
+    }()
+    
+    lazy var typeScrollView: UIScrollView = {
+        let sv = UIScrollView()
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.isScrollEnabled = true
+        sv.alwaysBounceHorizontal = true
+        sv.showsHorizontalScrollIndicator = false
+        return sv
+    }()
+    
     lazy var uploadButton: UIButton = {
         let bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
@@ -111,55 +149,43 @@ class ClothesController: UIViewController {
     
     // MARK: --
     
+    func showClothingDetails(of clothing: Clothing) {
+        present(ClothingDetailsController(clothing), animated: true)
+    }
+    
     func generateSortMenu() -> UIMenu {
-        if sortNameToggle == false && sortDateToggle == false && sortEditToggle == false {
-            sortDateToggle = true
-        }
-        
         let menuItems: [UIAction] = [
-            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortNameToggle ? .on : .mixed, handler: { (_) in self.sortBy(.name) }),
-            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortDateToggle ? .on : .mixed, handler: { (_) in self.sortBy(.date) }),
-            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortEditToggle ? .on : .mixed, handler: { (_) in self.sortBy(.edit) })
+            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .name ? .on : .mixed, handler: { (_) in self.sortBy(.name) }),
+            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .date ? .on : .mixed, handler: { (_) in self.sortBy(.date) }),
+            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .edit ? .on : .mixed, handler: { (_) in self.sortBy(.edit) })
         ]
         
         let menu = UIMenu(title: "Sort by (ascending)", image: nil, identifier: nil, options: [], children: menuItems)
         return menu
     }
     
-    func toggleSortOptions(_ sender: sortOptions) {
-        if sender != .name {
-            sortNameToggle = false
-        }
-        if sender != .date {
-            sortDateToggle = false
-        }
-        if sender != .edit {
-            sortEditToggle = false
+    func sortBy(_ sortOption: sortOptions) {
+        guard sortOption != clothingSortSelected else {
+            return
         }
         
-        switch sender {
+        clothingSortSelected = sortOption
+        self.navigationItem.rightBarButtonItems?.last!.menu = generateSortMenu()
+    }
+    
+    func sortClothes(source: [Clothing]? = nil) -> [Clothing] {
+        switch clothingSortSelected {
         case .name:
-            sortNameToggle.toggle()
+            sortByName(source: source)
         case .date:
-            sortDateToggle.toggle()
+            sortByDate(source: source)
         case .edit:
-            sortEditToggle.toggle()
+            sortByEdit(source: source)
         }
     }
     
-    func sortClothes(_ by: sortOptions) -> [Clothing] {
-        switch by {
-        case .name:
-            return sortByName()
-        case .edit:
-            return sortByEdit()
-        default:
-            return sortByDate()
-        }
-    }
-    
-    private func sortByName() -> [Clothing] {
-        var tempSortedDataSource: [Clothing] = dataSource
+    private func sortByName(source: [Clothing]? = nil) -> [Clothing] {
+        var tempSortedDataSource: [Clothing] = source != nil ? source! : dataSource
         tempSortedDataSource.sort {
             return ($0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending)
         }
@@ -167,8 +193,8 @@ class ClothesController: UIViewController {
         return tempSortedDataSource
     }
     
-    private func sortByDate() -> [Clothing] {
-        var tempSortedDataSource: [Clothing] = dataSource
+    private func sortByDate(source: [Clothing]? = nil) -> [Clothing] {
+        var tempSortedDataSource: [Clothing] = source != nil ? source! : dataSource
         tempSortedDataSource.sort {
             let formatter = DateFormatter()
             formatter.dateFormat = "YYYY-MM-DD hh-mm-ss"
@@ -181,8 +207,16 @@ class ClothesController: UIViewController {
     }
     
     // sortByEdit currently not available due to API, edits date not being saved to database
-    private func sortByEdit() -> [Clothing] {
+    private func sortByEdit(source _: [Clothing]? = nil) -> [Clothing] {
         return dataSource
+    }
+    
+    func generateFilterMenu() -> UIMenu {
+        let menuItems: [UIAction] = [
+        ]
+        
+        let menu = UIMenu(title: "Filter by", options: [], children: menuItems)
+        return menu
     }
     
     func levenshteinDistance(_ string1: String, _ string2: String) -> Int {
@@ -215,24 +249,6 @@ class ClothesController: UIViewController {
         return current[s2.count]
     }
     
-    func sortBy(_ sortOption: sortOptions) {
-        guard sortOption != .date || (sortOption == .date && sortDateToggle != true) else {
-            return
-        }
-        self.toggleSortOptions(sortOption)
-        sortedDataSource = sortClothes(sortOption)
-        
-        self.navigationItem.rightBarButtonItems?.last!.menu = self.generateSortMenu()
-    }
-    
-    func generateFilterMenu() -> UIMenu {
-        let menuItems: [UIAction] = [
-        ]
-        
-        let menu = UIMenu(title: "Filter by", options: [], children: menuItems)
-        return menu
-    }
-    
     func createUploadButtonHover() -> CABasicAnimation {
         uploadButton.layer.removeAllAnimations()
         
@@ -248,8 +264,82 @@ class ClothesController: UIViewController {
         return hover
     }
     
-    func showClothingDetails(of clothing: Clothing) {
-        present(ClothingDetailsController(clothing), animated: true)
+    func addTypeButtons() {
+        for arrView in typeStackView.arrangedSubviews {
+            typeStackView.removeArrangedSubview(arrView)
+        }
+    
+        let allButton = UIButton()
+        let attributedTitle = NSAttributedString(string: "All", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold)])
+        allButton.setAttributedTitle(attributedTitle, for: .normal)
+        allButton.setTitleColor(.label, for: .normal)
+        allButton.layer.cornerRadius = ( view.frame.size.height / 20 ) / 2
+        allButton.backgroundColor = .accent
+        allButton.layer.shadowColor = UIColor.label.cgColor
+        allButton.layer.shadowOpacity = 0.4
+        allButton.layer.shadowRadius = 6
+        allButton.layer.shadowOffset = CGSizeMake(6, 6)
+        allButton.addTarget(self, action: #selector(typeButtonAction(_:)), for: .touchUpInside)
+        
+        typeStackView.addArrangedSubview(allButton)
+        
+        allButton.widthAnchor.constraint(greaterThanOrEqualToConstant: view.frame.size.width / 5).isActive = true
+        allButton.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
+        
+        for type in clothingTypes.allCases {
+            let typeButton = UIButton()
+            let attributedTitle = NSAttributedString(string: "\(type)", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold)])
+            typeButton.setAttributedTitle(attributedTitle, for: .normal)
+            typeButton.setTitleColor(.secondaryLabel, for: .normal)
+            typeButton.layer.cornerRadius = ( view.frame.size.height / 20 ) / 2
+            typeButton.backgroundColor = .clear
+            typeButton.layer.shadowColor = UIColor.label.cgColor
+            typeButton.layer.shadowOpacity = 0.4
+            typeButton.layer.shadowRadius = 6
+            typeButton.layer.shadowOffset = CGSizeMake(6, 6)
+            typeButton.addTarget(self, action: #selector(typeButtonAction(_:)), for: .touchUpInside)
+            typeButton.isSelected = false
+            typeButton.contentEdgeInsets = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
+            
+            typeStackView.addArrangedSubview(typeButton)
+            
+            typeButton.widthAnchor.constraint(greaterThanOrEqualToConstant: view.frame.size.width / 5).isActive = true
+            typeButton.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
+        }
+        
+        let spacing = UIView()
+        spacing.backgroundColor = .clear
+        
+        typeStackView.addArrangedSubview(spacing)
+        spacing.widthAnchor.constraint(greaterThanOrEqualToConstant: 10).isActive = true
+        spacing.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
+    }
+    
+    func filterClothesType(source: [Clothing]? = nil) -> [Clothing] {
+        let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
+        let topsCategories: [String] = ["T-Shirt", "Shirt", "Polo", "Sweater", "Hoodie", "Jacket", "Coat"]
+        let bottomsCategories: [String] = ["Jeans", "Shorts", "Pants", "Skirt"]
+        let footwearCategories: [String] = ["Sneakers", "Boots", "Sandals", "Heels", "Loafers"]
+        let accessoriesCategories: [String] = ["Hat", "Scarf", "Gloves", "Belt", "Bag", "Watch", "Accessory"]
+        
+        return tempFilteredDataSource.filter { clothing in
+            guard (clothingTypesSelected != nil) else {
+                return true
+            }
+            
+            switch clothingTypesSelected {
+            case .Tops:
+                return topsCategories.contains(clothing.category)
+            case .Bottoms:
+                return bottomsCategories.contains(clothing.category)
+            case .Footwear:
+                return footwearCategories.contains(clothing.category)
+            case .Accessoires:
+                return accessoriesCategories.contains(clothing.category)
+            case nil:
+                return true
+            }
+        }
     }
     
     // MARK: --
@@ -257,6 +347,33 @@ class ClothesController: UIViewController {
     @objc
     func addClothingPiece() {
         navigationController?.pushViewController(UploadController(), animated: true)
+    }
+    
+    @objc
+    func typeButtonAction(_ sender: UIButton) {
+        for arrView in typeStackView.arrangedSubviews {
+            guard let buttonView = arrView as? UIButton, buttonView != sender else { continue }
+            
+            UIView.animate(withDuration: 0.4) {
+                buttonView.backgroundColor = .clear
+                buttonView.setTitleColor(.secondaryLabel, for: .normal)
+                buttonView.frame.origin.y = 0
+            }
+        }
+        
+        guard sender.frame.origin.y == 0 else {
+            return
+        }
+        
+        UIView.animate(withDuration: 0.4) {
+            sender.setTitleColor(.label, for: .normal)
+            sender.backgroundColor = .accent
+            sender.frame.origin.y -= 5
+        }
+        
+        guard let buttonTitle = sender.titleLabel?.text else { return }
+        guard let type = clothingTypes.withLabel(buttonTitle) else { clothingTypesSelected = nil; return }
+        clothingTypesSelected = type
     }
     
     @objc
@@ -305,9 +422,23 @@ class ClothesController: UIViewController {
         clothingCollectionView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -5).isActive = true
         clothingCollectionView.refreshControl = clothingRefreshControll
         
+        view.addSubview(typeScrollView)
+        typeScrollView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
+        typeScrollView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
+        typeScrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -25).isActive = true
+        typeScrollView.heightAnchor.constraint(equalToConstant: view.frame.size.height / 10).isActive = true
+        
+        typeScrollView.addSubview(typeStackView)
+        typeStackView.leadingAnchor.constraint(equalTo: typeScrollView.leadingAnchor).isActive = true
+        typeStackView.trailingAnchor.constraint(equalTo: typeScrollView.trailingAnchor).isActive = true
+        typeStackView.centerYAnchor.constraint(equalTo: typeScrollView.centerYAnchor).isActive = true
+        typeStackView.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
+        
+        addTypeButtons()
+        
         view.addSubview(uploadButton)
         uploadButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        uploadButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -25).isActive = true
+        uploadButton.bottomAnchor.constraint(equalTo: typeScrollView.topAnchor, constant: -10).isActive = true
     }
 }
 
@@ -316,18 +447,18 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
             isSearching = false
-            filteredDataSource = dataSource
+            searchDataSource = dataSource
             return
         }
         
         isSearching = true
         
-        filteredDataSource = dataSource.filter { clothingPiece in
+        searchDataSource = dataSource.filter { clothingPiece in
             let name = clothingPiece.name.lowercased()
             return name.hasPrefix(query) || name.contains(query)
         }
         
-        if filteredDataSource.isEmpty {
+        if searchDataSource.isEmpty {
             let fuzzyMatches = dataSource.filter { clothingPiece in
                 let name = clothingPiece.name.lowercased()
                 let distance = levenshteinDistance(name, query)
@@ -335,11 +466,11 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
             }
             
             if !fuzzyMatches.isEmpty {
-                filteredDataSource = fuzzyMatches
+                searchDataSource = fuzzyMatches
             }
         }
         
-        filteredDataSource.sort {
+        searchDataSource.sort {
             let nameA = $0.name.lowercased()
             let nameB = $1.name.lowercased()
             
@@ -357,7 +488,7 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return filteredDataSource.count
+        return isSearching ? searchDataSource.count : sortedAndFilteredDataSource.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -366,20 +497,20 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
         }
         
         if isSearching {
-            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + filteredDataSource[indexPath.item].image)!, and: filteredDataSource[indexPath.item].name)
+            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + searchDataSource[indexPath.item].image)!, and: searchDataSource[indexPath.item].name)
         } else {
-            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + sortedDataSource[indexPath.item].image)!, and: sortedDataSource[indexPath.item].name)
+            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + sortedAndFilteredDataSource[indexPath.item].image)!, and: sortedAndFilteredDataSource[indexPath.item].name)
         }
         
         return customCell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        showClothingDetails(of: isSearching ? filteredDataSource[indexPath.item] : sortedDataSource [indexPath.item])
+        showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource [indexPath.item])
     }
     
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        showClothingDetails(of: isSearching ? filteredDataSource[indexPath.item] : sortedDataSource [indexPath.item])
+        showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource [indexPath.item])
     }
     
     func collectionSkeletonView(_ skeletonView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
