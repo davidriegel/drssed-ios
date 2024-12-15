@@ -28,7 +28,7 @@ class ClothesController: UIViewController {
     var dataSource: [Clothing] = [] {
         didSet {
             searchDataSource = dataSource
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: dataSource))
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
         }
     }
     
@@ -47,22 +47,36 @@ class ClothesController: UIViewController {
     var isSearching: Bool = false
     let placeholders: [String] = ["super cool t-shirt", "fav hoodie", "zipper"]
     
-    var clothingSortSelected: sortOptions = .date {
+    var clothingSortSelected: sortOptions = .Date {
         didSet {
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: dataSource))
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
         }
     }
     
     var clothingTypesSelected: clothingTypes? = nil {
         didSet {
-            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: dataSource))
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
         }
     }
     
+    var clothingSeasonsSelected: [clothingSeasons] = [] {
+        didSet {
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
+        }
+    }
+    
+    var clothingTagsSelected: [clothingTags] = [] {
+        didSet {
+            sortedAndFilteredDataSource = sortClothes(source: filterClothesType(source: filterClothesSeason(source: filterClothesTags(source: dataSource))))
+        }
+    }
+
+    
+    
     enum sortOptions {
-        case name
-        case date
-        case edit
+        case Name
+        case Date
+        case Edit
     }
     
     enum clothingTypes: CaseIterable {
@@ -74,6 +88,20 @@ class ClothesController: UIViewController {
         static func withLabel(_ label: String) -> clothingTypes? {
             return self.allCases.first{ "\($0)" == label }
         }
+    }
+    
+    enum clothingSeasons {
+        case Spring
+        case Summer
+        case Autumn
+        case Winter
+    }
+    
+    enum clothingTags {
+        case Casual
+        case Formal
+        case Sports
+        case Vintage
     }
     
     // MARK: --
@@ -155,9 +183,9 @@ class ClothesController: UIViewController {
     
     func generateSortMenu() -> UIMenu {
         let menuItems: [UIAction] = [
-            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .name ? .on : .mixed, handler: { (_) in self.sortBy(.name) }),
-            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .date ? .on : .mixed, handler: { (_) in self.sortBy(.date) }),
-            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .edit ? .on : .mixed, handler: { (_) in self.sortBy(.edit) })
+            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Name ? .on : .mixed, handler: { (_) in self.sortBy(.Name) }),
+            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Date ? .on : .mixed, handler: { (_) in self.sortBy(.Date) }),
+            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Edit ? .on : .mixed, handler: { (_) in self.sortBy(.Edit) })
         ]
         
         let menu = UIMenu(title: "Sort by (ascending)", image: nil, identifier: nil, options: [], children: menuItems)
@@ -175,11 +203,11 @@ class ClothesController: UIViewController {
     
     func sortClothes(source: [Clothing]? = nil) -> [Clothing] {
         switch clothingSortSelected {
-        case .name:
+        case .Name:
             sortByName(source: source)
-        case .date:
+        case .Date:
             sortByDate(source: source)
-        case .edit:
+        case .Edit:
             sortByEdit(source: source)
         }
     }
@@ -212,11 +240,64 @@ class ClothesController: UIViewController {
     }
     
     func generateFilterMenu() -> UIMenu {
-        let menuItems: [UIAction] = [
+        let tagsMenuItems: [UIAction] = [
+            UIAction(title: "🌱 Spring", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Spring) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Spring) }),
+            UIAction(title: "☀️ Summer", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Summer) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Summer) }),
+            UIAction(title: "🍂 Autumn", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Autumn) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Autumn) }),
+            UIAction(title: "❄️ Winter", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Winter) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Winter) })
         ]
         
-        let menu = UIMenu(title: "Filter by", options: [], children: menuItems)
+        let seasonsMenuItems: [UIAction] = [
+            UIAction(title: "🧍🏻 Casual", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Casual) ? .on : .mixed, handler: { (_) in self.filterByTags(.Casual) }),
+            UIAction(title: "🕴🏻 Formal", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Formal) ? .on : .mixed, handler: { (_) in self.filterByTags(.Formal) }),
+            UIAction(title: "⛹🏻 Sports", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Sports) ? .on : .mixed, handler: { (_) in self.filterByTags(.Sports) }),
+            UIAction(title: "🧳 Vintage", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Vintage) ? .on : .mixed, handler: { (_) in self.filterByTags(.Vintage) })
+        ]
+        
+        var totalItems: [UIMenuElement] = []
+        totalItems.append(UIMenu(title: "", options: .displayInline, children: tagsMenuItems))
+        totalItems += seasonsMenuItems
+        
+        let menu = UIMenu(title: "Filter by", options: [], children: totalItems)
         return menu
+    }
+    
+    func filterBySeason(_ seasonSelected: clothingSeasons) {
+        clothingSeasonsSelected.contains(seasonSelected) ? clothingSeasonsSelected.removeAll(where: { season in
+            return season == seasonSelected
+        }) : clothingSeasonsSelected.append(seasonSelected)
+        self.navigationItem.rightBarButtonItems?.first!.menu = generateFilterMenu()
+    }
+    
+    func filterClothesSeason(source: [Clothing]? = nil) -> [Clothing] {
+        let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
+        
+        return tempFilteredDataSource.filter { clothing in
+            guard (!clothingSeasonsSelected.isEmpty) else {
+                return true
+            }
+            
+            return clothingSeasonsSelected.allSatisfy { clothing.seasons.contains("\($0)")}
+        }
+    }
+    
+    func filterByTags(_ tagSelected: clothingTags) {
+        clothingTagsSelected.contains(tagSelected) ? clothingTagsSelected.removeAll(where: { season in
+            return season == tagSelected
+        }) : clothingTagsSelected.append(tagSelected)
+        self.navigationItem.rightBarButtonItems?.first!.menu = generateFilterMenu()
+    }
+    
+    func filterClothesTags(source: [Clothing]? = nil) -> [Clothing] {
+        let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
+        
+        return tempFilteredDataSource.filter { clothing in
+            guard (!clothingTagsSelected.isEmpty) else {
+                return true
+            }
+            
+            return clothingTagsSelected.allSatisfy { clothing.tags.contains("\($0)")}
+        }
     }
     
     func levenshteinDistance(_ string1: String, _ string2: String) -> Int {
@@ -323,10 +404,6 @@ class ClothesController: UIViewController {
         let accessoriesCategories: [String] = ["Hat", "Scarf", "Gloves", "Belt", "Bag", "Watch", "Accessory"]
         
         return tempFilteredDataSource.filter { clothing in
-            guard (clothingTypesSelected != nil) else {
-                return true
-            }
-            
             switch clothingTypesSelected {
             case .Tops:
                 return topsCategories.contains(clothing.category)
