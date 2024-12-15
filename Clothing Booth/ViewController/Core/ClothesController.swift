@@ -111,7 +111,7 @@ class ClothesController: UIViewController {
             UIAction(title: "Recently edited", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: sortEditToggle ? .on : .mixed, handler: { (_) in self.toggleSortFalse(sender: 3); self.sortEditToggle.toggle(); self.navigationItem.rightBarButtonItems?.last!.menu = self.generateSortMenu()})
         ]
         
-        let menu = UIMenu(title: "Sort by", image: nil, identifier: nil, options: [], children: menuItems)
+        let menu = UIMenu(title: "Sort by (ascending)", image: nil, identifier: nil, options: [], children: menuItems)
         return menu
     }
     
