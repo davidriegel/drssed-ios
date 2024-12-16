@@ -94,6 +94,7 @@ class MyProfileController: UIViewController {
             
             guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene, let window = windowScene.windows.first else {
                 let alert = UIAlertController(title: "An unexpected error occurred", message: "Please restart the app.", preferredStyle: .alert)
+                self.present(alert, animated: true)
                 return
             }
             
