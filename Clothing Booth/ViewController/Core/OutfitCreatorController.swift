@@ -1,13 +1,13 @@
 //
-//  GeneratorController.swift
-//  Outfitter
+//  OutfitCreatorController.swift
+//  Clothing Booth
 //
-//  Created by David Riegel on 09.05.24.
+//  Created by David Riegel on 16.12.24.
 //
 
 import UIKit
 
-class GeneratorController: UIViewController {
+class OutfitCreatorController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
