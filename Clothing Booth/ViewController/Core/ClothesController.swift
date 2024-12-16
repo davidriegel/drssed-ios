@@ -380,7 +380,7 @@ class ClothesController: UIViewController {
             typeButton.layer.shadowOffset = CGSizeMake(6, 6)
             typeButton.addTarget(self, action: #selector(typeButtonAction(_:)), for: .touchUpInside)
             typeButton.isSelected = false
-            typeButton.contentEdgeInsets = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
+            typeButton.contentEdgeInsets = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10) // All buttons need to be configurated w. the UIButtonConfigurations due to deprecation in near future ()
             
             typeStackView.addArrangedSubview(typeButton)
             
