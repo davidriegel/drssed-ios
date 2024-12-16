@@ -188,7 +188,7 @@ class ClothesController: UIViewController {
             UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Edit ? .on : .mixed, handler: { (_) in self.sortBy(.Edit) })
         ]
         
-        let menu = UIMenu(title: "Sort by (ascending)", image: nil, identifier: nil, options: [], children: menuItems)
+        let menu = UIMenu(title: "Sort by (descending)", image: nil, identifier: nil, options: [], children: menuItems)
         return menu
     }
     
@@ -467,7 +467,8 @@ class ClothesController: UIViewController {
             clothingCollectionView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             
             do {
-                dataSource = try await APIHandler.shared.getClothingList(limit: 30, offset: 0).clothing
+                dataSource = try await APIHandler.shared.getClothingList(limit: 0, offset: 0).clothing
+                
                 if let encoded = try? JSONEncoder().encode(dataSource) {
                     UserDefaults.standard.setValue(encoded, forKey: "userClothes")
                 }
