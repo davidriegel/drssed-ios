@@ -595,10 +595,6 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
         showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource [indexPath.item])
     }
     
-    func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource [indexPath.item])
-    }
-    
     func collectionSkeletonView(_ skeletonView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return Int.random(in: 4...8)
     }
