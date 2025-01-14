@@ -15,8 +15,25 @@ class MyProfileController: UIViewController {
         super.viewDidLoad()
 
         configureViewComponents()
-        updateData()
+        updateProfileData()
     }
+    
+    lazy var scrollView: UIScrollView = {
+        let sv = UIScrollView()
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.showsVerticalScrollIndicator = false
+        sv.scrollsToTop = true
+        sv.alwaysBounceVertical = true
+        sv.refreshControl = refreshControl
+        sv.delegate = self
+        return sv
+    }()
+    
+    lazy var refreshControl: UIRefreshControl = {
+        let rc = UIRefreshControl()
+        rc.addTarget(self, action: #selector(updateProfileData), for: .valueChanged)
+        return rc
+    }()
     
     var profilePictureImageView: UIImageView = {
         let iv = UIImageView()
@@ -106,7 +123,8 @@ class MyProfileController: UIViewController {
         self.present(alert, animated: true)
     }
     
-    func updateData() {
+    @objc
+    func updateProfileData() {
         Task {
             let profile = await getMyProfile()
             let profilePictureURL = await retrieveProfilePicture()
@@ -117,6 +135,8 @@ class MyProfileController: UIViewController {
             profilePictureImageView.hideSkeleton()
             usernameLabel.text = profile!.username
             profilePictureImageView.sd_setImage(with: profilePictureURL)
+            
+            self.refreshControl.endRefreshing()
         }
     }
     
@@ -146,34 +166,45 @@ class MyProfileController: UIViewController {
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
+        navigationController?.navigationBar.isTranslucent = true
+        navigationController?.navigationBar.standardAppearance.configureWithTransparentBackground()
         
         navigationItem.largeTitleDisplayMode = .never
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "door.left.hand.open", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.systemRed, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(signOut))
-
         
-        view.addSubview(profilePictureImageView)
+        view.addSubview(scrollView)
+        scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+        scrollView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+        scrollView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+        scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        
+        scrollView.addSubview(profilePictureImageView)
         profilePictureImageView.heightAnchor.constraint(equalToConstant: 100).isActive = true
         profilePictureImageView.widthAnchor.constraint(equalToConstant: 100).isActive = true
-        profilePictureImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20).isActive = true
-        profilePictureImageView.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
+        profilePictureImageView.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 20).isActive = true
+        profilePictureImageView.leftAnchor.constraint(equalTo: scrollView.leftAnchor, constant: 20).isActive = true
         
-        view.addSubview(usernameLabel)
+        scrollView.addSubview(usernameLabel)
         usernameLabel.topAnchor.constraint(equalTo: profilePictureImageView.topAnchor).isActive = true
         usernameLabel.leftAnchor.constraint(equalTo: profilePictureImageView.rightAnchor, constant: 15).isActive = true
-        usernameLabel.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
+        usernameLabel.rightAnchor.constraint(equalTo: scrollView.rightAnchor, constant: -20).isActive = true
         
-        view.addSubview(friendsLabel)
+        scrollView.addSubview(friendsLabel)
         friendsLabel.topAnchor.constraint(equalTo: usernameLabel.bottomAnchor, constant: 5).isActive = true
         friendsLabel.leftAnchor.constraint(equalTo: profilePictureImageView.rightAnchor, constant: 15).isActive = true
-        friendsLabel.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
+        friendsLabel.rightAnchor.constraint(equalTo: scrollView.rightAnchor, constant: -20).isActive = true
         
-        view.addSubview(pinnedLabel)
+        scrollView.addSubview(pinnedLabel)
         pinnedLabel.topAnchor.constraint(equalTo: profilePictureImageView.bottomAnchor, constant: 15).isActive = true
-        pinnedLabel.leftAnchor.constraint(equalTo: view.leftAnchor, constant: 20).isActive = true
+        pinnedLabel.leftAnchor.constraint(equalTo: scrollView.leftAnchor, constant: 20).isActive = true
         
-        view.addSubview(editPinnedButton)
+        scrollView.addSubview(editPinnedButton)
         editPinnedButton.centerYAnchor.constraint(equalTo: pinnedLabel.centerYAnchor).isActive = true
-        editPinnedButton.rightAnchor.constraint(equalTo: view.rightAnchor, constant: -20).isActive = true
+        editPinnedButton.rightAnchor.constraint(equalTo: scrollView.rightAnchor, constant: -20).isActive = true
     }
+}
+
+extension MyProfileController: UIScrollViewDelegate {
+    
 }
