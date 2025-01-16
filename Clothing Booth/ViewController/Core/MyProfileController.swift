@@ -126,6 +126,10 @@ class MyProfileController: UIViewController {
     @objc
     func updateProfileData() {
         Task {
+            usernameLabel.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
+            friendsLabel.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
+            profilePictureImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
+            
             let profile = await getMyProfile()
             let profilePictureURL = await retrieveProfilePicture()
             guard profile != nil else { return }
@@ -141,12 +145,27 @@ class MyProfileController: UIViewController {
     }
     
     func getMyProfile() async -> privateUser? {
+        var userProfile: privateUser?
+        
         do {
-            return try await APIHandler.shared.getMyUserProfile()
+            userProfile = try await APIHandler.shared.getMyUserProfile()
+            
+            if let encoded = try? JSONEncoder().encode(userProfile) {
+                UserDefaults.standard.setValue(encoded, forKey: "userProfile")
+            }
         } catch let e {
             print(e)
-            return nil
         }
+        
+        if userProfile == nil {
+            do {
+                userProfile = try JSONDecoder().decode(privateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
+            } catch let e {
+                print(e)
+            }
+        }
+        
+        return userProfile
     }
     
     func retrieveProfilePicture() async -> URL? {
