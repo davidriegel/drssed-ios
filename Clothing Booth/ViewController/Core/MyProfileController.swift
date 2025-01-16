@@ -52,7 +52,7 @@ class MyProfileController: UIViewController {
         let lb = UILabel()
         lb.translatesAutoresizingMaskIntoConstraints = false
         lb.isSkeletonable = true
-        lb.lastLineFillPercent = 60
+        lb.lastLineFillPercent = 100
         lb.skeletonTextLineHeight = .relativeToFont
         lb.linesCornerRadius = 4
         lb.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
@@ -60,7 +60,7 @@ class MyProfileController: UIViewController {
         lb.textColor = .label
         lb.font = UIFont.systemFont(ofSize: 20, weight: .bold)
         lb.numberOfLines = 1
-        lb.text = "username"
+        lb.text = "example_user"
         return lb
     }()
     
@@ -68,7 +68,7 @@ class MyProfileController: UIViewController {
         let lb = UILabel()
         lb.translatesAutoresizingMaskIntoConstraints = false
         lb.isSkeletonable = true
-        lb.lastLineFillPercent = 40
+        lb.lastLineFillPercent = 60
         lb.skeletonTextLineHeight = .relativeToFont
         lb.linesCornerRadius = 4
         lb.textAlignment = .natural
