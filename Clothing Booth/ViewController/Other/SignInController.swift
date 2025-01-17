@@ -121,6 +121,11 @@ class SignInController: UIViewController {
                 let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 present(alert, animated: true)
+            } catch {
+                signInButton.alpha = 0.2
+                signInButton.isEnabled = false
+                
+                showUnexpectedErrorAlert()
             }
         }
     }

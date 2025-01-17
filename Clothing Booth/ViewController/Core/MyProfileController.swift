@@ -155,14 +155,14 @@ class MyProfileController: UIViewController {
                 UserDefaults.standard.setValue(encoded, forKey: "userProfile")
             }
         } catch let e {
-            print(e)
+            showUnexpectedErrorAlert()
         }
         
         if userProfile == nil {
             do {
                 userProfile = try JSONDecoder().decode(privateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
             } catch let e {
-                print(e)
+                showUnexpectedErrorAlert()
             }
         }
         
@@ -174,8 +174,9 @@ class MyProfileController: UIViewController {
             return try await APIHandler.shared.userHandler.getMyProfilePicture()
         } catch APIError.notFound {
             return nil
-        } catch let e {
-            print(e)
+        } catch {
+            assertionFailure("Couldn't retrieve profile picture: (\(error))")
+            
             return nil
         }
     }

@@ -21,3 +21,12 @@ extension UIColor {
         return hexString
      }
 }
+
+extension UIViewController {
+    func showUnexpectedErrorAlert() {
+        let alert = UIAlertController(title: "Unexpected Error", message: "Something went wrong. Please try again later.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Ok", style: .default))
+        
+        self.present(alert, animated: true)
+    }
+}

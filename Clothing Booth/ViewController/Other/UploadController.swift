@@ -697,6 +697,8 @@ class UploadController: UIViewController {
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
                 return present(alert, animated: true)
+            } catch {
+                showUnexpectedErrorAlert()
             }
         }
     }
@@ -1301,6 +1303,8 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
                 return present(alert, animated: true)
+            } catch {
+                showUnexpectedErrorAlert()
             }
         }
     }

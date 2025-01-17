@@ -475,8 +475,9 @@ class ClothesController: UIViewController {
             } catch APIError.tooManyRequests {
                 // possibily show alert
                 dataSource = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
-            } catch let e {
-                print(e)
+            } catch {
+                assertionFailure(error.localizedDescription)
+                
                 dataSource = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
             }
             

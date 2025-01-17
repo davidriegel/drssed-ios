@@ -158,6 +158,8 @@ class welcomeController: UIViewController {
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
                 return present(alert, animated: true)
+            } catch {
+                showUnexpectedErrorAlert()
             }
             
             if changedPicture {
@@ -167,9 +169,8 @@ class welcomeController: UIViewController {
                     let alert = UIAlertController(title: "", message: "Unsupported file type for your profile picture. (Don't worry you can pick a profile picture later.)", preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "Ok", style: .default))
                     present(alert, animated: true)
-                } catch let e {
-                    print(e)
-                    let alert = UIAlertController(title: "", message: "An unexpected error happened. (Don't worry you can pick a profile picture later.)", preferredStyle: .alert)
+                } catch {
+                    let alert = UIAlertController(title: "Unexpected Error", message: "Something went wrong. (Don't worry you can pick a profile picture later.)", preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "Ok", style: .default))
                     present(alert, animated: true)
                 }
