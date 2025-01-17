@@ -139,6 +139,21 @@ class MyProfileController: UIViewController {
             profilePictureImageView.hideSkeleton()
             usernameLabel.text = profile!.username
             friendsLabel.text = "\(profile!.friends?.count ?? 0) friends"
+            
+            guard let profilePicture = profilePictureURL else {
+                profilePictureImageView.image = UIImage(named: "default_scarf_profilepicture")
+                self.refreshControl.endRefreshing()
+                return
+            }
+            
+            if profilePicture.absoluteString.contains("profile_pictures/default/") {
+                let defaultProfilePictureType = profilePicture.absoluteString.split(separator: "/").last?.split(separator: ".").first?.split(separator: "_")[1] ?? "scarf"
+                
+                profilePictureImageView.image = UIImage(named: "default_\(String(describing: defaultProfilePictureType))_profilepicture")
+                self.refreshControl.endRefreshing()
+                return
+            }
+            
             profilePictureImageView.sd_setImage(with: profilePictureURL)
             
             self.refreshControl.endRefreshing()
@@ -154,14 +169,16 @@ class MyProfileController: UIViewController {
             if let encoded = try? JSONEncoder().encode(userProfile) {
                 UserDefaults.standard.setValue(encoded, forKey: "userProfile")
             }
-        } catch let e {
+        } catch APIError.tooManyRequests {
+            // ignore rate limiting
+        } catch {
             showUnexpectedErrorAlert()
         }
         
         if userProfile == nil {
             do {
                 userProfile = try JSONDecoder().decode(privateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
-            } catch let e {
+            } catch {
                 showUnexpectedErrorAlert()
             }
         }
@@ -172,8 +189,18 @@ class MyProfileController: UIViewController {
     func retrieveProfilePicture() async -> URL? {
         do {
             return try await APIHandler.shared.userHandler.getMyProfilePicture()
-        } catch APIError.notFound {
-            return nil
+        } catch APIError.tooManyRequests {
+            do {
+                let userProfile = try JSONDecoder().decode(privateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
+                
+                guard userProfile.profile_picture != nil else {
+                    return nil
+                }
+                
+                return URL(string: userProfile.profile_picture!, relativeTo: APIHandler.baseURL)
+            } catch {
+                return nil
+            }
         } catch {
             assertionFailure("Couldn't retrieve profile picture: (\(error))")
             
