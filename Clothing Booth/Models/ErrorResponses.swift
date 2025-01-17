@@ -17,16 +17,3 @@ struct ConflictResp: Codable {
     let error: String
     let key: String
 }
-
-// MARK: -- ERROR MODELS --
-
-enum AuthenticationError: Error {
-    case emailAlreadyInUse
-    case usernameAlreadyInUse
-    case wrongSignInCredentials
-}
-
-enum ImageError: Error {
-    case imageForegroundUnclear
-    case imageTooLarge
-}

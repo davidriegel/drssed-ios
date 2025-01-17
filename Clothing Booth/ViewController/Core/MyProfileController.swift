@@ -138,6 +138,7 @@ class MyProfileController: UIViewController {
             friendsLabel.hideSkeleton()
             profilePictureImageView.hideSkeleton()
             usernameLabel.text = profile!.username
+            friendsLabel.text = "\(profile!.friends?.count ?? 0) friends"
             profilePictureImageView.sd_setImage(with: profilePictureURL)
             
             self.refreshControl.endRefreshing()
@@ -148,7 +149,7 @@ class MyProfileController: UIViewController {
         var userProfile: privateUser?
         
         do {
-            userProfile = try await APIHandler.shared.getMyUserProfile()
+            userProfile = try await APIHandler.shared.userHandler.getMyUserProfile()
             
             if let encoded = try? JSONEncoder().encode(userProfile) {
                 UserDefaults.standard.setValue(encoded, forKey: "userProfile")
@@ -170,8 +171,8 @@ class MyProfileController: UIViewController {
     
     func retrieveProfilePicture() async -> URL? {
         do {
-            return try await APIHandler.shared.getMyProfilePicture()
-        } catch NetworkingError.notFound {
+            return try await APIHandler.shared.userHandler.getMyProfilePicture()
+        } catch APIError.notFound {
             return nil
         } catch let e {
             print(e)
@@ -185,12 +186,14 @@ class MyProfileController: UIViewController {
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
-        navigationController?.navigationBar.isTranslucent = true
-        navigationController?.navigationBar.standardAppearance.configureWithTransparentBackground()
         
         navigationItem.largeTitleDisplayMode = .never
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "door.left.hand.open", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.systemRed, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(signOut))
+        let signOutButton = UIBarButtonItem(image: UIImage(systemName: "door.left.hand.open", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.systemRed, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(signOut))
+        
+        let friendRequestsButton = UIBarButtonItem(image: UIImage(systemName: "person.2.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(signOut))
+        
+        navigationItem.rightBarButtonItems = [friendRequestsButton, signOutButton]
         
         view.addSubview(scrollView)
         scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true

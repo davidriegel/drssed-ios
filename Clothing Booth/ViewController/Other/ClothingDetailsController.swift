@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SDWebImage
 
 class ClothingDetailsController: UIViewController {
     
@@ -30,8 +31,25 @@ class ClothingDetailsController: UIViewController {
     
     // MARK: --
     
+    lazy var clothingImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.contentMode = .scaleAspectFit
+        iv.clipsToBounds = true
+        iv.heightAnchor.constraint(equalToConstant: self.view.frame.width * (2 / 3)).isActive = true
+        iv.widthAnchor.constraint(equalToConstant: self.view.frame.width * (2 / 3)).isActive = true
+        iv.isUserInteractionEnabled = true
+        return iv
+    }()
+    
+    // MARK: --
+    
     func configureViewComponents() {
         view.backgroundColor = .background
         
+        view.addSubview(clothingImageView)
+        clothingImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        clothingImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20).isActive = true
+        clothingImageView.sd_setImage(with: URL(string: clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/")))
     }
 }

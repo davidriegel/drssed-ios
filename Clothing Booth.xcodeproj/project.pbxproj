@@ -7,8 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		631B405E2C663B820018C5FF /* NetworkingError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 631B405D2C663B820018C5FF /* NetworkingError.swift */; };
 		6321954D2C5C4B38003EE6E4 /* ClothingDetailsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */; };
+		632F9A522D3ADB0300026B76 /* UserHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632F9A512D3ADAFD00026B76 /* UserHandler.swift */; };
+		632F9A542D3ADC9B00026B76 /* ClothingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632F9A532D3ADC9700026B76 /* ClothingHandler.swift */; };
 		635A6CB32C65858100142784 /* SignUpController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB22C65858100142784 /* SignUpController.swift */; };
 		635A6CB52C65859000142784 /* SignInController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB42C65859000142784 /* SignInController.swift */; };
 		635A6CB72C6585A000142784 /* welcomeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB62C6585A000142784 /* welcomeController.swift */; };
@@ -31,6 +32,7 @@
 		63A096932CE63C6000537455 /* Clothing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A096922CE63C6000537455 /* Clothing.swift */; };
 		63C82C582C935B3A00E85243 /* UploadController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C82C572C935B3A00E85243 /* UploadController.swift */; };
 		63E010222BED31C3007F38F2 /* APIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E010212BED31C3007F38F2 /* APIHandler.swift */; };
+		63E0F32D2D39919B0025DA8D /* AuthHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E0F32C2D3991950025DA8D /* AuthHandler.swift */; };
 		63E8747B2C67F0F300A907FD /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8747A2C67F0F300A907FD /* SkeletonView */; };
 		63E8747D2C67FA8D00A907FD /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E8747C2C67FA8D00A907FD /* Extensions.swift */; };
 		63E8747F2C68069900A907FD /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63E8747E2C68069900A907FD /* User.swift */; };
@@ -55,8 +57,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		631B405D2C663B820018C5FF /* NetworkingError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkingError.swift; sourceTree = "<group>"; };
 		6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingDetailsController.swift; sourceTree = "<group>"; };
+		632F9A512D3ADAFD00026B76 /* UserHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserHandler.swift; sourceTree = "<group>"; };
+		632F9A532D3ADC9700026B76 /* ClothingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingHandler.swift; sourceTree = "<group>"; };
 		635A6CB22C65858100142784 /* SignUpController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpController.swift; sourceTree = "<group>"; };
 		635A6CB42C65859000142784 /* SignInController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInController.swift; sourceTree = "<group>"; };
 		635A6CB62C6585A000142784 /* welcomeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = welcomeController.swift; sourceTree = "<group>"; };
@@ -83,6 +86,7 @@
 		63A096922CE63C6000537455 /* Clothing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clothing.swift; sourceTree = "<group>"; };
 		63C82C572C935B3A00E85243 /* UploadController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadController.swift; sourceTree = "<group>"; };
 		63E010212BED31C3007F38F2 /* APIHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIHandler.swift; sourceTree = "<group>"; };
+		63E0F32C2D3991950025DA8D /* AuthHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthHandler.swift; sourceTree = "<group>"; };
 		63E8747C2C67FA8D00A907FD /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		63E8747E2C68069900A907FD /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -144,7 +148,6 @@
 			isa = PBXGroup;
 			children = (
 				635A6CB92C65958E00142784 /* TokenModel.swift */,
-				631B405D2C663B820018C5FF /* NetworkingError.swift */,
 				63E8747E2C68069900A907FD /* User.swift */,
 				63903AB92CE292BC00459A13 /* ErrorResponses.swift */,
 				63A096922CE63C6000537455 /* Clothing.swift */,
@@ -213,6 +216,9 @@
 		637D861C2BE94DA70010BDBF /* Manager */ = {
 			isa = PBXGroup;
 			children = (
+				632F9A532D3ADC9700026B76 /* ClothingHandler.swift */,
+				632F9A512D3ADAFD00026B76 /* UserHandler.swift */,
+				63E0F32C2D3991950025DA8D /* AuthHandler.swift */,
 				63E010212BED31C3007F38F2 /* APIHandler.swift */,
 			);
 			path = Manager;
@@ -374,18 +380,20 @@
 				63A096932CE63C6000537455 /* Clothing.swift in Sources */,
 				637D86232BE957070010BDBF /* MyProfileController.swift in Sources */,
 				635A6CB72C6585A000142784 /* welcomeController.swift in Sources */,
+				63E0F32D2D39919B0025DA8D /* AuthHandler.swift in Sources */,
 				63E8747F2C68069900A907FD /* User.swift in Sources */,
 				637D85F02BE94CC90010BDBF /* HomeController.swift in Sources */,
 				637D86212BE955D90010BDBF /* TabBarController.swift in Sources */,
 				635A6CB32C65858100142784 /* SignUpController.swift in Sources */,
 				63743F212CEB7B2500646541 /* ClothesController.swift in Sources */,
 				637D85EC2BE94CC90010BDBF /* AppDelegate.swift in Sources */,
+				632F9A522D3ADB0300026B76 /* UserHandler.swift in Sources */,
+				632F9A542D3ADC9B00026B76 /* ClothingHandler.swift in Sources */,
 				6321954D2C5C4B38003EE6E4 /* ClothingDetailsController.swift in Sources */,
 				63903ABA2CE292BC00459A13 /* ErrorResponses.swift in Sources */,
 				637D85EE2BE94CC90010BDBF /* SceneDelegate.swift in Sources */,
 				63743F232CEB7F9F00646541 /* ClothingViewCell.swift in Sources */,
 				63E8747D2C67FA8D00A907FD /* Extensions.swift in Sources */,
-				631B405E2C663B820018C5FF /* NetworkingError.swift in Sources */,
 				637D86252BED05CD0010BDBF /* OutfitCreatorController.swift in Sources */,
 				635A6CBA2C65958E00142784 /* TokenModel.swift in Sources */,
 				635A6CB52C65859000142784 /* SignInController.swift in Sources */,

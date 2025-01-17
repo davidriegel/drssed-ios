@@ -467,12 +467,12 @@ class ClothesController: UIViewController {
             clothingCollectionView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             
             do {
-                dataSource = try await APIHandler.shared.getClothingList(limit: 0, offset: 0).clothing
+                dataSource = try await APIHandler.shared.clothingHandler.getClothingList(limit: 0, offset: 0).clothing
                 
                 if let encoded = try? JSONEncoder().encode(dataSource) {
                     UserDefaults.standard.setValue(encoded, forKey: "userClothes")
                 }
-            } catch NetworkingError.rateLimiting {
+            } catch APIError.tooManyRequests {
                 // possibily show alert
                 dataSource = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
             } catch let e {

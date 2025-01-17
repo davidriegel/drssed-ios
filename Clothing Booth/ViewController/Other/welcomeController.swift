@@ -139,7 +139,7 @@ class welcomeController: UIViewController {
     func proceed() {
         Task {
             do {
-                let tokenResponse = try await APIHandler.shared.signUpWith(email: self.email!, username: self.usernameTextField.text!, andPassword: self.password!)
+                let tokenResponse = try await APIHandler.shared.authHandler.signUpWith(email: self.email!, username: self.usernameTextField.text!, andPassword: self.password!)
                 UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
                 UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
                 UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
@@ -153,7 +153,7 @@ class welcomeController: UIViewController {
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
                 return present(alert, animated: true)
-            } catch NetworkingError.rateLimiting {
+            } catch APIError.tooManyRequests {
                 let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
@@ -162,8 +162,8 @@ class welcomeController: UIViewController {
             
             if changedPicture {
                 do {
-                    let _ = try await APIHandler.shared.setProfilePicture(with: profilePictureImageView.image!, fileExtension)
-                } catch NetworkingError.badRequest {
+                    let _ = try await APIHandler.shared.userHandler.setProfilePicture(with: profilePictureImageView.image!, fileExtension)
+                } catch APIError.badRequest {
                     let alert = UIAlertController(title: "", message: "Unsupported file type for your profile picture. (Don't worry you can pick a profile picture later.)", preferredStyle: .alert)
                     alert.addAction(UIAlertAction(title: "Ok", style: .default))
                     present(alert, animated: true)

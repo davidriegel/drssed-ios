@@ -24,7 +24,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
         
         Task {
-            await APIHandler.shared._getAccessToken()
+            await APIHandler.shared.authHandler.getAccessToken()
         }
         
         window.rootViewController = TabBarController()

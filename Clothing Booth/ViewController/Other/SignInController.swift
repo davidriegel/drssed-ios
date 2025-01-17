@@ -99,12 +99,12 @@ class SignInController: UIViewController {
     func handleSignIn() {
         Task {
             do {
-                let tokenResponse = try await APIHandler.shared.signInWith(signInName: signInNameTextField.text!, andPassword: passwordTextField.text!)
+                let tokenResponse = try await APIHandler.shared.authHandler.signInWith(signInName: signInNameTextField.text!, andPassword: passwordTextField.text!)
                 UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
                 UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
                 UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
                 self.view.window?.rootViewController = TabBarController()
-            } catch NetworkingError.unauthorized {
+            } catch APIError.unauthorized {
                 signInButton.alpha = 0.2
                 signInButton.isEnabled = false
                 
@@ -115,7 +115,7 @@ class SignInController: UIViewController {
                 let alert = UIAlertController(title: "", message: "Either your \(signInUse) or your password is wrong.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 present(alert, animated: true)
-            } catch NetworkingError.rateLimiting {
+            } catch APIError.tooManyRequests {
                 signInButton.alpha = 0.2
                 signInButton.isEnabled = false
                 let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)

@@ -675,7 +675,7 @@ class UploadController: UIViewController {
         
         Task { [self] in
             do {
-                let clothingPiece = try await APIHandler.shared.uploadClothing(with: nameTextField.text!, description: descriptionTextView.textColor == .label ? descriptionTextView.text : "", type: typeSelection.text!, seasons: selectedSeasonsArray, tags:  selectedTagsArray, imageURL: String(clothingURL.absoluteString.split(separator: "/").last?.split(separator: ".").first ?? ""), color: colorPickerView.selectedColor)
+                let clothingPiece = try await APIHandler.shared.clothingHandler.uploadClothing(with: nameTextField.text!, description: descriptionTextView.textColor == .label ? descriptionTextView.text : "", type: typeSelection.text!, seasons: selectedSeasonsArray, tags:  selectedTagsArray, imageURL: String(clothingURL.absoluteString.split(separator: "/").last?.split(separator: ".").first ?? ""), color: colorPickerView.selectedColor)
                 
                 var clothesArray = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
                 clothesArray.append(clothingPiece)
@@ -687,12 +687,12 @@ class UploadController: UIViewController {
                 
                 return present(alert, animated: true)
             }
-            catch ImageError.imageForegroundUnclear {
-                let alert = UIAlertController(title: "", message: "The image background couldn't be removed, please upload a clearer and try again.\nUse a bright enviroment and ensure a high contrast for the best results.", preferredStyle: .alert)
+            catch APIError.unprocessableContent {
+                let alert = UIAlertController(title: "", message: "The image background couldn't be removed, please upload a clearer image and try again.\nUse a bright enviroment and ensure a high contrast for the best results.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
                 return present(alert, animated: true)
-            } catch NetworkingError.rateLimiting {
+            } catch APIError.tooManyRequests {
                 let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
@@ -1282,13 +1282,13 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
             
             uploadImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             do {
-                let clothingURL = try await APIHandler.shared.removeClothingBackground(from: image, self.fileExtension)
+                let clothingURL = try await APIHandler.shared.clothingHandler.removeClothingBackground(from: image, self.fileExtension)
                 
                 imageURL = clothingURL
                 uploadImageView.sd_setImage(with: clothingURL)
                 uploadImageView.hideSkeleton()
-            } catch ImageError.imageForegroundUnclear, ImageError.imageTooLarge {
-                let alert = UIAlertController(title: "", message: "The image background couldn't be removed, please upload a clearer and try again.\nUse a bright enviroment and ensure a high contrast for the best results.", preferredStyle: .alert)
+            } catch APIError.payloadTooLarge, APIError.unprocessableContent {
+                let alert = UIAlertController(title: "", message: "The image background couldn't be removed, please upload a clearer image and try again.\nUse a bright enviroment and ensure a high contrast for the best results.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
                     self.imageURL = nil
                     self.uploadImageView.image = UIImage(named: "upload_placeholder")
@@ -1296,7 +1296,7 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
                 }))
                 
                 return present(alert, animated: true)
-            } catch NetworkingError.rateLimiting {
+            } catch APIError.tooManyRequests {
                 let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default))
                 
