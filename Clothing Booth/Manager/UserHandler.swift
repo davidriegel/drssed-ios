@@ -14,7 +14,9 @@ class UserHandler {
     
     func getMyUserProfile() async throws -> privateUser {
         let request = try await APIHandler.shared.createRequest(endpoint: "/users/me", method: .GET)
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        
+        try APIHandler.shared.handleHTTPResponse(response as? HTTPURLResponse, data: data)
         
         return try JSONDecoder().decode(privateUser.self, from: data)
     }
