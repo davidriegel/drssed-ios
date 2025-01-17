@@ -14,6 +14,9 @@ struct privateUser: Codable {
     let profile_picture: String?
     let created_at: String
     let updated_at: String
+    let friends: [String]?
+    let incoming_friend_requests: [String]?
+    let outgoing_friend_requests: [String]?
 }
 
 struct imageResponse: Codable {
