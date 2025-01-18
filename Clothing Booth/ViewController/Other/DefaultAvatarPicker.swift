@@ -14,7 +14,7 @@ protocol UIDefaultAvatarPickerDelegate: AnyObject {
 class UIDefaultAvatarPicker: UIViewController {
     weak var delegate: UIDefaultAvatarPickerDelegate?
     
-    let defaultAvatarsNamed: [String] = ["default_hat_profilepicture", "default_scarf_profilepicture", "default_cap_profilepicture", "default_tshirt_profilepicture"]
+    let defaultAvatarsNamed: [String] = ["default_hat_profilepicture", "default_scarf_profilepicture", "default_cap_profilepicture", "default_tshirt_profilepicture", "default_sweater_profilepicture"]
     lazy var defaultAvatars: [UIImage] = self.defaultAvatarsNamed.compactMap { name in
         UIImage(named: name)!
     }

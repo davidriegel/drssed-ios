@@ -27,7 +27,7 @@ class welcomeController: UIViewController {
     var email: String? = nil
     var password: String? = nil
     var changedPicture: Bool = false
-    var defaultAvatar: String = "default_" + ["hat", "scarf", "tshirt", "cap"].randomElement()! + "_profilepicture" {
+    var defaultAvatar: String = "default_" + ["hat", "scarf", "tshirt", "cap", "sweater"].randomElement()! + "_profilepicture" {
         didSet {
             changedPicture = false
             profilePictureImageView.image = UIImage(named: defaultAvatar)
