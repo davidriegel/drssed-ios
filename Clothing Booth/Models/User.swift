@@ -11,7 +11,7 @@ struct privateUser: Codable {
     let user_id: String
     let username: String
     let email: String
-    let profile_picture: String?
+    let profile_picture: String
     let created_at: String
     let updated_at: String
     let friends: [String]?

@@ -193,11 +193,7 @@ class MyProfileController: UIViewController {
             do {
                 let userProfile = try JSONDecoder().decode(privateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
                 
-                guard userProfile.profile_picture != nil else {
-                    return nil
-                }
-                
-                return URL(string: userProfile.profile_picture!, relativeTo: APIHandler.baseURL)
+                return URL(string: userProfile.profile_picture, relativeTo: APIHandler.baseURL)
             } catch {
                 return nil
             }

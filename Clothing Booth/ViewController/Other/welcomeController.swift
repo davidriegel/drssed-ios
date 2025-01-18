@@ -27,6 +27,12 @@ class welcomeController: UIViewController {
     var email: String? = nil
     var password: String? = nil
     var changedPicture: Bool = false
+    var defaultAvatar: String = "default_" + ["hat", "scarf", "tshirt", "cap"].randomElement()! + "_profilepicture" {
+        didSet {
+            changedPicture = false
+            profilePictureImageView.image = UIImage(named: defaultAvatar)
+        }
+    }
     var fileExtension: String = ""
     
     lazy var imagePickerController: UIImagePickerController = {
@@ -40,11 +46,23 @@ class welcomeController: UIViewController {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFit
-        iv.image = UIImage(named: "profilepicture_placeholder")
+        
+        iv.image = UIImage(named: defaultAvatar)
         iv.layer.cornerRadius = 10
         iv.clipsToBounds = true
         iv.isUserInteractionEnabled = true
         return iv
+    }()
+    
+    lazy var galleryButton: UIButton = {
+        let button = UIButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(UIImage(systemName: "photo.fill", withConfiguration: UIImage.SymbolConfiguration(hierarchicalColor: .label)), for: .normal)
+        button.heightAnchor.constraint(equalToConstant: 45).isActive = true
+        button.widthAnchor.constraint(equalToConstant: 45).isActive = true
+        button.layer.cornerRadius = 45 / 5
+        button.addTarget(self, action: #selector(changeProfilePicture), for: .touchUpInside)
+        return button
     }()
     
     lazy var trashButton: UIButton = {
@@ -122,7 +140,20 @@ class welcomeController: UIViewController {
     
     @objc
     func changeProfilePicture() {
-        self.present(self.imagePickerController, animated: true)
+        let alert = UIAlertController(title: "", message: "Pick your profile picture.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Default avatars", style: .default, handler: { _ in
+            let defaultAvatarPicker = UIDefaultAvatarPicker(delegate: self)
+            let navigationController = UINavigationController(rootViewController: defaultAvatarPicker)
+            self.present(navigationController, animated: true)
+        }))
+        alert.addAction(UIAlertAction(title: "Camera roll", style: .default, handler: { _ in
+            self.present(self.imagePickerController, animated: true)
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
+            // cancel
+        }))
+        
+        self.present(alert, animated: true)
     }
     
     @objc
@@ -131,7 +162,7 @@ class welcomeController: UIViewController {
             return
         }
         
-        profilePictureImageView.image = UIImage(named: "profilepicture_placeholder")
+        profilePictureImageView.image = UIImage(named: defaultAvatar)
         changedPicture = false
     }
     
@@ -139,7 +170,7 @@ class welcomeController: UIViewController {
     func proceed() {
         Task {
             do {
-                let tokenResponse = try await APIHandler.shared.authHandler.signUpWith(email: self.email!, username: self.usernameTextField.text!, andPassword: self.password!)
+                let tokenResponse = try await APIHandler.shared.authHandler.signUpWith(email: self.email!, username: self.usernameTextField.text!, password: self.password!, andProfilePicture: self.defaultAvatar.replacingOccurrences(of: "profilepicture", with: "light"))
                 UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
                 UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
                 UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
@@ -159,7 +190,8 @@ class welcomeController: UIViewController {
                 
                 return present(alert, animated: true)
             } catch {
-                showUnexpectedErrorAlert()
+                assertionFailure("\(error)")
+                return showUnexpectedErrorAlert()
             }
             
             if changedPicture {
@@ -186,7 +218,7 @@ class welcomeController: UIViewController {
         
         navigationItem.largeTitleDisplayMode = .never
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.label, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(cancelTapped))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(cancelTapped))
         
         view.addSubview(profilePictureImageView)
         profilePictureImageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 150).isActive = true
@@ -197,9 +229,13 @@ class welcomeController: UIViewController {
         let profilePicture = UITapGestureRecognizer(target: self, action: #selector(changeProfilePicture))
         profilePictureImageView.addGestureRecognizer(profilePicture)
         
+        view.addSubview(galleryButton)
+        galleryButton.leftAnchor.constraint(equalTo: profilePictureImageView.rightAnchor, constant: 20).isActive = true
+        galleryButton.bottomAnchor.constraint(equalTo: profilePictureImageView.centerYAnchor, constant: -5).isActive = true
+        
         view.addSubview(trashButton)
         trashButton.leftAnchor.constraint(equalTo: profilePictureImageView.rightAnchor, constant: 20).isActive = true
-        trashButton.centerYAnchor.constraint(equalTo: profilePictureImageView.centerYAnchor).isActive = true
+        trashButton.topAnchor.constraint(equalTo: profilePictureImageView.centerYAnchor, constant: 5).isActive = true
         
         view.addSubview(welcomeLabel)
         welcomeLabel.topAnchor.constraint(equalTo: profilePictureImageView.bottomAnchor, constant: 20).isActive = true
@@ -266,5 +302,11 @@ extension welcomeController: UIImagePickerControllerDelegate, UINavigationContro
             
             dismiss(animated: true)
         }
+    }
+}
+
+extension welcomeController: UIDefaultAvatarPickerDelegate {
+    func defaultAvatarPicker(_ image: UIImage, _ named: String) {
+        self.defaultAvatar = named
     }
 }

@@ -48,8 +48,8 @@ class AuthHandler {
     
     // MARK: -- SIGN UP
     
-    func signUpWith(email: String, username: String, andPassword password: String) async throws -> tokenModel {
-        guard let uploadData = try? JSONEncoder().encode(["email": email, "username": username, "password": password]) else {
+    func signUpWith(email: String, username: String, password: String, andProfilePicture profilepicture: String) async throws -> tokenModel {
+        guard let uploadData = try? JSONEncoder().encode(["email": email, "username": username, "password": password, "profile_picture": profilepicture]) else {
             fatalError("JSONEncoder failed for known-safe dictionary encoding.")
         }
         

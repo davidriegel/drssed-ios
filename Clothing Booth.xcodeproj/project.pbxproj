@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		6321954D2C5C4B38003EE6E4 /* ClothingDetailsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */; };
+		63269E482D3BBB8900DFD102 /* DefaultAvatarPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63269E472D3BBB8900DFD102 /* DefaultAvatarPicker.swift */; };
+		63269E4C2D3BBCAB00DFD102 /* DefaultAvatarCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63269E4B2D3BBCAB00DFD102 /* DefaultAvatarCell.swift */; };
 		632F9A522D3ADB0300026B76 /* UserHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632F9A512D3ADAFD00026B76 /* UserHandler.swift */; };
 		632F9A542D3ADC9B00026B76 /* ClothingHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 632F9A532D3ADC9700026B76 /* ClothingHandler.swift */; };
 		635A6CB32C65858100142784 /* SignUpController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635A6CB22C65858100142784 /* SignUpController.swift */; };
@@ -58,6 +60,8 @@
 
 /* Begin PBXFileReference section */
 		6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingDetailsController.swift; sourceTree = "<group>"; };
+		63269E472D3BBB8900DFD102 /* DefaultAvatarPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAvatarPicker.swift; sourceTree = "<group>"; };
+		63269E4B2D3BBCAB00DFD102 /* DefaultAvatarCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultAvatarCell.swift; sourceTree = "<group>"; };
 		632F9A512D3ADAFD00026B76 /* UserHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserHandler.swift; sourceTree = "<group>"; };
 		632F9A532D3ADC9700026B76 /* ClothingHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingHandler.swift; sourceTree = "<group>"; };
 		635A6CB22C65858100142784 /* SignUpController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpController.swift; sourceTree = "<group>"; };
@@ -135,11 +139,13 @@
 		635A6CB12C65855900142784 /* Other */ = {
 			isa = PBXGroup;
 			children = (
+				63269E4B2D3BBCAB00DFD102 /* DefaultAvatarCell.swift */,
 				6321954C2C5C4B38003EE6E4 /* ClothingDetailsController.swift */,
 				635A6CB22C65858100142784 /* SignUpController.swift */,
 				635A6CB42C65859000142784 /* SignInController.swift */,
 				635A6CB62C6585A000142784 /* welcomeController.swift */,
 				63C82C572C935B3A00E85243 /* UploadController.swift */,
+				63269E472D3BBB8900DFD102 /* DefaultAvatarPicker.swift */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -395,7 +401,9 @@
 				63743F232CEB7F9F00646541 /* ClothingViewCell.swift in Sources */,
 				63E8747D2C67FA8D00A907FD /* Extensions.swift in Sources */,
 				637D86252BED05CD0010BDBF /* OutfitCreatorController.swift in Sources */,
+				63269E4C2D3BBCAB00DFD102 /* DefaultAvatarCell.swift in Sources */,
 				635A6CBA2C65958E00142784 /* TokenModel.swift in Sources */,
+				63269E482D3BBB8900DFD102 /* DefaultAvatarPicker.swift in Sources */,
 				635A6CB52C65859000142784 /* SignInController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
