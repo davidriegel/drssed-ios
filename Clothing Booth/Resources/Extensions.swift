@@ -13,6 +13,15 @@ extension UIColor {
     
     func hexStringFromColor(color: UIColor) -> String {
         let components = color.cgColor.components
+        
+        guard components?.count != nil && components!.count >= 3 else {
+            guard UITraitCollection.current.userInterfaceStyle != .dark else {
+                return "#FFFFFF"
+            }
+            
+            return "#000000"
+        }
+        
         let r: CGFloat = components?[0] ?? 0.0
         let g: CGFloat = components?[1] ?? 0.0
         let b: CGFloat = components?[2] ?? 0.0
