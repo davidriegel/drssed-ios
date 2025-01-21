@@ -23,6 +23,12 @@ class ClothesController: UIViewController {
         uploadButton.layer.add(createUploadButtonHover(), forKey: "hoverAnimation")
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        self.clothingCollectionView.flashScrollIndicators()
+    }
+
     // MARK: --
     
     var dataSource: [Clothing] = [] {
@@ -117,9 +123,8 @@ class ClothesController: UIViewController {
     lazy var clothingCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
-        layout.minimumLineSpacing = 5
-        layout.minimumInteritemSpacing = 5
-        layout.estimatedItemSize = CGSize(width: (self.view.frame.width / 3.2), height: (self.view.frame.width / 2))
+        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 10
         let view =  UICollectionView(frame: .zero, collectionViewLayout: layout)
         view.isSkeletonable = true
         view.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
@@ -129,8 +134,10 @@ class ClothesController: UIViewController {
         view.register(SkeletonClothingViewCell.self, forCellWithReuseIdentifier: SkeletonClothingViewCell.identifier)
         view.dataSource = self
         view.delegate = self
-        view.showsVerticalScrollIndicator = false
+        view.showsVerticalScrollIndicator = true
         view.backgroundColor = .background
+        view.isPagingEnabled = true
+        view.decelerationRate = .fast
         return view
     }()
     
@@ -497,22 +504,15 @@ class ClothesController: UIViewController {
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
         navigationItem.searchController = searchBarController
         navigationItem.preferredSearchBarPlacement = .stacked
-        navigationItem.hidesSearchBarWhenScrolling = true
+        navigationItem.hidesSearchBarWhenScrolling = false
         navigationItem.largeTitleDisplayMode = .automatic
         
         navigationItem.rightBarButtonItems = [UIBarButtonItem(image: UIImage(systemName: "slider.horizontal.2.square", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateFilterMenu()), UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateSortMenu())]
         
-        view.addSubview(clothingCollectionView)
-        clothingCollectionView.topAnchor.constraint(equalTo: view.superview?.topAnchor ?? view.topAnchor).isActive = true
-        clothingCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
-        clothingCollectionView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
-        clothingCollectionView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -5).isActive = true
-        clothingCollectionView.refreshControl = clothingRefreshControll
-        
         view.addSubview(typeScrollView)
         typeScrollView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
         typeScrollView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
-        typeScrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -25).isActive = true
+        typeScrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0).isActive = true
         typeScrollView.heightAnchor.constraint(equalToConstant: view.frame.size.height / 10).isActive = true
         
         typeScrollView.addSubview(typeStackView)
@@ -523,13 +523,20 @@ class ClothesController: UIViewController {
         
         addTypeButtons()
         
+        view.addSubview(clothingCollectionView)
+        clothingCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
+        clothingCollectionView.bottomAnchor.constraint(equalTo: typeStackView.topAnchor, constant: -5).isActive = true
+        clothingCollectionView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
+        clothingCollectionView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -5).isActive = true
+        clothingCollectionView.refreshControl = clothingRefreshControll
+        
         view.addSubview(uploadButton)
         uploadButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
         uploadButton.bottomAnchor.constraint(equalTo: typeScrollView.topAnchor, constant: -10).isActive = true
     }
 }
 
-extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegate, SkeletonCollectionViewDelegate, SkeletonCollectionViewDataSource, UISearchResultsUpdating {
+extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, SkeletonCollectionViewDelegate, SkeletonCollectionViewDataSource, UISearchResultsUpdating {
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
@@ -608,4 +615,29 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
         let cell = skeletonView.dequeueReusableCell(withReuseIdentifier: SkeletonClothingViewCell.identifier, for: indexPath)
         return cell
     }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let columns: CGFloat = 3
+        let rows: CGFloat = 3
+        let horizontalSpacing: CGFloat = 10
+        let verticalSpacing: CGFloat = 10
+            
+        let totalHorizontalSpacing = (columns - 1) * horizontalSpacing
+        let totalVerticalSpacing = (rows - 1) * verticalSpacing // pretend theres more vertical spacing to make the cells vertically smaller and show next row a little bit as indicator
+            
+        let availableWidth = collectionView.bounds.width - totalHorizontalSpacing
+        let availableHeight = collectionView.bounds.height - totalVerticalSpacing
+            
+        let itemWidth = availableWidth / columns
+        let itemHeight = availableHeight / rows
+            
+        return CGSize(width: floor(itemWidth), height: floor(itemHeight))
+    }
+    
+    // MARK: - SCROLLING FROM PAGE TO PAGE IDEA
+    //func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+    //    let pageHeight = scrollView.bounds.height
+    //    let targetY = round(targetContentOffset.pointee.y / pageHeight) * pageHeight
+    //    targetContentOffset.pointee.y = targetY
+    //}
 }
