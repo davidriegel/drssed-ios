@@ -8,7 +8,12 @@
 import UIKit
 import SkeletonView
 
+protocol UploadControllerDelegate: AnyObject {
+    func didUploadClothing(_ clothing: Clothing)
+}
+
 class UploadController: UIViewController {
+    weak var delegate: UploadControllerDelegate?
     
     let clothingTypes = [
         "*🤫🌟",
@@ -679,6 +684,12 @@ class UploadController: UIViewController {
                 
                 var clothesArray = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
                 clothesArray.append(clothingPiece)
+                
+                if let encoded = try? JSONEncoder().encode(clothesArray) {
+                    UserDefaults.standard.setValue(encoded, forKey: "userClothes")
+                }
+                
+                if delegate != nil { delegate?.didUploadClothing(clothingPiece) }
                 
                 let alert = UIAlertController(title: nil, message: "Clothing piece uploaded successfully.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
