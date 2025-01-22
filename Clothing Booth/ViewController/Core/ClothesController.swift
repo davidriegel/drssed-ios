@@ -438,7 +438,9 @@ class ClothesController: UIViewController {
     
     @objc
     func addClothingPiece() {
-        navigationController?.pushViewController(UploadController(), animated: true)
+        let vc = UploadController()
+        vc.delegate = self
+        navigationController?.pushViewController(vc, animated: true)
     }
     
     @objc
@@ -536,7 +538,7 @@ class ClothesController: UIViewController {
     }
 }
 
-extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, SkeletonCollectionViewDelegate, SkeletonCollectionViewDataSource, UISearchResultsUpdating {
+extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, SkeletonCollectionViewDelegate, SkeletonCollectionViewDataSource, UISearchResultsUpdating, UploadControllerDelegate {
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
@@ -640,4 +642,9 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
     //    let targetY = round(targetContentOffset.pointee.y / pageHeight) * pageHeight
     //    targetContentOffset.pointee.y = targetY
     //}
+    
+    func didUploadClothing(_ clothing: Clothing) {
+        //clothing.image = "/" + clothing.image
+        dataSource.insert(clothing, at: 0)
+    }
 }
