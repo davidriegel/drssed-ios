@@ -636,15 +636,7 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
         return CGSize(width: floor(itemWidth), height: floor(itemHeight))
     }
     
-    // MARK: - SCROLLING FROM PAGE TO PAGE IDEA
-    //func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-    //    let pageHeight = scrollView.bounds.height
-    //    let targetY = round(targetContentOffset.pointee.y / pageHeight) * pageHeight
-    //    targetContentOffset.pointee.y = targetY
-    //}
-    
     func didUploadClothing(_ clothing: Clothing) {
-        //clothing.image = "/" + clothing.image
         dataSource.insert(clothing, at: 0)
     }
 }
