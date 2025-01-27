@@ -970,7 +970,7 @@ class UploadController: UIViewController {
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
         
-        colorPickerView.supportsAlpha = true
+        colorPickerView.supportsAlpha = false
         colorPickerView.selectedColor = .label
         colorPickerView.delegate = self
         colorPickerView.title = "color picker"
