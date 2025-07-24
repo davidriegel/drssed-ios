@@ -46,7 +46,7 @@ class UserHandler {
         let (data, _) = try await APIHandler.shared.executeRequest(request: request)
         
         let fetchedData = try JSONDecoder().decode(imageResponse.self, from: data)
-        guard let url = URL(string: fetchedData.path, relativeTo: APIHandler.baseURL) else { throw URLError(.badURL) }
+        guard let url = URL(string: fetchedData.image_url, relativeTo: APIHandler.baseURL) else { throw URLError(.badURL) }
         return url
     }
 }

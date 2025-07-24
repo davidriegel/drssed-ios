@@ -7,10 +7,31 @@
 
 import Foundation
 import UIKit
+import JWTDecode
 
 final class AuthHandler {
     
     init() {}
+    
+    // MARK: -- register as new guest
+    
+    public func registerAsGuest() async throws -> TokenModel {
+        let request = try await APIHandler.shared.createRequest(endpoint: "/auth/guest", method: .POST, authentication: false)
+        
+        do {
+            let (data, response) = try await APIHandler.shared.executeRequest(request: request, ignoreError: [])
+            
+            let tokenResponse = try JSONDecoder().decode(TokenModel.self, from: data)
+            
+            let jwt = try decode(jwt: tokenResponse.access_token)
+            UserDefaults.standard.set(jwt.subject, forKey: "user_id")
+            UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
+            UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
+            UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
+            
+            return tokenResponse
+        }
+    }
     
     // MARK: -- GET ACCESS TOKEN
     
@@ -20,8 +41,8 @@ final class AuthHandler {
         
         if Date().addingTimeInterval(TimeInterval(60 * 10)) >= expiresAt {
             let refreshToken = UserDefaults.standard.string(forKey: "refresh_token")!
-            let uploadData = try JSONEncoder().encode(["refresh_token": refreshToken])
-            let request = try await APIHandler.shared.createRequest(endpoint: "/auth/refresh", method: .POST, body: uploadData, authentication: false)
+            let uploadData = try JSONEncoder().encode(["refresh_token": refreshToken, "access_token": accessToken])
+            let request = try await APIHandler.shared.createRequest(endpoint: "/auth/refresh", method: .POST, body: uploadData, authentication: true)
             
             do {
                 let (data, _) = try await APIHandler.shared.executeRequest(request: request)
@@ -32,7 +53,7 @@ final class AuthHandler {
                 UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(fetchedData.expires_in)), forKey: "expires_at")
             } catch _ {
                 // TODO: return to sign up page
-                UserDefaults.standard.removeObject(forKey: "access_token")
+                //UserDefaults.standard.removeObject(forKey: "access_token")
                 preconditionFailure()
             }
         }

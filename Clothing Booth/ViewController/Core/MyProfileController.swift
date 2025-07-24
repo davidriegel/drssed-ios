@@ -14,8 +14,8 @@ public class MyProfileController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        configureViewComponents()
-        updateProfileData()
+        //configureViewComponents()
+        //updateProfileData()
     }
     
     private lazy var scrollView: UIScrollView = {

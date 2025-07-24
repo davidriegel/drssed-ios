@@ -476,7 +476,11 @@ class ClothesController: UIViewController {
             clothingCollectionView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             
             do {
-                dataSource = try await APIHandler.shared.clothingHandler.getClothingList(limit: 0, offset: 0).clothing
+                guard let userID = UserDefaults.standard.string(forKey: "user_id") else {
+                    // ! Idk how should I handle that?
+                    return
+                }
+                dataSource = try await APIHandler.shared.clothingHandler.getClothingList(userID: userID, limit: 1000, offset: 0).clothing
                 
                 if let encoded = try? JSONEncoder().encode(dataSource) {
                     UserDefaults.standard.setValue(encoded, forKey: "userClothes")
@@ -591,9 +595,9 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
         }
         
         if isSearching {
-            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + searchDataSource[indexPath.item].image)!, and: searchDataSource[indexPath.item].name)
+            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/" + searchDataSource[indexPath.item].image)!, and: searchDataSource[indexPath.item].name)
         } else {
-            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com" + sortedAndFilteredDataSource[indexPath.item].image)!, and: sortedAndFilteredDataSource[indexPath.item].name)
+            customCell.configureViewComponents(with: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/" + sortedAndFilteredDataSource[indexPath.item].image)!, and: sortedAndFilteredDataSource[indexPath.item].name)
         }
         
         return customCell

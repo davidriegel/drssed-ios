@@ -20,5 +20,5 @@ public struct PrivateUser: Codable {
 }
 
 public struct imageResponse: Codable {
-    let path: String
+    let image_url: String
 }

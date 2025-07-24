@@ -18,11 +18,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         Task {
             do {
                 _ = try await APIHandler.shared.authHandler.getAccessToken()
-                window.rootViewController = TabBarController()
             } catch AuthenticationError.userNotSignedIn {
-                window.rootViewController = UINavigationController(rootViewController: SignUpController())
+                _ = try await APIHandler.shared.authHandler.registerAsGuest()
             }
             
+            window.rootViewController = TabBarController()
             window.makeKeyAndVisible()
             self.window = window
         }

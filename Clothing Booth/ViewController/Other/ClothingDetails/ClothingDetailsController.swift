@@ -315,7 +315,7 @@ final class ClothingDetailsController: UIViewController {
         view.addSubview(clothingImageView)
         clothingImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         clothingImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20).isActive = true
-        clothingImageView.sd_setImage(with: URL(string: clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/")))
+        clothingImageView.sd_setImage(with: URL(string: clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
         
         let imageTap = UITapGestureRecognizer(target: self, action: #selector(uploadImage))
         clothingImageView.addGestureRecognizer(imageTap)

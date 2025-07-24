@@ -41,14 +41,14 @@ extension ClothingDetailsController: UIImagePickerControllerDelegate, UINavigati
                 clothingImageView.hideSkeleton()
             } catch APIError.payloadTooLarge {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: APIHandler.baseURL))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
                     ErrorHandler.handle(APIError.payloadTooLargeWithMessage("The image background couldn't be removed.", suggestion: "Use a smaller image or a image with lower resolution."))                }
             } catch APIError.unprocessableContent {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: APIHandler.baseURL))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
@@ -56,7 +56,7 @@ extension ClothingDetailsController: UIImagePickerControllerDelegate, UINavigati
                 }
             } catch {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: APIHandler.baseURL))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
@@ -161,7 +161,7 @@ extension ClothingDetailsController: UIAdaptivePresentationControllerDelegate {
             
             if self.updatedImageID != nil {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/")))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
             }
         }))
         
