@@ -7,13 +7,7 @@
 
 import Foundation
 
-// MARK: -- API RESPONSES --
-
-struct error: Codable {
-    let error: String
-}
-
-struct ConflictResp: Codable {
+public struct ConflictResp: Codable {
     let error: String
     let key: String
 }
