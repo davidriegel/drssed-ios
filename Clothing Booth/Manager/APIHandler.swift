@@ -6,71 +6,29 @@
 //
 
 import Foundation
+import Network
 import UIKit
 
-enum APIError: Error {
-    case internalServerError // 500+
-    case tooManyRequests // 429
-    case unprocessableContent // 422
-    case payloadTooLarge // 413
-    case conflict // 409
-    case methodNotAllowed // 405
-    case notFound // 404
-    case forbidden // 403
-    case unauthorized // 401
-    case badRequest // 400
-    case custom(String) // Custom error message
-    case unknown // Unexpected error
-}
-
-extension APIError: LocalizedError {
-    var errorDescription: String? {
-        switch self {
-        case .internalServerError:
-            return "A 'internal server error' error has occurred."
-        case .tooManyRequests:
-            return "A 'too many requests' error has occurred."
-        case .unprocessableContent:
-            return "A 'unprocessable content' error has occurred."
-        case .payloadTooLarge:
-            return "A 'payload too large' error has occurred."
-        case .conflict:
-            return "A 'conflict' error has occurred."
-        case .methodNotAllowed:
-            return "A 'method not allowed' error has occurred."
-        case .notFound:
-            return "A 'not found' error has occurred."
-        case .forbidden:
-            return "A 'forbidden' error has occurred."
-        case .unauthorized:
-            return "A 'unauthorized' error has occurred."
-        case .badRequest:
-            return "A 'bad request' error has occurred."
-        case .custom(let message):
-            return message
-        case .unknown:
-            return "An unknown error occurred."
-        }
-    }
-}
-
-class APIHandler {
-    static let shared = APIHandler()
-    static let baseURL = URL(string: "https://api.clothing-booth.com")
+final public class APIHandler {
+    public static let shared = APIHandler()
+    public static let baseURL = URL(string: "https://api.clothing-booth.com")
     
-    let authHandler: AuthHandler
-    let userHandler: UserHandler
-    let clothingHandler: ClothingHandler
+    let authHandler: AuthHandler = AuthHandler()
+    let userHandler: UserHandler = UserHandler()
+    let clothingHandler: ClothingHandler = ClothingHandler()
     
-    enum requestMethods {
+    public enum requestMethods {
         case GET
         case PUT
         case POST
+        case DELETE
     }
+    
+    private init() {}
     
     // MARK: -- Error Handling
     
-    func handleHTTPResponse(_ response: HTTPURLResponse?, data: Data?) throws {
+    public func handleHTTPResponse(_ response: HTTPURLResponse?, data: Data?) throws {
         guard let statusCode = response?.statusCode else { throw APIError.unknown }
         
         switch statusCode {
@@ -104,18 +62,20 @@ class APIHandler {
     
     // MARK: -- Create requests
     
-    func createRequest(endpoint: String, method: requestMethods, body: Data? = nil, headers: [String: String]? = nil, authentication: Bool = true) async throws -> URLRequest {
+    public func createRequest(endpoint: String, method: requestMethods, body: Data? = nil, headers: [String: String]? = nil, authentication: Bool = true) async throws -> URLRequest {
+        guard NetworkManager.shared.isConnected else { throw APIError.offline }
+        
         guard let url = URL(string: endpoint, relativeTo: APIHandler.baseURL) else { throw APIError.badRequest }
         
         var request = URLRequest(url: url)
         request.httpMethod = "\(method)"
         request.httpBody = body
-        request.allHTTPHeaderFields = await prepareHeaders(customHeaders: headers, authentication: authentication)
+        request.allHTTPHeaderFields = try await prepareHeaders(customHeaders: headers, authentication: authentication)
         
         return request
     }
     
-    func createRequest(withImage image: UIImage, fileName: String, endpoint: String, method: requestMethods) async throws -> URLRequest {
+    public func createRequest(withImage image: UIImage, fileName: String, endpoint: String, method: requestMethods) async throws -> URLRequest {
         guard let imageData = fileName.hasSuffix("png") ? image.pngData() : image.jpegData(compressionQuality: 1) else {
             fatalError("couldn't compress image")
         }
@@ -133,14 +93,14 @@ class APIHandler {
         return try await createRequest(endpoint: endpoint, method: method, body: data, headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"])
     }
     
-    private func prepareHeaders(customHeaders: [String: String]? = nil, authentication: Bool = true) async -> [String: String] {
+    private func prepareHeaders(customHeaders: [String: String]? = nil, authentication: Bool = true) async throws -> [String: String] {
         var defaultHeaders = [
             "Content-Type": "application/json",
             "Accept": "application/json"
         ]
         
         if authentication {
-            defaultHeaders["Authorization"] = await self.authHandler.getAccessToken()
+            defaultHeaders["Authorization"] = try await self.authHandler.getAccessToken()
         }
         
         guard (customHeaders != nil) else {
@@ -151,9 +111,30 @@ class APIHandler {
         return defaultHeaders.merging(customHeaders ?? [:]) { _, custom in custom }
     }
     
-    private init() {
-        self.authHandler = AuthHandler()
-        self.userHandler = UserHandler()
-        self.clothingHandler = ClothingHandler()
+    // MARK: -- Execute request
+    
+    public func executeRequest(request: URLRequest, ignoreError: [APIError]? = nil) async throws -> (Data, HTTPURLResponse?) {
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            do {
+                try handleHTTPResponse(response as? HTTPURLResponse, data: data)
+            } catch let error as APIError {
+                guard let ignoredErrorList = ignoreError else { throw error }
+                
+                if !ignoredErrorList.contains(error) {
+                    throw error
+                }
+            }
+            
+            return (data, response as? HTTPURLResponse)
+        } catch let error as URLError {
+            switch error.code {
+            case .notConnectedToInternet, .networkConnectionLost, .timedOut:
+                throw APIError.offline
+            default:
+                throw APIError.custom(error.localizedDescription)
+            }
+        }
     }
 }

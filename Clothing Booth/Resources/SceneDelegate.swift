@@ -11,25 +11,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
-
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
         
-        if UserDefaults.standard.string(forKey: "access_token") == nil {
-            window.rootViewController = UINavigationController(rootViewController: SignUpController())
+        Task {
+            do {
+                _ = try await APIHandler.shared.authHandler.getAccessToken()
+                window.rootViewController = TabBarController()
+            } catch AuthenticationError.userNotSignedIn {
+                window.rootViewController = UINavigationController(rootViewController: SignUpController())
+            }
+            
             window.makeKeyAndVisible()
             self.window = window
-            return
         }
-        
-        Task {
-            await APIHandler.shared.authHandler.getAccessToken()
-        }
-        
-        window.rootViewController = TabBarController()
-        window.makeKeyAndVisible()
-        self.window = window
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

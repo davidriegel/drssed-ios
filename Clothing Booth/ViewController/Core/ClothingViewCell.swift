@@ -9,10 +9,10 @@ import UIKit
 import SDWebImage
 import SkeletonView
 
-class ClothingViewCell: UICollectionViewCell {
-    static let identifier: String = "clothing"
+public class ClothingViewCell: UICollectionViewCell {
+    public static let identifier: String = "clothing"
     
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
     }
     
@@ -20,15 +20,15 @@ class ClothingViewCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
     }
     
-    override func prepareForReuse() {
+    public override func prepareForReuse() {
         super.prepareForReuse()
     }
     
-    lazy var imageView: UIImageView = {
+    private lazy var imageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFit
@@ -39,7 +39,7 @@ class ClothingViewCell: UICollectionViewCell {
         return iv
     }()
     
-    lazy var nameLabel: UILabel = {
+    private lazy var nameLabel: UILabel = {
         let lb = UILabel()
         lb.translatesAutoresizingMaskIntoConstraints = false
         lb.textColor = .label
@@ -52,7 +52,7 @@ class ClothingViewCell: UICollectionViewCell {
         return lb
     }()
     
-    func configureViewComponents(with imageURL: URL,and name: String) {
+    public func configureViewComponents(with imageURL: URL,and name: String) {
         backgroundColor = .secondarySystemBackground
         layer.cornerRadius = self.contentView.frame.size.height / 6
         
@@ -68,10 +68,10 @@ class ClothingViewCell: UICollectionViewCell {
     }
 }
 
-class SkeletonClothingViewCell: UICollectionViewCell {
-    static let identifier: String = "skeleton_clothing"
+public class SkeletonClothingViewCell: UICollectionViewCell {
+    public static let identifier: String = "skeleton_clothing"
     
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         
         contentView.addSubview(imageView)
@@ -89,15 +89,15 @@ class SkeletonClothingViewCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
     }
     
-    override func prepareForReuse() {
+    public override func prepareForReuse() {
         super.prepareForReuse()
     }
     
-    lazy var imageView: UIImageView = {
+    private lazy var imageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFit
@@ -111,7 +111,7 @@ class SkeletonClothingViewCell: UICollectionViewCell {
         return iv
     }()
     
-    lazy var nameLabel: UILabel = {
+    private lazy var nameLabel: UILabel = {
         let lb = UILabel()
         lb.translatesAutoresizingMaskIntoConstraints = false
         lb.textColor = .label

@@ -7,15 +7,15 @@
 
 import UIKit
 
-class HomeController: UIViewController {
+public class HomeController: UIViewController {
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         
         configureViewComponents()
     }
 
-    func configureViewComponents() {
+    private func configureViewComponents() {
         view.backgroundColor = .background
         title = "home"
         

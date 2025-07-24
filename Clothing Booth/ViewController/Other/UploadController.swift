@@ -689,7 +689,7 @@ class UploadController: UIViewController {
                     UserDefaults.standard.setValue(encoded, forKey: "userClothes")
                 }
                 
-                if delegate != nil { delegate?.didUploadClothing(clothingPiece) }
+                delegate?.didUploadClothing(clothingPiece)
                 
                 let alert = UIAlertController(title: nil, message: "Clothing piece uploaded successfully.", preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
@@ -697,19 +697,8 @@ class UploadController: UIViewController {
                 }))
                 
                 return present(alert, animated: true)
-            }
-            catch APIError.unprocessableContent {
-                let alert = UIAlertController(title: "", message: "The image background couldn't be removed, please upload a clearer image and try again.\nUse a bright enviroment and ensure a high contrast for the best results.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default))
-                
-                return present(alert, animated: true)
-            } catch APIError.tooManyRequests {
-                let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default))
-                
-                return present(alert, animated: true)
             } catch {
-                showUnexpectedErrorAlert()
+                ErrorHandler.handle(error)
             }
         }
     }
@@ -1300,22 +1289,25 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
                 imageURL = clothingURL
                 uploadImageView.sd_setImage(with: clothingURL)
                 uploadImageView.hideSkeleton()
-            } catch APIError.payloadTooLarge, APIError.unprocessableContent {
-                let alert = UIAlertController(title: "", message: "The image background couldn't be removed, please upload a clearer image and try again.\nUse a bright enviroment and ensure a high contrast for the best results.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
-                    self.imageURL = nil
-                    self.uploadImageView.image = UIImage(named: "upload_placeholder")
-                    self.uploadImageView.hideSkeleton()
-                }))
+            } catch APIError.payloadTooLarge {
+                self.imageURL = nil
+                self.uploadImageView.image = UIImage(named: "upload_placeholder")
+                self.uploadImageView.hideSkeleton()
                 
-                return present(alert, animated: true)
-            } catch APIError.tooManyRequests {
-                let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default))
+                picker.dismiss(animated: true) {
+                    ErrorHandler.handle(APIError.payloadTooLargeWithMessage("The image background couldn't be removed.", suggestion: "Use a smaller image or a image with lower resolution."))
+                }
+            } catch APIError.unprocessableContent {
+                self.imageURL = nil
+                self.uploadImageView.image = UIImage(named: "upload_placeholder")
+                self.uploadImageView.hideSkeleton()
                 
-                return present(alert, animated: true)
+                picker.dismiss(animated: true) {
+                    ErrorHandler.handle(APIError.unprocessableContentWithMessage("The image backround couldn't be removed.", suggestion: "Use a brighter enviroment and ensure a high contrast for the best results."))
+                }
+
             } catch {
-                showUnexpectedErrorAlert()
+                ErrorHandler.handle(error)
             }
         }
     }

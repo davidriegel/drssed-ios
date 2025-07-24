@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct privateUser: Codable {
+public struct PrivateUser: Codable {
     let user_id: String
     let username: String
     let email: String
@@ -19,6 +19,6 @@ struct privateUser: Codable {
     let outgoing_friend_requests: [String]?
 }
 
-struct imageResponse: Codable {
+public struct imageResponse: Codable {
     let path: String
 }

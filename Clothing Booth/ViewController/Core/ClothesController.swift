@@ -76,8 +76,6 @@ class ClothesController: UIViewController {
             sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
-
-    
     
     enum sortOptions {
         case Name
@@ -120,7 +118,7 @@ class ClothesController: UIViewController {
         return sb
     }()
     
-    lazy var clothingCollectionView: UICollectionView = {
+    lazy var  clothingCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
         layout.minimumLineSpacing = 10
@@ -185,7 +183,9 @@ class ClothesController: UIViewController {
     // MARK: --
     
     func showClothingDetails(of clothing: Clothing) {
-        present(ClothingDetailsController(clothing), animated: true)
+        let clothingController = ClothingDetailsController(clothing)
+        clothingController.delegate = self
+        present(clothingController, animated: true)
     }
     
     func generateSortMenu() -> UIMenu {
@@ -481,13 +481,11 @@ class ClothesController: UIViewController {
                 if let encoded = try? JSONEncoder().encode(dataSource) {
                     UserDefaults.standard.setValue(encoded, forKey: "userClothes")
                 }
-            } catch APIError.tooManyRequests {
+            } catch APIError.tooManyRequests, APIError.offline {
                 // possibily show alert
                 dataSource = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
             } catch {
-                assertionFailure(error.localizedDescription)
-                
-                dataSource = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
+                ErrorHandler.handle(error, suppressed: [.tooManyRequests])
             }
             
             clothingCollectionView.hideSkeleton()
@@ -538,7 +536,7 @@ class ClothesController: UIViewController {
     }
 }
 
-extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, SkeletonCollectionViewDelegate, SkeletonCollectionViewDataSource, UISearchResultsUpdating, UploadControllerDelegate {
+extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, SkeletonCollectionViewDelegate, SkeletonCollectionViewDataSource, UISearchResultsUpdating, UploadControllerDelegate, ClothingDetailsControllerDelegate {
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
@@ -638,5 +636,11 @@ extension ClothesController: UICollectionViewDataSource, UICollectionViewDelegat
     
     func didUploadClothing(_ clothing: Clothing) {
         dataSource.insert(clothing, at: 0)
+    }
+    
+    func didEditClothing(_ clothing: Clothing) {
+        guard let clothingArray = try? JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data()) else { return updateData() }
+        
+        dataSource = clothingArray
     }
 }

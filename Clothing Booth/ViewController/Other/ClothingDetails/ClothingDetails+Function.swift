@@ -43,19 +43,19 @@ extension ClothingDetailsController {
     
     func setEditingMode() {
         clothingImageView.isUserInteractionEnabled = isEditingClothing
-        clothingNameTextField.isUserInteractionEnabled = isEditingClothing
-        typeButton.isUserInteractionEnabled = isEditingClothing
-        clothingSeasonsLabel.isUserInteractionEnabled = isEditingClothing
+        clothingNameField.fieldInput.isUserInteractionEnabled = isEditingClothing
+        clothingTypeField.fieldInput.isUserInteractionEnabled = isEditingClothing
+        clothingSeasonsField.fieldInput.isUserInteractionEnabled = isEditingClothing
         clothingColorButton.isUserInteractionEnabled = isEditingClothing
-        clothingTagsLabel.isUserInteractionEnabled = isEditingClothing
+        clothingTagsField.fieldInput.isUserInteractionEnabled = isEditingClothing
     }
     
     func checkChangesMade() -> Bool {
-        return !(clothingNameTextField.text == clothing.name && (updatedImageID == nil) && clothingTypeLabel.text == clothing.category && selectedTagsArray == clothing.tags && selectedSeasonsArray == clothing.seasons && colorPickerView.selectedColor.hexStringFromColor(color: colorPickerView.selectedColor) == clothing.color)
+        return !(clothingNameField.fieldInput.text == clothing.name && (updatedImageID == nil) && clothingTypeLabel.text == clothing.category && selectedTagsArray == clothing.tags && selectedSeasonsArray == clothing.seasons && colorPickerView.selectedColor.hexStringFromColor(color: colorPickerView.selectedColor) == clothing.color)
     }
     
     func saveChangesToDatabase(_ item: Clothing) async throws {
-        try await APIHandler.shared.clothingHandler.patchEditClothing(clothing: item)
+        try await APIHandler.shared.clothingHandler.putEditClothing(clothing: item)
     }
     
     func saveChangesToUserDefaults(_ item: Clothing) throws {

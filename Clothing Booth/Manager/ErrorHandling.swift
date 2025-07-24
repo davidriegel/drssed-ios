@@ -59,6 +59,9 @@ public enum ErrorHandler {
         case .unauthorized:
             message = "You are not authorized to make this request."
             solution = "Please log in or provide the necessary credentials."
+        case .offline:
+            message = "There's a problem with your internet connection."
+            solution = "Please ensure a stable internet connection to connect to online services."
         case .custom(let string):
             message = "An unknown API error occurred."
             solution = string

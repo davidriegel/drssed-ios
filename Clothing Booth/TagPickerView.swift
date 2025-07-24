@@ -1,5 +1,5 @@
 //
-//  TagPickerViewDelegate.swift
+//  TagPickerView.swift
 //  Clothing Booth
 //
 //  Created by David Riegel on 17.04.25.
@@ -8,28 +8,20 @@
 
 import UIKit
 
-// MARK: - Protokoll für Kommunikation
-
 protocol TagPickerViewDelegate: AnyObject {
     func tagPickerView(_ pickerView: TagPickerView, didSelectTag tag: String)
     func tagPickerViewDidTapDone(_ pickerView: TagPickerView)
 }
 
-// MARK: - View
-
 class TagPickerView: UIView {
     
-    // MARK: - Datenmodell
     private var tags: [(emoji: String, title: String)] = []
     private var tagButtons: [UIButton] = []
     
-    // MARK: - Delegate
     weak var delegate: TagPickerViewDelegate?
     
-    // MARK: - UI
     private let tagsStackView = UIStackView()
     private let tagsPickerDone = UIButton()
-    private let tagsSelection = UILabel()
     
     // MARK: - Init
 

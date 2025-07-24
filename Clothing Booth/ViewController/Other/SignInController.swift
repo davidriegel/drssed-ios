@@ -125,7 +125,7 @@ class SignInController: UIViewController {
                 signInButton.alpha = 0.2
                 signInButton.isEnabled = false
                 
-                showUnexpectedErrorAlert()
+                ErrorHandler.handle(error)
             }
         }
     }

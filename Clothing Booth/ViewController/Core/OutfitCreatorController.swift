@@ -129,16 +129,16 @@ class OutfitCreatorController: UIViewController {
     }
     
     @objc
-    func lockPiece(_ sender: UIButton) {
+    private func lockPiece(_ sender: UIButton) {
         sender.isSelected.toggle()
     }
     
     @objc
-    func presentClothingInformation() {
+    private func presentClothingInformation() {
         //present(CloPieceController(), animated: true)
     }
     
-    func configureViewComponents() {
+    private func configureViewComponents() {
         view.backgroundColor = .systemBackground
         title = "create"
         

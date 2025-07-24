@@ -7,9 +7,9 @@
 
 import UIKit
 
-class OutfitsController: UIViewController {
+public class OutfitsController: UIViewController {
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
 
         configureViewComponents()
@@ -17,7 +17,7 @@ class OutfitsController: UIViewController {
     
     // MARK: --
     
-    lazy var searchBarController: UISearchController = {
+    private lazy var searchBarController: UISearchController = {
         let sb = UISearchController()
         sb.searchBar.placeholder = "casual fit"
         //sb.searchResultsUpdater = self
@@ -27,7 +27,7 @@ class OutfitsController: UIViewController {
     
     // MARK: --
     
-    func configureViewComponents() {
+    private func configureViewComponents() {
         view.backgroundColor = .background
         title = "outfits"
         

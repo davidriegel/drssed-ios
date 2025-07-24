@@ -7,15 +7,15 @@
 
 import UIKit
 
-class TabBarController: UITabBarController, UITabBarControllerDelegate {
+public class TabBarController: UITabBarController, UITabBarControllerDelegate {
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         
         setupViewController()
     }
 
-    func setupViewController() {
+    private func setupViewController() {
         let HomeController = HomeController()
         let OutfitsController = OutfitsController()
         let ClothesController = ClothesController()

@@ -56,11 +56,25 @@ extension UIColor {
     }
 }
 
-extension UIViewController {
-    func showUnexpectedErrorAlert() {
-        let alert = UIAlertController(title: "Unexpected Error", message: "Something went wrong. Please try again later.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Ok", style: .default))
+extension UIApplication {
+    func topMostViewController(base: UIViewController? = UIApplication.shared.connectedScenes
+        .filter { $0.activationState == .foregroundActive }
+        .compactMap { ($0 as? UIWindowScene)?.keyWindow }
+        .first?.rootViewController) -> UIViewController? {
         
-        self.present(alert, animated: true)
+        if let nav = base as? UINavigationController {
+            return topMostViewController(base: nav.visibleViewController)
+        }
+        
+        if let tab = base as? UITabBarController,
+           let selected = tab.selectedViewController {
+            return topMostViewController(base: selected)
+        }
+        
+        if let presented = base?.presentedViewController {
+            return topMostViewController(base: presented)
+        }
+        
+        return base
     }
 }

@@ -9,16 +9,16 @@ import UIKit
 import SkeletonView
 import SDWebImage
 
-class MyProfileController: UIViewController {
+public class MyProfileController: UIViewController {
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
 
         configureViewComponents()
         updateProfileData()
     }
     
-    lazy var scrollView: UIScrollView = {
+    private lazy var scrollView: UIScrollView = {
         let sv = UIScrollView()
         sv.translatesAutoresizingMaskIntoConstraints = false
         sv.showsVerticalScrollIndicator = false
@@ -29,13 +29,13 @@ class MyProfileController: UIViewController {
         return sv
     }()
     
-    lazy var refreshControl: UIRefreshControl = {
+    private lazy var refreshControl: UIRefreshControl = {
         let rc = UIRefreshControl()
         rc.addTarget(self, action: #selector(updateProfileData), for: .valueChanged)
         return rc
     }()
     
-    var profilePictureImageView: UIImageView = {
+    private var profilePictureImageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFit
@@ -48,7 +48,7 @@ class MyProfileController: UIViewController {
         return iv
     }()
     
-    var usernameLabel: UILabel = {
+    private var usernameLabel: UILabel = {
         let lb = UILabel()
         lb.translatesAutoresizingMaskIntoConstraints = false
         lb.isSkeletonable = true
@@ -64,7 +64,7 @@ class MyProfileController: UIViewController {
         return lb
     }()
     
-    var friendsLabel: UILabel = {
+    private var friendsLabel: UILabel = {
         let lb = UILabel()
         lb.translatesAutoresizingMaskIntoConstraints = false
         lb.isSkeletonable = true
@@ -80,7 +80,7 @@ class MyProfileController: UIViewController {
         return lb
     }()
     
-    var pinnedLabel: UILabel = {
+    private var pinnedLabel: UILabel = {
         let lb = UILabel()
         lb.translatesAutoresizingMaskIntoConstraints = false
         lb.isSkeletonable = false
@@ -92,7 +92,7 @@ class MyProfileController: UIViewController {
         return lb
     }()
     
-    var editPinnedButton: UIButton = {
+    private var editPinnedButton: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(UIImage(systemName: "pencil", withConfiguration: UIImage.SymbolConfiguration(pointSize: 20)), for: .normal)
@@ -101,7 +101,7 @@ class MyProfileController: UIViewController {
     }()
     
     @objc
-    func signOut() {
+    private func signOut() {
         let alert = UIAlertController(title: "Are you sure?", message: "Do you want to sign out?", preferredStyle: .actionSheet)
         alert.addAction(UIAlertAction(title: "Yes", style: .destructive, handler: { _ in
             for key in UserDefaults.standard.dictionaryRepresentation().keys {
@@ -124,7 +124,7 @@ class MyProfileController: UIViewController {
     }
     
     @objc
-    func updateProfileData() {
+    private func updateProfileData() {
         Task {
             usernameLabel.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             friendsLabel.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
@@ -160,8 +160,8 @@ class MyProfileController: UIViewController {
         }
     }
     
-    func getMyProfile() async -> privateUser? {
-        var userProfile: privateUser?
+    private func getMyProfile() async -> PrivateUser? {
+        var userProfile: PrivateUser?
         
         do {
             userProfile = try await APIHandler.shared.userHandler.getMyUserProfile()
@@ -169,29 +169,27 @@ class MyProfileController: UIViewController {
             if let encoded = try? JSONEncoder().encode(userProfile) {
                 UserDefaults.standard.setValue(encoded, forKey: "userProfile")
             }
-        } catch APIError.tooManyRequests {
-            // ignore rate limiting
         } catch {
-            showUnexpectedErrorAlert()
+            ErrorHandler.handle(error, suppressed: [APIError.tooManyRequests])
         }
         
         if userProfile == nil {
             do {
-                userProfile = try JSONDecoder().decode(privateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
+                userProfile = try JSONDecoder().decode(PrivateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
             } catch {
-                showUnexpectedErrorAlert()
+                ErrorHandler.handle(error)
             }
         }
         
         return userProfile
     }
     
-    func retrieveProfilePicture() async -> URL? {
+    private func retrieveProfilePicture() async -> URL? {
         do {
             return try await APIHandler.shared.userHandler.getMyProfilePicture()
-        } catch APIError.tooManyRequests {
+        } catch APIError.tooManyRequests, APIError.offline {
             do {
-                let userProfile = try JSONDecoder().decode(privateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
+                let userProfile = try JSONDecoder().decode(PrivateUser.self, from: UserDefaults.standard.data(forKey: "userProfile") ?? Data())
                 
                 return URL(string: userProfile.profile_picture, relativeTo: APIHandler.baseURL)
             } catch {
@@ -204,7 +202,7 @@ class MyProfileController: UIViewController {
         }
     }
 
-    func configureViewComponents() {
+    private func configureViewComponents() {
         view.backgroundColor = .background
         title = "profile"
         

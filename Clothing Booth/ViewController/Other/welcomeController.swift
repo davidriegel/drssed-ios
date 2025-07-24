@@ -142,7 +142,7 @@ class welcomeController: UIViewController {
     func changeProfilePicture() {
         let alert = UIAlertController(title: "", message: "Pick your profile picture.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Default avatars", style: .default, handler: { _ in
-            let defaultAvatarPicker = UIDefaultAvatarPicker(delegate: self)
+            let defaultAvatarPicker = DefaultAvatarPickerController(delegate: self)
             let navigationController = UINavigationController(rootViewController: defaultAvatarPicker)
             self.present(navigationController, animated: true)
         }))
@@ -191,7 +191,8 @@ class welcomeController: UIViewController {
                 return present(alert, animated: true)
             } catch {
                 assertionFailure("\(error)")
-                return showUnexpectedErrorAlert()
+                ErrorHandler.handle(error)
+                return
             }
             
             if changedPicture {
