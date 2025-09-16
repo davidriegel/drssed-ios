@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "pants@1x-1.0s-200px-200px.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "template-rendering-intent" : "template"
+  }
+}
