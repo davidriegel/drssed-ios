@@ -12,18 +12,10 @@ The native iOS frontend for **Drssed**, a personal wardrobe management app that 
 - **Outfit builder** — combine items into saved outfits
 - **Image processing** — automatic background removal and categorization on upload
 - **Sync** — all data is stored server-side via the Drssed REST API
+- **Offline support** — local persistence via Core Data
 - **Authentication** — secure login and user account management
+- **Localization** — supports English and German
 - **Clean UI** — focused on performance and intuitive workflows built with UIKit
-
----
-
-## Tech Stack
-
-| | Technology |
-|---|---|
-| Language | Swift |
-| UI Framework | UIKit |
-| Local Storage | Core Data |
 
 ---
 
@@ -32,21 +24,33 @@ The native iOS frontend for **Drssed**, a personal wardrobe management app that 
 ### Prerequisites
 
 - Xcode 26+
-- iOS 26+ deployment target
+- iOS 18+ deployment target
 - A running instance of the [Drssed API](https://github.com/davidriegel/drssed-api)
 
-### Setup
+### Installation
+
+Clone the repository and open the Xcode project:
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/davidriegel/drssed-ios.git
 cd drssed-ios
 
-# 2. Open in Xcode
 open Drssed.xcodeproj
 ```
 
-Configure the API base URL in the networking service to point to your local or hosted backend, then build and run on a simulator or device.
+Configure the API base URL in the api configuration file `App/Configuration/APIConfig.swift` to point to your local or hosted backend, then build and run on a simulator or device.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Language | Swift |
+| UI Framework | UIKit |
+| Sync | Custom sync layer |
+| Local Storage | Core Data |
+
 
 ---
 
