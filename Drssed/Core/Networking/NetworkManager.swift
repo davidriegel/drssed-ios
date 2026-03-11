@@ -67,7 +67,7 @@ public final class NetworkManager {
         }
 
     private func pingServer() async throws {
-        var request = try await APIHandler.shared.createRequest(endpoint: "/ping", method: .GET, authentication: false)
+        var request = try await APIClient.shared.createRequest(endpoint: "/ping", method: .GET, authentication: false)
         request.timeoutInterval = 5
         let (_, response) = try await URLSession.shared.data(for: request)
         
