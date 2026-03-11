@@ -38,7 +38,11 @@ cd drssed-ios
 open Drssed.xcodeproj
 ```
 
-Configure the API base URL in the api configuration file `App/Configuration/APIConfig.swift` to point to your local or hosted backend, then build and run on a simulator or device.
+Configure the API base URL in the APIClient `Core/Networking/APIClient.swift` to point to your local or hosted backend, then build and run on a simulator or device.
+
+```swift
+public static let baseURL = URL(string: "YOUR_BASE_URL_HERE")
+```
 
 ---
 
