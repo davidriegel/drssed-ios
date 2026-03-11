@@ -16,6 +16,8 @@
 		C91885C32E843B9000D9F8DE /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91885C22E843B8700D9F8DE /* KeychainHelper.swift */; };
 		C91885C52E84426400D9F8DE /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91885C42E84426400D9F8DE /* TokenManager.swift */; };
 		C918BC552F61E3F100663AF4 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = C918BC542F61E3EB00663AF4 /* .gitignore */; };
+		C918BC572F61EA7C00663AF4 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = C918BC562F61EA7C00663AF4 /* README.md */; };
+		C918BC592F61EA8600663AF4 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C918BC582F61EA8600663AF4 /* LICENSE */; };
 		C95C4B302E7727A900844DC8 /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B2F2E7727A900844DC8 /* CropViewController */; };
 		C95C4B322E7727A900844DC8 /* TOCropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B312E7727A900844DC8 /* TOCropViewController */; };
 		C9D40AFD2E79BC360087611B /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D40AFC2E79BC2F0087611B /* PersistenceController.swift */; };
@@ -51,6 +53,8 @@
 		C91885C22E843B8700D9F8DE /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		C91885C42E84426400D9F8DE /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenManager.swift; sourceTree = "<group>"; };
 		C918BC542F61E3EB00663AF4 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		C918BC562F61EA7C00663AF4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		C918BC582F61EA8600663AF4 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		C9D40AFC2E79BC2F0087611B /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		C9D40B032E79C2FA0087611B /* SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
 		C9DE0FC02E61D78A00DED96E /* TODO.MD */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.MD; sourceTree = "<group>"; };
@@ -103,6 +107,8 @@
 				637D85EA2BE94CC90010BDBF /* Drssed */,
 				637D86012BE94CCC0010BDBF /* DrssedTests */,
 				637D860B2BE94CCC0010BDBF /* DrssedUITests */,
+				C918BC562F61EA7C00663AF4 /* README.md */,
+				C918BC582F61EA8600663AF4 /* LICENSE */,
 				637D85E92BE94CC90010BDBF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -281,6 +287,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C918BC592F61EA8600663AF4 /* LICENSE in Resources */,
+				C918BC572F61EA7C00663AF4 /* README.md in Resources */,
 				C918BC552F61E3F100663AF4 /* .gitignore in Resources */,
 				C9DE0FC12E61D78A00DED96E /* TODO.MD in Resources */,
 			);
