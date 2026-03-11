@@ -11,7 +11,11 @@ import UIKit
 
 final public class APIClient {
     public static let shared = APIClient()
-    public static let baseURL = URL(string: "http://192.168.2.159:8000") // DEBUG MODE "localhost:8000/192.168.2.159" // PROD MODE "api.clothing-booth.com"
+    #if DEBUG
+    public static let baseURL = URL(string: "http://127.0.0.1:8000") // Debug mode
+    #else
+    public static let baseURL = URL(string: "https://api.clothing-booth.com") // Production mode
+    #endif
     public static let clothingImagesURL = URL(string: "/uploads/clothing_images/", relativeTo: baseURL)
     public static let profileImagesURL = URL(string: "/uploads/profile_pictures/", relativeTo: baseURL)
     public static let outfitImagesURL = URL(string: "/uploads/outfit_images/", relativeTo: baseURL)
