@@ -99,6 +99,7 @@
 		637D85DF2BE94CC90010BDBF = {
 			isa = PBXGroup;
 			children = (
+				C918BC542F61E3EB00663AF4 /* .gitignore */,
 				637D85EA2BE94CC90010BDBF /* Drssed */,
 				637D86012BE94CCC0010BDBF /* DrssedTests */,
 				637D860B2BE94CCC0010BDBF /* DrssedUITests */,
@@ -119,7 +120,6 @@
 		637D85EA2BE94CC90010BDBF /* Drssed */ = {
 			isa = PBXGroup;
 			children = (
-				C918BC542F61E3EB00663AF4 /* .gitignore */,
 				C92749032EAE573100BC3BFC /* LocalDataSources */,
 				C9895C702EABE3AD0019F070 /* Repositories */,
 				C91885C22E843B8700D9F8DE /* KeychainHelper.swift */,
