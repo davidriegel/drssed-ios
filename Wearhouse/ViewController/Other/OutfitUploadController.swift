@@ -44,7 +44,7 @@ class OutfitUploadController: UIViewController {
     @objc private func createMockOutfit() {
         Task {
             do {
-                let _ = try await APIHandler.shared.outfitHandler.createNewOutfit(name: "nameTextField.text2", is_public: true, clothing_ids: ["e9b9b5b8-e67f-4207-aa9b-f108b974af5b", "e9b9b5b8-e67f-4207-aa9b-f108b974af5b"], description: nil, tags: nil, seasons: nil)
+                //let _ = try await APIHandler.shared.outfitHandler.createNewOutfit(name: "nameTextField.text2", is_public: true, clothing_ids: ["e9b9b5b8-e67f-4207-aa9b-f108b974af5b", "e9b9b5b8-e67f-4207-aa9b-f108b974af5b"], description: nil, tags: nil, seasons: nil)
                 
                 print("Successfully created outfit.")
             } catch {

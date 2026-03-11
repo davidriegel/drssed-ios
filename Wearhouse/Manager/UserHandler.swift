@@ -32,7 +32,7 @@ class UserHandler {
     // MARK: -- PUT MY PROFILEPICTURE
     
     func setProfilePicture(with image: UIImage, _ fileExtension: String) async throws -> PrivateUser {
-        let request = try await APIHandler.shared.createRequest(withImage: image, fileName: "profilePicture.\(fileExtension)", endpoint: "/users/me/profilepicture", method: .PUT)
+        let request = try await APIHandler.shared.createRequest(withImage: image, endpoint: "/users/me/profilepicture", method: .PUT)
         let (data, _) = try await APIHandler.shared.executeRequest(request: request)
         
         let privateUser = try JSONDecoder().decode(PrivateUser.self, from: data)

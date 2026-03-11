@@ -1,18 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788.4" systemVersion="24G90" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
-    <entity name="ClothingLocal" representedClassName="ClothingLocal" syncable="YES" codeGenerationType="class">
-        <attribute name="category" optional="YES" attributeType="String"/>
-        <attribute name="color" optional="YES" attributeType="String"/>
-        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="id" optional="YES" attributeType="String"/>
-        <attribute name="imageID" optional="YES" attributeType="String"/>
-        <attribute name="is_public" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
-        <attribute name="itemDescription" optional="YES" attributeType="String"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="pendingSync" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
-        <attribute name="seasons" optional="YES" attributeType="Transformable"/>
-        <attribute name="tags" optional="YES" attributeType="Transformable"/>
-        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="userID" optional="YES" attributeType="String"/>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24299" systemVersion="25B78" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="ClothingLocal" representedClassName="ClothingLocal" syncable="YES">
+        <attribute name="category" attributeType="String" defaultValueString=""/>
+        <attribute name="color" attributeType="String" defaultValueString=""/>
+        <attribute name="createdAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
+        <attribute name="imageID" attributeType="String" defaultValueString=""/>
+        <attribute name="isPublic" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="itemDescription" attributeType="String" defaultValueString=""/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="seasons" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="tags" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userID" attributeType="String" defaultValueString=""/>
+    </entity>
+    <entity name="OutfitLocal" representedClassName="OutfitLocal" syncable="YES">
+        <attribute name="createdAt" attributeType="Date" defaultDateTimeInterval="781107900" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="imageID" attributeType="String"/>
+        <attribute name="isFavorite" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="isPublic" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="itemDescription" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="sceneData" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="seasons" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="tags" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="userID" attributeType="String"/>
     </entity>
 </model>

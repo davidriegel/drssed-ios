@@ -19,17 +19,32 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         Task {
             do {
-                _ = try await APIHandler.shared.authHandler.getAndRenewAccessToken()
-                
-                await SyncManager.shared.syncWithServer()
+                try await checkUserIsSignedIn()
+                print("checked if user is signed in")
             } catch AuthenticationError.userNotSignedIn {
+                print("user not signed in -> registering as guest")
+                await TokenManager.shared.clearTokens()
                 _ = try await APIHandler.shared.authHandler.registerAsGuest()
             }
             
             window.rootViewController = TabBarController()
             window.makeKeyAndVisible()
             self.window = window
+
+            Task {
+                await NetworkManager.shared.checkServerReachable()
+                
+                if NetworkManager.shared.isReachable {
+                    await SyncManager.shared.syncWithServer()
+                }
+            }
         }
+    }
+    
+    func checkUserIsSignedIn() async throws {
+        guard let tokens = await TokenManager.shared.currentTokens() else { throw AuthenticationError.userNotSignedIn }
+        
+        print(tokens)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

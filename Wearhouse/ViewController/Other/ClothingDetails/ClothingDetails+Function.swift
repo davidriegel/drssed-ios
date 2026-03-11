@@ -51,15 +51,17 @@ extension ClothingDetailsController {
     }
     
     func checkChangesMade() -> Bool {
-        return !(clothingNameField.fieldInput.text == clothing.name && (updatedImageID == nil) && clothingTypeLabel.text == clothing.category.rawValue && selectedTagsArray == clothing.tags && selectedSeasonsArray == clothing.seasons && colorPickerView.selectedColor.hexStringFromColor(color: colorPickerView.selectedColor) == clothing.color)
+        return !(clothingNameField.fieldInput.text == clothing.name && (updatedImageID == nil) && clothingTypeLabel.text == clothing.category.rawValue && selectedTagsArray == clothing.tags && selectedSeasonsArray == clothing.seasons && colorPickerView.selectedColor == clothing.color)
     }
     
     func saveChanges() async throws {
+        #warning("need to save changes again")
+        /*
         let newClothing = try await APIHandler.shared.clothingHandler.patchEditClothing(oldClothing: clothing, name: clothingNameField.fieldInput.text == clothing.name ? nil : clothingNameField.fieldInput.text, description: nil, category: clothingTypeLabel.text == clothing.category.rawValue ? nil : clothingTypeLabel.text, tags: selectedTagsArray == clothing.tags ? nil : selectedTagsArray, seasons: selectedSeasonsArray == clothing.seasons ? nil : selectedSeasonsArray, color: colorPickerView.selectedColor.hexStringFromColor(color: colorPickerView.selectedColor) == clothing.color ? nil : colorPickerView.selectedColor, image_id: updatedImageID)
         
         var clothesArray = try JSONDecoder().decode([ClothingAPI].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
         
-        guard let clothingIndex = clothesArray.firstIndex (where: { $0.clothing_id == clothing.clothing_id }) else {
+        guard let clothingIndex = clothesArray.firstIndex (where: { $0.clothing_id == clothing.id }) else {
             return assertionFailure("clothingIndex should not be nil")
         }
         
@@ -68,5 +70,6 @@ extension ClothingDetailsController {
         let encoded = try JSONEncoder().encode(clothesArray)
         
         UserDefaults.standard.setValue(encoded, forKey: "userClothes")
+         */
     }
 }

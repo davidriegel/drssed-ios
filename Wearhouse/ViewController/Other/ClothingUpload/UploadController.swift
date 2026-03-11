@@ -8,14 +8,14 @@
 import UIKit
 import SkeletonView
 import TOCropViewController
-import CropViewController
 
 protocol UploadControllerDelegate: AnyObject {
-    func didUploadClothing(_ clothing: ClothingAPI)
+    func didUploadClothing(_ clothing: Clothing)
 }
 
 class UploadController: UIViewController {
     weak var delegate: UploadControllerDelegate?
+    private let clothingRepo: ClothingRepository = ClothingRepository()
         
     let clothingCategoriesDataSource: [String] = {
         var ar: [String] = ["*"]
@@ -352,11 +352,11 @@ class UploadController: UIViewController {
         errorAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
         
         
-        var safeImageURL: URL?
+        var imageID: String = ""
 
         
         if let imageURL = imageURL {
-            safeImageURL = imageURL
+            imageID = String(imageURL.lastPathComponent.split(separator: ".").first ?? "")
         } else {
             errorAlert.message = String(localized: "clothingupload.error.missing.image")
         }
@@ -369,7 +369,7 @@ class UploadController: UIViewController {
             errorAlert.message = String(localized: "clothingupload.error.missing.name")
         }
         
-        var category: ClothingCategories?
+        var category: ClothingCategories!
         
         if let selectedCategory = selectedCategory {
             category = selectedCategory
@@ -390,32 +390,19 @@ class UploadController: UIViewController {
             return
         }
         
-        Task { [self] in
-            do {
-                let clothingPiece = try await APIHandler.shared.clothingHandler.uploadClothing(with: name, description: descriptionTextView.textColor == .label ? descriptionTextView.text : "", category: category!, seasons: selectedSeasonsArray, tags:  selectedTagsArray, imageID: String(safeImageURL!.absoluteString.split(separator: "/").last?.split(separator: ".").first ?? ""), color: colorPickerView.selectedColor)
-                
-                
-                //if let clothesArrayData = UserDefaults.standard.data(forKey: "userClothes") {
-                    //var clothesArray = try APIHandler.shared.decoder.decode([Clothing].self, from: clothesArrayData)
-                    //clothesArray.append(clothingPiece)
-                    
-                    //if let encoded = try? JSONEncoder().encode(clothesArray) {
-                        //UserDefaults.standard.setValue(encoded, forKey: "userClothes")
-                    //}
-                //}
-                
-                delegate?.didUploadClothing(clothingPiece)
-                
-                let alert = UIAlertController(title: nil, message: String(localized: "clothingupload.alert.success"), preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
-                    self.cancelTapped()
-                }))
-                
-                return present(alert, animated: true)
-            } catch {
-                ErrorHandler.handle(error)
-            }
+        let domainModel = Clothing(name: name, imageID: imageID, category: category, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray)
+        
+        Task {
+            await clothingRepo.addOrUpdateClothing(from: domainModel)
+            delegate?.didUploadClothing(domainModel)
         }
+                
+        let alert = UIAlertController(title: nil, message: String(localized: "clothingupload.alert.success"), preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
+            self.cancelTapped()
+        }))
+                
+        return present(alert, animated: true)
     }
     
     @objc
@@ -732,7 +719,7 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
             cropViewController.dismiss(animated: true)
             
             do {
-                let (clothingURL, clothingColor, clothingCategory) = try await APIHandler.shared.clothingHandler.removeClothingBackground(from: image, self.fileExtension)
+                let (clothingURL, clothingColor, clothingCategory) = try await APIHandler.shared.clothingHandler.removeClothingBackground(from: image)
                 
                 imageURL = clothingURL
                 colorPickerView.selectedColor = clothingColor
@@ -797,35 +784,11 @@ extension UploadController: UIColorPickerViewControllerDelegate {
 }
 
 extension UploadController: SeasonsPickerViewDelegate {
-    func springSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .SPRING) {
-            selectedSeasonsArray.remove(at: index)
+    func seasonSelected(_ season: Seasons) {
+        if let idx = selectedSeasonsArray.firstIndex(of: season) {
+            selectedSeasonsArray.remove(at: idx)
         } else {
-            selectedSeasonsArray.append(.SPRING)
-        }
-    }
-    
-    func summerSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .SUMMER) {
-            selectedSeasonsArray.remove(at: index)
-        } else {
-            selectedSeasonsArray.append(.SUMMER)
-        }
-    }
-    
-    func autumnSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .AUTUMN) {
-            selectedSeasonsArray.remove(at: index)
-        } else {
-            selectedSeasonsArray.append(.AUTUMN)
-        }
-    }
-    
-    func winterSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .WINTER) {
-            selectedSeasonsArray.remove(at: index)
-        } else {
-            selectedSeasonsArray.append(.WINTER)
+            selectedSeasonsArray.append(season)
         }
     }
     
@@ -835,35 +798,11 @@ extension UploadController: SeasonsPickerViewDelegate {
 }
 
 extension UploadController: TagsPickerViewDelegate {
-    func casualTagSelected() {
-        if let index = selectedTagsArray.firstIndex(of: .CASUAL) {
-            selectedTagsArray.remove(at: index)
+    func tagSelected(_ tag: Tags) {
+        if let idx = selectedTagsArray.firstIndex(of: tag) {
+            selectedTagsArray.remove(at: idx)
         } else {
-            selectedTagsArray.append(.CASUAL)
-        }
-    }
-    
-    func formalTagSelected() {
-        if let index = selectedTagsArray.firstIndex(of: .FORMAL) {
-            selectedTagsArray.remove(at: index)
-        } else {
-            selectedTagsArray.append(.FORMAL)
-        }
-    }
-    
-    func sportsTagSelected() {
-        if let index = selectedTagsArray.firstIndex(of: .SPORTS) {
-            selectedTagsArray.remove(at: index)
-        } else {
-            selectedTagsArray.append(.SPORTS)
-        }
-    }
-    
-    func vintageTagSelected() {
-        if let index = selectedTagsArray.firstIndex(of: .VINTAGE) {
-            selectedTagsArray.remove(at: index)
-        } else {
-            selectedTagsArray.append(.VINTAGE)
+            selectedTagsArray.append(tag)
         }
     }
     

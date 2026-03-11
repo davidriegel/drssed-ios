@@ -8,10 +8,7 @@
 import UIKit
 
 protocol SeasonsPickerViewDelegate: AnyObject {
-    func springSeasonSelected()
-    func summerSeasonSelected()
-    func autumnSeasonSelected()
-    func winterSeasonSelected()
+    func seasonSelected(_ season: Seasons)
     func seasonsDoneButtonPressed()
 }
 
@@ -27,13 +24,13 @@ class SeasonsPickerView: UIView {
             
             switch button.tag {
             case 1:
-                self.delegate.springSeasonSelected()
+                self.delegate.seasonSelected(.SPRING)
             case 2:
-                self.delegate.summerSeasonSelected()
+                self.delegate.seasonSelected(.SUMMER)
             case 3:
-                self.delegate.autumnSeasonSelected()
+                self.delegate.seasonSelected(.AUTUMN)
             case 4:
-                self.delegate.winterSeasonSelected()
+                self.delegate.seasonSelected(.WINTER)
             default:
                 return
             }
@@ -145,9 +142,26 @@ class SeasonsPickerView: UIView {
         }
     }
     
-    init(delegate: SeasonsPickerViewDelegate) {
+    init(delegate: SeasonsPickerViewDelegate, _ preselection: [Seasons] = []) {
         super.init(frame: .zero)
         self.delegate = delegate
+        
+        preselection.forEach { season in
+            switch season {
+            case .SPRING:
+                springPickerButton.isSelected = true
+                springPickerButton.backgroundColor = .accent
+            case .SUMMER:
+                summerPickerButton.isSelected = true
+                summerPickerButton.backgroundColor = .accent
+            case .AUTUMN:
+                autumnPickerButton.isSelected = true
+                autumnPickerButton.backgroundColor = .accent
+            case .WINTER:
+                winterPickerButton.isSelected = true
+                winterPickerButton.backgroundColor = .accent
+            }
+        }
         
         addSubview(springPickerButton)
         NSLayoutConstraint.activate([

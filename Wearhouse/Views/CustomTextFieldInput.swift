@@ -25,7 +25,6 @@ final public class CustomTextFieldInput: CustomInputBackground {
         tf.keyboardType = .default
         tf.font = .systemFont(ofSize: 13, weight: .heavy)
         tf.returnKeyType = .done
-        tf.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         return tf
     }()
     
@@ -43,6 +42,7 @@ final public class CustomTextFieldInput: CustomInputBackground {
     init(fieldTitle title: String, placeholder: String? = nil, text: String? = nil, charCounterWithCharacters: Int = 0) {
         super.init(fieldTitle: title)
         
+        fieldInput.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         setupView(placeholder: placeholder, text: text, charCounterWithCharacters: charCounterWithCharacters)
         setupConstraints()
     }

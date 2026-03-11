@@ -9,8 +9,8 @@ import UIKit
 import SkeletonView
 
 protocol ClothingDetailsControllerDelegate: AnyObject {
-    func didEditClothing(_ clothing: ClothingAPI)
-    func didDeleteClothing(_ clothing: ClothingAPI)
+    func didEditClothing(_ clothing: Clothing)
+    func didDeleteClothing(_ clothing: Clothing)
 }
 
 
@@ -35,27 +35,27 @@ extension ClothingDetailsController: UIImagePickerControllerDelegate, UINavigati
             clothingImageView.image = nil
             clothingImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             do {
-                let (clothingURL, clothingColor, clothingCategory) = try await APIHandler.shared.clothingHandler.removeClothingBackground(from: image, fileExtension)
+                let (clothingURL, clothingColor, _) = try await APIHandler.shared.clothingHandler.removeClothingBackground(from: image)
                 
                 updatedImageID = clothingURL.deletingPathExtension().lastPathComponent
                 colorPickerView.selectedColor = clothingColor
                 
 //                if let index = clothingCategoriesDataSource.firstIndex(of: clothingCategory.localizedName) {
-//                    categoryPicker.selectRow(index, inComponent: 0, animated: false)
+//                    itemCategoryPicker.selectRow(index, inComponent: 0, animated: false)
 //                }
                 
                 clothingImageView.sd_setImage(with: clothingURL)
                 clothingImageView.hideSkeleton()
             } catch APIError.payloadTooLarge {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image_id, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.imageID, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
                     ErrorHandler.handle(APIError.payloadTooLargeWithMessage("The image background couldn't be removed.", suggestion: "Use a smaller image or a image with lower resolution."))                }
             } catch APIError.unprocessableContent {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image_id, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.imageID, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
@@ -63,7 +63,7 @@ extension ClothingDetailsController: UIImagePickerControllerDelegate, UINavigati
                 }
             } catch {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image_id, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.imageID, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
@@ -152,15 +152,15 @@ extension ClothingDetailsController: UIAdaptivePresentationControllerDelegate {
         
         alert.addAction(UIAlertAction(title: "Undo", style: .destructive, handler: { _ in
             self.clothingNameField.fieldInput.text = self.clothing.name
-            self.clothingTypeLabel.text = self.clothing.category.rawValue
+            self.clothingTypeLabel.text = self.clothing.category.localizedName
             self.selectedTagsArray = self.clothing.tags
             self.selectedSeasonsArray = self.clothing.seasons
-            self.clothingColorButton.backgroundColor = UIColor(hex: self.clothing.color)
-            self.colorPickerView.selectedColor = UIColor(hex: self.clothing.color)!
+            self.clothingColorButton.backgroundColor = self.clothing.color
+            self.colorPickerView.selectedColor = self.clothing.color
             
             if self.updatedImageID != nil {
                 self.updatedImageID = nil
-                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.image_id, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
+                self.clothingImageView.sd_setImage(with: URL(string: self.clothing.imageID, relativeTo: APIHandler.clothingImagesURL))
             }
         }))
         

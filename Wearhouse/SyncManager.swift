@@ -5,48 +5,48 @@
 //  Created by David Riegel on 16.09.25.
 //
 
+import Foundation
 
-class SyncManager {
-    private let repo = ClothingRepository()
+final class SyncManager {
+    private let clothesRepo = AppRepository.shared.clothingRepository
+    private let outfitRepo = AppRepository.shared.outfitRepository
     
     public static let shared = SyncManager()
     
     private init() {}
     
     func syncWithServer() async {
+        guard NetworkManager.shared.isReachable else {
+            print("No connection to server, skipping sync")
+            return
+        }
+        
         await pullFromServer()
-        await pushLocalChanges()
     }
     
     
     private func pullFromServer() async {
         do {
-            let clothesAPI = try await APIHandler.shared.clothingHandler.getMyClothing().clothing
+            let clothingLastSync = UserDefaults.standard.object(forKey: "clothing_last_sync") as? Date
+                        
+            let clothingSyncResponse = try await APIHandler.shared.clothingHandler.syncClothes(updatedSince: clothingLastSync)
+                        
+            await self.clothesRepo.applyServerSync(updated: clothingSyncResponse.updated, deleted: clothingSyncResponse.deleted)
             
-            for apiItem in clothesAPI {
-                self.repo.addOrUpdateClothing(from: apiItem)
-            }
+            UserDefaults.standard.set(clothingSyncResponse.serverTime, forKey: "clothing_last_sync")
+            
+            let outfitLastSync = UserDefaults.standard.object(forKey: "outfit_last_sync") as? Date
+                        
+            let outfitSyncResponse = try await APIHandler.shared.outfitHandler.syncOutfits(updatedSince: outfitLastSync)
+                        
+            await self.outfitRepo.applyServerSync(updated: outfitSyncResponse.updated, deleted: outfitSyncResponse.deleted)
+            
+            UserDefaults.standard.set(outfitSyncResponse.serverTime, forKey: "outfit_last_sync")
+        } catch AuthenticationError.userNotSignedIn {
+            print("User not signed in skipping sync")
         } catch {
-            //#warning("Pull failed")
-            //#error("error.localizedDescription")
+            ErrorHandler.handle(error)
             print("Error while pulling from server: \(error)")
-        }
-    }
-    
-    private func pushLocalChanges() async {
-        let pending = repo.fetchClothes().filter { $0.pendingSync }
-        
-        for item in pending {
-            do {
-                // uploadClothing ist async
-                //try await APIHandler.shared.clothingHandler.
-                
-                // Markiere als synchronisiert
-                //item.pendingSync = false
-                //repo.save()
-            } catch {
-                print("Fehler beim Upload: \(error)")
-            }
         }
     }
 }

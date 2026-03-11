@@ -11,32 +11,131 @@ final class OutfitHandler {
     
     init() {}
     
+    // Sync outfits with server
+    func syncOutfits(updatedSince: Date?) async throws -> SyncronizationResponse<OutfitAPI> {
+        var endpoint = "/users/me/outfits/sync"
+            
+        if let updatedSince {
+            let iso = ISO8601DateFormatter().string(from: updatedSince)
+            endpoint += "?updated_since=\(iso)"
+        }
+            
+        let request = try await APIHandler.shared.createRequest(endpoint: endpoint, method: .GET)
+        let response: SyncronizationResponse<OutfitAPI> = try await APIHandler.shared.executeRequestAndDecode(request: request)
+            
+        return response
+    }
+    
     // MARK: -- POST CREATE NEW OUTFIT
     
-    func createNewOutfit(name: String, is_public: Bool, clothing_ids: [String], description: String?, tags: [String]?, seasons: [String]?) async throws -> Outfit {
-        let outfitData = ["name": name, "is_public": is_public, "clothing_ids": clothing_ids, "description": description ?? "", "tags": tags ?? [], "seasons": seasons ?? []] as [String : Any]
-        let uploadData = try JSONSerialization.data(withJSONObject: outfitData, options: [])
+    public func createNewOutfit(
+        _ domainModel: Outfit
+    ) async throws -> OutfitAPI {
+        var seasonsStrings: [String] = []
+        for season in domainModel.seasons {
+            seasonsStrings.append(season.rawValue)
+        }
+
+        var tagsStrings: [String] = []
+        for tag in domainModel.tags {
+            tagsStrings.append(tag.rawValue)
+        }
+        
+        let apiModel = domainModel.toAPI()
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+
+        let uploadData = try encoder.encode(apiModel)
         
         let request = try await APIHandler.shared.createRequest(endpoint: "/users/me/outfits", method: .POST, body: uploadData)
+
         let outfitWrapper: OutfitWrapper = try await APIHandler.shared.executeRequestAndDecode(request: request)
-        
+        return outfitWrapper.outfit
+    }
+
+    // MARK: -- PATCH UPDATE OUTFIT
+
+    public func updateOutfit(
+        _ domainModel: Outfit,
+        previewImageData: Data? = nil,
+        previewFilename: String = "preview.jpg",
+        previewMimeType: String = "image/jpeg"
+    ) async throws -> OutfitAPI {
+        var seasonsStrings: [String] = []
+        for season in domainModel.seasons {
+            seasonsStrings.append(season.rawValue)
+        }
+
+        var tagsStrings: [String] = []
+        for tag in domainModel.tags {
+            tagsStrings.append(tag.rawValue)
+        }
+
+        let sceneJSONData = try JSONEncoder().encode(domainModel.scene)
+        guard let sceneJSONString = String(data: sceneJSONData, encoding: .utf8) else {
+            throw NSError(domain: "OutfitHandler", code: 11, userInfo: [NSLocalizedDescriptionKey: "Failed to encode scene to UTF-8 string"])
+        }
+
+        let seasonsJSONData = try JSONEncoder().encode(seasonsStrings)
+        guard let seasonsJSONString = String(data: seasonsJSONData, encoding: .utf8) else {
+            throw NSError(domain: "OutfitHandler", code: 12, userInfo: [NSLocalizedDescriptionKey: "Failed to encode seasons to UTF-8 string"])
+        }
+
+        let tagsJSONData = try JSONEncoder().encode(tagsStrings)
+        guard let tagsJSONString = String(data: tagsJSONData, encoding: .utf8) else {
+            throw NSError(domain: "OutfitHandler", code: 13, userInfo: [NSLocalizedDescriptionKey: "Failed to encode tags to UTF-8 string"])
+        }
+
+        let fields: [String: String] = [
+            "name": domainModel.name,
+            "seasons": seasonsJSONString,
+            "tags": tagsJSONString,
+            "scene": sceneJSONString,
+            "description": domainModel.description,
+            "is_public": domainModel.isPublic ? "true" : "false",
+            "is_favorite": domainModel.isFavorite ? "true" : "false"
+        ]
+
+        var files: [APIHandler.MultipartFile] = []
+        if let previewImageData {
+            files = [
+                .init(
+                    fieldName: "preview_image",
+                    filename: previewFilename,
+                    mimeType: previewMimeType,
+                    data: previewImageData
+                )
+            ]
+        }
+
+        let request = try await APIHandler.shared.createMultipartRequest(
+            endpoint: "/users/me/outfits/\(domainModel.id)",
+            method: .PATCH,
+            fields: fields,
+            files: files
+        )
+
+        let outfitWrapper: OutfitWrapper = try await APIHandler.shared.executeRequestAndDecode(request: request)
         return outfitWrapper.outfit
     }
     
     // MARK: -- GET MY OUTFITS
     
-    func getMyOutfits(limit: Int = 20, offset: Int = 0) async throws -> OutfitsWrapper {
-        guard let userID = UserDefaults.standard.string(forKey: "user_id") else { throw AuthenticationError.userNotSignedIn }
+    func getMyOutfits(limit: Int = 20, offset: Int = 0) async throws -> PaginatedResponse<SimpleOutfitAPI> {
+        let request = try await APIHandler.shared.createRequest(endpoint: "/users/me/outfits?limit=\(limit)&offset=\(offset)", method: .GET)
+        let outfitsWrapper: PaginatedResponse<SimpleOutfitAPI> = try await APIHandler.shared.executeRequestAndDecode(request: request)
         
-        return try await getOutfitsByUserID(userID: userID)
+        return outfitsWrapper
     }
     
     // MARK: -- GET OUTFITS BY USER ID
     
-    func getOutfitsByUserID(userID: String, limit: Int = 20, offset: Int = 0) async throws -> OutfitsWrapper {
+    func getOutfitsByUserID(userID: String, limit: Int = 20, offset: Int = 0) async throws -> PaginatedResponse<OutfitAPI> {
         let request = try await APIHandler.shared.createRequest(endpoint: "/users/\(userID)/outfits?limit=\(limit)&offset=\(offset)", method: .GET)
-        let outfitsWrapper: OutfitsWrapper = try await APIHandler.shared.executeRequestAndDecode(request: request)
+        let outfitsWrapper: PaginatedResponse<OutfitAPI> = try await APIHandler.shared.executeRequestAndDecode(request: request)
         
         return outfitsWrapper
     }
 }
+

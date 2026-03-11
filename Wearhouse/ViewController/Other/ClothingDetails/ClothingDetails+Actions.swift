@@ -71,22 +71,24 @@ extension ClothingDetailsController {
     @objc func seasonButtonTapped() {
         showSeasonPicker { selectedSeason in
             let seasonName = String(selectedSeason.dropFirst(2))
-            if self.selectedSeasonsArray.contains(seasonName) {
+            #warning("This needs to replaced with real picker")
+            /*if self.selectedSeasonsArray.contains(seasonName) {
                 self.selectedSeasonsArray.remove(at: self.selectedSeasonsArray.firstIndex(of: seasonName)!)
             } else {
                 self.selectedSeasonsArray.append(seasonName)
-            }
+            }*/
         }
     }
     
     @objc func tagButtonTapped() {
         showTagPicker { selectedTag in
             let tagName = String(selectedTag.dropFirst(2))
-            if self.selectedTagsArray.contains(tagName) {
+            #warning("This needs to replaced with real picker")
+            /*if self.selectedTagsArray.contains(tagName) {
                 self.selectedTagsArray.remove(at: self.selectedTagsArray.firstIndex(of: tagName)!)
             } else {
                 self.selectedTagsArray.append(tagName)
-            }
+            }*/
         }
     }
     
@@ -100,20 +102,18 @@ extension ClothingDetailsController {
         isEditingClothing = false
         guard checkChangesMade() else { return }
         
-        let editedClothingItem = clothing.update(
-            name: clothingNameField.fieldInput.text,
-            category: ClothingCategories(rawValue: clothingTypeLabel.text?.uppercased() ?? ""),
-            tags: selectedTagsArray,
-            seasons: selectedSeasonsArray,
-            color: colorPickerView.selectedColor.hexStringFromColor(color: colorPickerView.selectedColor),
-            image: updatedImageID
-        )
+        clothing.name = clothingNameField.fieldInput.text ?? clothing.name
+        clothing.category = ClothingCategories(rawValue: clothingTypeLabel.text?.uppercased() ?? clothing.category.rawValue) ?? clothing.category
+        clothing.tags = selectedTagsArray
+        clothing.seasons = selectedSeasonsArray
+        clothing.color = colorPickerView.selectedColor
+        clothing.imageID = updatedImageID ?? clothing.imageID
         
         Task {
             do {
                 try await saveChanges()
                 
-                delegate?.didEditClothing(editedClothingItem)
+                delegate?.didEditClothing(clothing)
             } catch let e {
                 ErrorHandler.handle(e)
             }
@@ -128,7 +128,7 @@ extension ClothingDetailsController {
         confirmationAlert.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { _ in
             Task {
                 do {
-                    try await APIHandler.shared.clothingHandler.deleteClothingByID(clothingID: self.clothing.clothing_id)
+                    await AppRepository.shared.clothingRepository.deleteClothing(with: self.clothing.id)
                     self.delegate?.didDeleteClothing(self.clothing)
                     self.dismiss(animated: true)
                 }

@@ -10,11 +10,11 @@ import UIKit
 import SDWebImage
 
 protocol ClothingImagePreviewDelegate: AnyObject {
-    func didTapOnImage(_ clothing: ClothingAPI)
+    func didTapOnImage(_ clothing: Clothing)
 }
 
 class ClothingImagePreview: UIView {
-    private(set) var clothing: ClothingAPI? = nil
+    private(set) var clothing: Clothing? = nil
     public var delegate: ClothingImagePreviewDelegate?
     
     private lazy var clothingImageView: UIImageView = {
@@ -39,7 +39,7 @@ class ClothingImagePreview: UIView {
         delegate?.didTapOnImage(clothing)
     }
     
-    init(clothing: ClothingAPI) {
+    init(clothing: Clothing) {
         super.init(frame: .zero)
         
         self.clothing = clothing
@@ -59,7 +59,7 @@ class ClothingImagePreview: UIView {
             clothingImageView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
         
-        clothingImageView.sd_setImage(with: URL(string: clothing.image_id, relativeTo: APIHandler.clothingImagesURL))
+        clothingImageView.sd_setImage(with: URL(string: clothing.imageID, relativeTo: APIHandler.clothingImagesURL))
     }
     
     required init?(coder: NSCoder) {

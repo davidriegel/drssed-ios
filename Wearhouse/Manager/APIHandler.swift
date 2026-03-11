@@ -11,12 +11,13 @@ import UIKit
 
 final public class APIHandler {
     public static let shared = APIHandler()
-    public static let baseURL = URL(string: "https://api.clothing-booth.com")
+    public static let baseURL = URL(string: "http://192.168.2.159:8000") // DEBUG MODE "localhost:8000/192.168.2.159" // PROD MODE "api.clothing-booth.com"
     public static let clothingImagesURL = URL(string: "/uploads/clothing_images/", relativeTo: baseURL)
     public static let profileImagesURL = URL(string: "/uploads/profile_pictures/", relativeTo: baseURL)
     public static let outfitImagesURL = URL(string: "/uploads/outfit_images/", relativeTo: baseURL)
     
     public let decoder: JSONDecoder
+    private let session: URLSession
     
     let authHandler: AuthHandler = AuthHandler()
     let userHandler: UserHandler = UserHandler()
@@ -30,11 +31,31 @@ final public class APIHandler {
         case PATCH
         case DELETE
     }
+
+    public struct MultipartFile {
+        public let fieldName: String
+        public let filename: String
+        public let mimeType: String
+        public let data: Data
+
+        public init(fieldName: String, filename: String, mimeType: String, data: Data) {
+            self.fieldName = fieldName
+            self.filename = filename
+            self.mimeType = mimeType
+            self.data = data
+        }
+    }
     
     private init() {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         self.decoder = decoder
+        
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 20
+        config.timeoutIntervalForResource = 60
+        
+        session = URLSession(configuration: config)
     }
     
     // MARK: -- Error Handling
@@ -70,6 +91,8 @@ final public class APIHandler {
             throw APIError.unprocessableContent
         case 429:
             throw APIError.tooManyRequests
+        case 502...504:
+            throw APIError.offline
         case 500...599:
             throw APIError.internalServerError
         default:
@@ -80,9 +103,7 @@ final public class APIHandler {
     
     // MARK: -- Create requests
     
-    public func createRequest(endpoint: String, method: requestMethods, body: Data? = nil, headers: [String: String]? = nil, authentication: Bool = true) async throws -> URLRequest {
-        guard NetworkManager.shared.isConnected else { throw APIError.offline }
-        
+    public func createRequest(endpoint: String, method: requestMethods, body: Data? = nil, headers: [String: String]? = nil, authentication: Bool = true, timeoutIntervall: Double? = nil) async throws -> URLRequest {
         guard let url = URL(string: endpoint, relativeTo: APIHandler.baseURL) else { throw APIError.badRequest }
         
         var request = URLRequest(url: url)
@@ -90,10 +111,43 @@ final public class APIHandler {
         request.httpBody = body
         request.allHTTPHeaderFields = try await prepareHeaders(customHeaders: headers, authentication: authentication)
         
+        if let timeoutIntervall = timeoutIntervall {
+            request.timeoutInterval = timeoutIntervall
+        }
+        
+        return request
+    }
+
+    public func createMultipartRequest(
+        endpoint: String,
+        method: requestMethods,
+        fields: [String: String],
+        files: [MultipartFile],
+        headers: [String: String]? = nil,
+        authentication: Bool = true,
+        timeoutIntervall: Double? = nil
+    ) async throws -> URLRequest {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        let body = makeMultipartBody(fields: fields, files: files, boundary: boundary)
+
+        var mergedHeaders: [String: String] = headers ?? [:]
+        mergedHeaders["Content-Type"] = "multipart/form-data; boundary=\(boundary)"
+        mergedHeaders["Accept"] = "application/json"
+
+        var request = try await createRequest(
+            endpoint: endpoint,
+            method: method,
+            body: body,
+            headers: mergedHeaders,
+            authentication: authentication,
+            timeoutIntervall: timeoutIntervall
+        )
+
+        request.setValue(String(body.count), forHTTPHeaderField: "Content-Length")
         return request
     }
     
-    public func createRequest(withImage image: UIImage, fileName: String, endpoint: String, method: requestMethods) async throws -> URLRequest {
+    public func createRequest(withImage image: UIImage, endpoint: String, method: requestMethods) async throws -> URLRequest {
         guard let imageData = image.compressedData(maxSizeMB: 4.8) else {
             fatalError("couldn't compress image")
         }
@@ -106,15 +160,40 @@ final public class APIHandler {
         var data = Data()
         
         data.append("--\(boundary)\r\n".data(using: .utf8)!)
-        data.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        data.append("Content-Disposition: form-data; name=\"file\"; filename=\"image.png\"\r\n".data(using: .utf8)!)
         data.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
         data.append(imageData)
         data.append("\r\n".data(using: .utf8)!)
         data.append("--\(boundary)--".data(using: .utf8)!)
         
-        return try await createRequest(endpoint: endpoint, method: method, body: data, headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"])
+        return try await createRequest(endpoint: endpoint, method: method, body: data, headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"], timeoutIntervall: 120)
     }
     
+    private func makeMultipartBody(fields: [String: String], files: [MultipartFile], boundary: String) -> Data {
+        var body = Data()
+        let crlf = "\r\n"
+
+        // Text fields
+        for (key, value) in fields {
+            body.append(Data("--\(boundary)\(crlf)".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\(crlf)\(crlf)".utf8))
+            body.append(Data("\(value)\(crlf)".utf8))
+        }
+
+        // File fields
+        for file in files {
+            body.append(Data("--\(boundary)\(crlf)".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(file.fieldName)\"; filename=\"\(file.filename)\"\(crlf)".utf8))
+            body.append(Data("Content-Type: \(file.mimeType)\(crlf)\(crlf)".utf8))
+            body.append(file.data)
+            body.append(Data(crlf.utf8))
+        }
+
+        // Closing boundary
+        body.append(Data("--\(boundary)--\(crlf)".utf8))
+        return body
+    }
+
     private func prepareHeaders(customHeaders: [String: String]? = nil, authentication: Bool = true) async throws -> [String: String] {
         var defaultHeaders = [
             "Content-Type": "application/json",
@@ -136,8 +215,13 @@ final public class APIHandler {
     // MARK: -- Execute request
     
     public func executeRequest(request: URLRequest, ignoreError: [APIError] = []) async throws -> (Data, HTTPURLResponse?) {
+        guard NetworkManager.shared.isReachable else {
+            print("Server not reachable, skipping request")
+            throw APIError.offline
+        }
+        
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             
             do {
                 try handleHTTPResponse(response as? HTTPURLResponse, data: data)
@@ -150,7 +234,7 @@ final public class APIHandler {
             return (data, response as? HTTPURLResponse)
         } catch let error as URLError {
             switch error.code {
-            case .notConnectedToInternet, .networkConnectionLost, .timedOut:
+            case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost, .cannotFindHost:
                 throw APIError.offline
             default:
                 throw APIError.custom(error.localizedDescription)
@@ -159,7 +243,7 @@ final public class APIHandler {
     }
     
     public func executeRequestAndDecode<T: Decodable>(request: URLRequest, ignoreError: [APIError] = []) async throws -> T {
-        let (data, response) = try await executeRequest(request: request, ignoreError: ignoreError)
+        let (data, _) = try await executeRequest(request: request, ignoreError: ignoreError)
 
         do {
             return try decoder.decode(T.self, from: data)

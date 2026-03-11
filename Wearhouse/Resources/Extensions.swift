@@ -6,13 +6,14 @@
 //
 
 import Foundation
+import CoreData
 import UIKit
 
 extension UIColor {
     static let skeletonColor = UIColor(named: "skeletonColor")!
     
-    func hexStringFromColor(color: UIColor) -> String {
-        let components = color.cgColor.components
+    var hexString: String {
+        let components = self.cgColor.components
         
         guard components?.count != nil && components!.count >= 3 else {
             guard UITraitCollection.current.userInterfaceStyle != .dark else {
@@ -60,6 +61,7 @@ extension UIViewController {
     func showInteractionBlocker() {
         let overlay = UIView(frame: view.bounds)
         overlay.tag = 2000
+        overlay.alpha = 0
         overlay.backgroundColor = UIColor.black.withAlphaComponent(0.4)
         overlay.translatesAutoresizingMaskIntoConstraints = false
         overlay.isUserInteractionEnabled = true // blockiert alles darunter
@@ -71,12 +73,19 @@ extension UIViewController {
             overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+        
+        UIView.animate(withDuration: 0.3) {
+            overlay.alpha = 1.0
+        }
     }
 
     func hideInteractionBlocker() {
         for subview in view.subviews {
             if subview.tag == 2000 {
-                subview.removeFromSuperview()
+                UIView.animate(withDuration: 0.3) {
+                    subview.alpha = 0.0
+                    subview.removeFromSuperview()
+                }
             }
         }
     }
@@ -157,4 +166,34 @@ public enum CornerStyle {
         case .circle: return minSide / 2
         }
     }
+}
+
+extension UIView {
+    func renderAsTransparentImage() -> UIImage? {
+        // Sicherstellen, dass Canvas Hintergrund transparent ist
+        let originalBackground = backgroundColor
+        backgroundColor = .clear
+        
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false // 🔑 Transparent möglich
+
+        let renderer = UIGraphicsImageRenderer(size: bounds.size, format: format)
+        let image = renderer.image { ctx in
+            layer.render(in: ctx.cgContext)
+        }
+        
+        // Hintergrund zurücksetzen
+        backgroundColor = originalBackground
+        return image
+    }
+}
+
+extension NSManagedObjectContext {
+    func saveIfNeeded() throws { if hasChanges { try save() } }
+}
+
+extension Notification.Name {
+    static let clothingUpdated = Notification.Name("clothingUpdated")
+    static let clothingDeleted = Notification.Name("clothingDeleted")
 }

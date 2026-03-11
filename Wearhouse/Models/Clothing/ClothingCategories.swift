@@ -5,7 +5,7 @@
 //  Created by David Riegel on 15.08.25.
 //
 
-public enum ClothingCategories: String, Codable, CaseIterable, Hashable {
+public enum ClothingCategories: String, Codable, CaseIterable, Hashable, Sendable {
     case JACKET
     case TOP
     case BOTTOM

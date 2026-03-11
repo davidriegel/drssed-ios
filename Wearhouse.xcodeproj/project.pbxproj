@@ -13,10 +13,11 @@
 		639680C12E3250270073479F /* JWTDecode in Frameworks */ = {isa = PBXBuildFile; productRef = 639680C02E3250270073479F /* JWTDecode */; };
 		63E8747B2C67F0F300A907FD /* SkeletonView in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8747A2C67F0F300A907FD /* SkeletonView */; };
 		63E874822C680C7D00A907FD /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = 63E874812C680C7D00A907FD /* SDWebImage */; };
+		C91885C32E843B9000D9F8DE /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91885C22E843B8700D9F8DE /* KeychainHelper.swift */; };
+		C91885C52E84426400D9F8DE /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91885C42E84426400D9F8DE /* TokenManager.swift */; };
 		C95C4B302E7727A900844DC8 /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B2F2E7727A900844DC8 /* CropViewController */; };
 		C95C4B322E7727A900844DC8 /* TOCropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B312E7727A900844DC8 /* TOCropViewController */; };
 		C9D40AFD2E79BC360087611B /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D40AFC2E79BC2F0087611B /* PersistenceController.swift */; };
-		C9D40B022E79BD670087611B /* ClothingRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D40B012E79BD670087611B /* ClothingRepository.swift */; };
 		C9D40B042E79C2FA0087611B /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D40B032E79C2FA0087611B /* SyncManager.swift */; };
 		C9DE0FC12E61D78A00DED96E /* TODO.MD in Resources */ = {isa = PBXBuildFile; fileRef = C9DE0FC02E61D78A00DED96E /* TODO.MD */; };
 /* End PBXBuildFile section */
@@ -46,9 +47,9 @@
 		637D86082BE94CCC0010BDBF /* WearhouseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WearhouseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		637D860C2BE94CCC0010BDBF /* OutfitterUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitterUITests.swift; sourceTree = "<group>"; };
 		637D860E2BE94CCC0010BDBF /* OutfitterUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitterUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		63E043582DB1A44C0028715F /* TagPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagPickerView.swift; sourceTree = "<group>"; };
+		C91885C22E843B8700D9F8DE /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		C91885C42E84426400D9F8DE /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenManager.swift; sourceTree = "<group>"; };
 		C9D40AFC2E79BC2F0087611B /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
-		C9D40B012E79BD670087611B /* ClothingRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingRepository.swift; sourceTree = "<group>"; };
 		C9D40B032E79C2FA0087611B /* SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
 		C9DE0FC02E61D78A00DED96E /* TODO.MD */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.MD; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -57,8 +58,10 @@
 		636DAD102DB97D8E007F5CC1 /* ViewController */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ViewController; sourceTree = "<group>"; };
 		636DAD272DB97D9B007F5CC1 /* Resources */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Resources; sourceTree = "<group>"; };
 		636DAD322DB97D9F007F5CC1 /* Manager */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Manager; sourceTree = "<group>"; };
-		636DAD3E2DB97DA6007F5CC1 /* Models */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Models; sourceTree = "<group>"; };
 		63A5CA9A2DBA5ABB00411049 /* Views */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Views; sourceTree = "<group>"; };
+		C92749032EAE573100BC3BFC /* LocalDataSources */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = LocalDataSources; sourceTree = "<group>"; };
+		C9895C702EABE3AD0019F070 /* Repositories */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Repositories; sourceTree = "<group>"; };
+		C9AC16E82EEDA9B1000CC983 /* Models */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Models; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,15 +117,17 @@
 		637D85EA2BE94CC90010BDBF /* Wearhouse */ = {
 			isa = PBXGroup;
 			children = (
+				C92749032EAE573100BC3BFC /* LocalDataSources */,
+				C9895C702EABE3AD0019F070 /* Repositories */,
+				C91885C22E843B8700D9F8DE /* KeychainHelper.swift */,
+				C91885C42E84426400D9F8DE /* TokenManager.swift */,
 				C9D40B032E79C2FA0087611B /* SyncManager.swift */,
-				C9D40B012E79BD670087611B /* ClothingRepository.swift */,
 				C9D40AFC2E79BC2F0087611B /* PersistenceController.swift */,
 				C9DE0FC02E61D78A00DED96E /* TODO.MD */,
-				63E043582DB1A44C0028715F /* TagPickerView.swift */,
 				637D85F92BE94CCC0010BDBF /* Info.plist */,
 				636DAD272DB97D9B007F5CC1 /* Resources */,
 				636DAD322DB97D9F007F5CC1 /* Manager */,
-				636DAD3E2DB97DA6007F5CC1 /* Models */,
+				C9AC16E82EEDA9B1000CC983 /* Models */,
 				63A5CA9A2DBA5ABB00411049 /* Views */,
 				636DAD102DB97D8E007F5CC1 /* ViewController */,
 			);
@@ -165,8 +170,10 @@
 				636DAD102DB97D8E007F5CC1 /* ViewController */,
 				636DAD272DB97D9B007F5CC1 /* Resources */,
 				636DAD322DB97D9F007F5CC1 /* Manager */,
-				636DAD3E2DB97DA6007F5CC1 /* Models */,
 				63A5CA9A2DBA5ABB00411049 /* Views */,
+				C92749032EAE573100BC3BFC /* LocalDataSources */,
+				C9895C702EABE3AD0019F070 /* Repositories */,
+				C9AC16E82EEDA9B1000CC983 /* Models */,
 			);
 			name = Wearhouse;
 			packageProductDependencies = (
@@ -296,9 +303,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C9D40B022E79BD670087611B /* ClothingRepository.swift in Sources */,
+				C91885C32E843B9000D9F8DE /* KeychainHelper.swift in Sources */,
 				C9D40AFD2E79BC360087611B /* PersistenceController.swift in Sources */,
 				C9D40B042E79C2FA0087611B /* SyncManager.swift in Sources */,
+				C91885C52E84426400D9F8DE /* TokenManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -475,6 +483,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -509,6 +518,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

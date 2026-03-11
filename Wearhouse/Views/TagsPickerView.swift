@@ -8,10 +8,7 @@
 import UIKit
 
 protocol TagsPickerViewDelegate: AnyObject {
-    func casualTagSelected()
-    func formalTagSelected()
-    func sportsTagSelected()
-    func vintageTagSelected()
+    func tagSelected(_ tag: Tags)
     func tagsDoneButtonPressed()
 }
 
@@ -27,13 +24,13 @@ class TagsPickerView: UIView {
             
             switch button.tag {
             case 1:
-                self.delegate.casualTagSelected()
+                self.delegate.tagSelected(.CASUAL)
             case 2:
-                self.delegate.formalTagSelected()
+                self.delegate.tagSelected(.FORMAL)
             case 3:
-                self.delegate.sportsTagSelected()
+                self.delegate.tagSelected(.SPORTS)
             case 4:
-                self.delegate.vintageTagSelected()
+                self.delegate.tagSelected(.VINTAGE)
             default:
                 return
             }
@@ -145,9 +142,26 @@ class TagsPickerView: UIView {
         }
     }
     
-    init(delegate: TagsPickerViewDelegate) {
+    init(delegate: TagsPickerViewDelegate, _ preselection: [Tags] = []) {
         super.init(frame: .zero)
         self.delegate = delegate
+        
+        preselection.forEach { tag in
+            switch tag {
+            case .CASUAL:
+                casualPickerButton.isSelected = true
+                casualPickerButton.backgroundColor = .accent
+            case .FORMAL:
+                formalPickerButton.isSelected = true
+                formalPickerButton.backgroundColor = .accent
+            case .VINTAGE:
+                vintagePickerButton.isSelected = true
+                vintagePickerButton.backgroundColor = .accent
+            case .SPORTS:
+                sportsPickerButton.isSelected = true
+                sportsPickerButton.backgroundColor = .accent
+            }
+        }
         
         addSubview(casualPickerButton)
         NSLayoutConstraint.activate([
@@ -194,3 +208,4 @@ class TagsPickerView: UIView {
     }
     
 }
+

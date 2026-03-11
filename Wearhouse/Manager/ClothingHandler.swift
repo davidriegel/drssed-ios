@@ -12,10 +12,25 @@ final class ClothingHandler {
     
     init() {}
     
+    // MARK: -- Sync clothes with server
+    func syncClothes(updatedSince: Date?) async throws -> SyncronizationResponse<ClothingAPI> {
+        var endpoint = "/users/me/clothing/sync"
+            
+        if let updatedSince {
+            let iso = ISO8601DateFormatter().string(from: updatedSince)
+            endpoint += "?updated_since=\(iso)"
+        }
+            
+        let request = try await APIHandler.shared.createRequest(endpoint: endpoint, method: .GET)
+        let response: SyncronizationResponse<ClothingAPI> = try await APIHandler.shared.executeRequestAndDecode(request: request)
+            
+        return response
+    }
+    
     // MARK: -- POST REMOVE CLOTHING BACKGROUND
     
-    public func removeClothingBackground(from image: UIImage, _ fileExtension: String) async throws -> (URL, UIColor, ClothingCategories) {
-        let request = try await APIHandler.shared.createRequest(withImage: image, fileName: "clothingPicture.\(fileExtension)", endpoint: "/images/preview", method: .POST)
+    public func removeClothingBackground(from image: UIImage) async throws -> (URL, UIColor, ClothingCategories) {
+        let request = try await APIHandler.shared.createRequest(withImage: image, endpoint: "/images/preview", method: .POST)
         
         let imageResponse: ImagePreview = try await APIHandler.shared.executeRequestAndDecode(request: request)
         
@@ -26,26 +41,22 @@ final class ClothingHandler {
     
     // MARK: -- POST UPLOAD CLOATHING
     
-    public func uploadClothing(with name: String, description: String, category: ClothingCategories, seasons: [Seasons], tags: [Tags], imageID: String, color: UIColor) async throws -> ClothingAPI {
+    public func uploadClothing(_ domainModel: Clothing) async throws -> ClothingAPI {
         var seasonsStrings: [String] = []
-        for season in seasons {
+        for season in domainModel.seasons {
             seasonsStrings.append(season.rawValue)
         }
         
         var tagsStrings: [String] = []
-        for tag in tags {
+        for tag in domainModel.tags {
             tagsStrings.append(tag.rawValue)
         }
         
-        let uploadDict = ["name": name, "description": description, "category": category.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": imageID, "color": color.hexStringFromColor(color: color)] as [String : Any]
+        let uploadDict = ["name": domainModel.name, "description": domainModel.description, "category": domainModel.category.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": domainModel.imageID, "color": domainModel.color.hexString] as [String : Any]
         
         let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
         let request = try await APIHandler.shared.createRequest(endpoint: "/users/me/clothing", method: .POST, body: uploadData)
         let clothingWrapper: ClothingWrapper = try await APIHandler.shared.executeRequestAndDecode(request: request)
-        
-        //#if DEBUG
-        //print("💻 POST /users/me/clothing Response: \(String(data: data, encoding: .utf8) ?? "No Data")")
-        //#endif
         
         return clothingWrapper.clothing
     }
@@ -99,7 +110,7 @@ final class ClothingHandler {
         }
         
         if let color = color {
-            uploadDict["color"] = color.hexStringFromColor(color: color)
+            uploadDict["color"] = color.hexString
         }
         
         if let image_id = image_id {
@@ -108,6 +119,44 @@ final class ClothingHandler {
         
         let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
         let request = try await APIHandler.shared.createRequest(endpoint: "/clothing/\(oldClothing.clothing_id)", method: .PATCH, body: uploadData)
+        let clothingWrapper: ClothingWrapper = try await APIHandler.shared.executeRequestAndDecode(request: request)
+        
+        return clothingWrapper.clothing
+    }
+    
+    public func patchEditClothing(oldClothing: Clothing, newClothing: Clothing) async throws -> ClothingAPI {
+        var uploadDict: [String:Any] = [:]
+        
+        if oldClothing.name != newClothing.name {
+            uploadDict["name"] = newClothing.name
+        }
+        
+        if oldClothing.description != newClothing.description {
+            uploadDict["description"] = newClothing.description
+        }
+        
+        if oldClothing.category != newClothing.category {
+            uploadDict["category"] = newClothing.category.rawValue
+        }
+        
+        if oldClothing.tags != newClothing.tags {
+            uploadDict["tags"] = newClothing.tags.map(\.rawValue)
+        }
+        
+        if oldClothing.seasons != newClothing.seasons {
+            uploadDict["seasons"] = newClothing.seasons.map(\.rawValue)
+        }
+        
+        if oldClothing.color != newClothing.color {
+            uploadDict["color"] = newClothing.color.hexString
+        }
+        
+        if oldClothing.imageID != newClothing.imageID {
+            uploadDict["image_id"] = newClothing.imageID
+        }
+        
+        let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
+        let request = try await APIHandler.shared.createRequest(endpoint: "/clothing/\(oldClothing.id)", method: .PATCH, body: uploadData)
         let clothingWrapper: ClothingWrapper = try await APIHandler.shared.executeRequestAndDecode(request: request)
         
         return clothingWrapper.clothing

@@ -8,10 +8,11 @@
 import UIKit
 
 class OutfitCreationController: UIViewController {
+    private let clothingRepo: ClothingRepository = ClothingRepository()
     
     private var visibleContainer: [ClothingCategories] = []
     
-    var dataSoutce: [ClothingAPI] = []
+    var dataSoutce: [ClothingLocal] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,33 +29,11 @@ class OutfitCreationController: UIViewController {
     }
     
     func updateData() -> Void {
-        if dataSoutce.isEmpty {
-            Task {
-                await fetchDataFromAPI()
-                shuffleItems()
-                return
-            }
-        }
-        
-        do {
-            jacketContainer.setDataSource(dataSoutce.filter { $0.category == ClothingCategories.JACKET })
-            topContainer.setDataSource(dataSoutce.filter { $0.category == ClothingCategories.TOP })
-            bottomContainer.setDataSource(dataSoutce.filter { $0.category == ClothingCategories.BOTTOM })
-            footwearContainer.setDataSource(dataSoutce.filter { $0.category == ClothingCategories.FOOTWEAR })
-        } catch {
-            ErrorHandler.handle(error)
-        }
-        
-    }
-    
-    func fetchDataFromAPI() async -> Void {
-        do {
-            jacketContainer.setDataSource(try await APIHandler.shared.clothingHandler.getMyClothing(category: .JACKET).clothing)
-            topContainer.setDataSource(try await APIHandler.shared.clothingHandler.getMyClothing(category: .TOP).clothing)
-            bottomContainer.setDataSource(try await APIHandler.shared.clothingHandler.getMyClothing(category: .BOTTOM).clothing)
-            footwearContainer.setDataSource(try await APIHandler.shared.clothingHandler.getMyClothing(category: .FOOTWEAR).clothing)
-        } catch {
-            ErrorHandler.handle(error, suppressed: [.tooManyRequests])
+        Task {
+            jacketContainer.setDataSource(await AppRepository.shared.clothingRepository.fetchClothes(filterCategories: [.JACKET]))
+            topContainer.setDataSource(await AppRepository.shared.clothingRepository.fetchClothes(filterCategories: [.TOP]))
+            bottomContainer.setDataSource(await AppRepository.shared.clothingRepository.fetchClothes(filterCategories: [.BOTTOM]))
+            footwearContainer.setDataSource(await AppRepository.shared.clothingRepository.fetchClothes(filterCategories: [.FOOTWEAR]))
         }
     }
     
@@ -189,7 +168,7 @@ class OutfitCreationController: UIViewController {
     
     @objc
     private func saveOutfit() {
-        var outfitClothes: [ClothingAPI] = []
+        var outfitClothes: [Clothing] = []
         
         for visible in visibleContainer {
             switch visible {

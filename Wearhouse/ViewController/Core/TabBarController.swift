@@ -16,24 +16,24 @@ public class TabBarController: UITabBarController, UITabBarControllerDelegate {
     }
 
     private func setupViewController() {
-        let HomeController = HomeController()
-        let OutfitsController = OutfitsGalleryViewController()
+        //let HomeController = HomeController()
         let ClothesController = ClothesGalleryController()
-        let MyProfileController = OutfitCreationController()
+        let OutfitsController = OutfitsGalleryViewController()
+        //let MyProfileController = OutfitComposerViewController()
         
-        let navHomeController = UINavigationController(rootViewController: HomeController)
-        let navOutfitsController = UINavigationController(rootViewController: OutfitsController)
+        //let navHomeController = UINavigationController(rootViewController: HomeController)
         let navClothesController = UINavigationController(rootViewController: ClothesController)
-        let navMyProfileController = UINavigationController(rootViewController: MyProfileController)
+        let navOutfitsController = UINavigationController(rootViewController: OutfitsController)
+        //let navMyProfileController = UINavigationController(rootViewController: MyProfileController)
         
-        navHomeController.tabBarItem = UITabBarItem(title: "home", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
-        navOutfitsController.tabBarItem = UITabBarItem(title: "outfits", image: UIImage(systemName: "cabinet"), selectedImage: UIImage(systemName: "cabinet.fill"))
-        navClothesController.tabBarItem = UITabBarItem(title: "clothes", image: UIImage(systemName: "tshirt"), selectedImage: UIImage(systemName: "tshirt.fill"))
-        navMyProfileController.tabBarItem = UITabBarItem(title: "profile", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
+        //navHomeController.tabBarItem = UITabBarItem(title: "home", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
+        navClothesController.tabBarItem = UITabBarItem(title: String(localized: "wardrobe.title"), image: UIImage(systemName: "tshirt"), selectedImage: UIImage(systemName: "tshirt.fill"))
+        navOutfitsController.tabBarItem = UITabBarItem(title: String(localized: "lookbook.title"), image: UIImage(systemName: "cabinet"), selectedImage: UIImage(systemName: "cabinet.fill"))
+        //navMyProfileController.tabBarItem = UITabBarItem(title: "profile", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
         
-        tabBar.tintColor = .label
-        tabBar.backgroundColor = .background
+        //tabBar.tintColor = .label
+        //tabBar.backgroundColor = .background
         
-        setViewControllers([navHomeController, navOutfitsController, navClothesController, navMyProfileController], animated: false)
+        setViewControllers([navClothesController, navOutfitsController], animated: false)
     }
 }

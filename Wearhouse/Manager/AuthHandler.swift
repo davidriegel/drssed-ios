@@ -18,50 +18,35 @@ final class AuthHandler {
     public func registerAsGuest() async throws -> TokenModel {
         let request = try await APIHandler.shared.createRequest(endpoint: "/auth/guest", method: .POST, authentication: false)
         
-        do {
-            let (data, _) = try await APIHandler.shared.executeRequest(request: request, ignoreError: [])
-            
-            let tokenResponse = try JSONDecoder().decode(TokenModel.self, from: data)
-            
-            let jwt = try decode(jwt: tokenResponse.access_token)
-            UserDefaults.standard.set(jwt.subject, forKey: "user_id")
-            UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
-            UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
-            UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
-            
-            return tokenResponse
-        }
+        let (data, _) = try await APIHandler.shared.executeRequest(request: request, ignoreError: [])
+        
+        let tokenResponse = try JSONDecoder().decode(TokenModel.self, from: data)
+        
+        let jwt = try decode(jwt: tokenResponse.access_token)
+        UserDefaults.standard.set(jwt.subject, forKey: "user_id")
+        let keychainModel = TokenKeychainModel(accessToken: tokenResponse.access_token, refreshToken: tokenResponse.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)))
+        await TokenManager.shared.setTokens(keychainModel)
+        
+        return tokenResponse
     }
     
     // MARK: -- GET ACCESS TOKEN
     
     public func getAndRenewAccessToken() async throws -> String {
-        guard var accessToken = UserDefaults.standard.string(forKey: "access_token") else { throw AuthenticationError.userNotSignedIn }
-        guard let expiresAt = UserDefaults.standard.object(forKey: "expires_at") as? Date else { UserDefaults.standard.removeObject(forKey: "access_token"); throw AuthenticationError.userNotSignedIn }
+        guard var tokens = await TokenManager.shared.currentTokens() else { throw AuthenticationError.userNotSignedIn }
         
-        if Date().addingTimeInterval(TimeInterval(60 * 10)) >= expiresAt {
-            guard var refreshToken = UserDefaults.standard.string(forKey: "refresh_token") else { throw AuthenticationError.userNotSignedIn }
-            let uploadData = try JSONEncoder().encode(["refresh_token": refreshToken, "access_token": accessToken])
+        if Date().addingTimeInterval(TimeInterval(60 * 10)) >= tokens.expiryDate {
+            let uploadData = try JSONEncoder().encode(["refresh_token": tokens.refreshToken, "access_token": tokens.accessToken])
             let request = try await APIHandler.shared.createRequest(endpoint: "/auth/refresh", method: .POST, body: uploadData, authentication: false)
             
-            do {
-                let tokenModel: TokenModel = try await APIHandler.shared.executeRequestAndDecode(request: request)
+            let tokenModel: TokenModel = try await APIHandler.shared.executeRequestAndDecode(request: request)
                 
-                accessToken = tokenModel.access_token
-                refreshToken = tokenModel.refresh_token
-                UserDefaults.standard.set(accessToken, forKey: "access_token")
-                UserDefaults.standard.set(refreshToken, forKey: "refresh_token")
-                UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)), forKey: "expires_at")
-            } catch let e {
-                // TODO: return to sign up page
-                //UserDefaults.standard.removeObject(forKey: "access_token")
-                print(e)
-                ErrorHandler.handle(e)
-                preconditionFailure()
-            }
+            let keychainModel = TokenKeychainModel(accessToken: tokenModel.access_token, refreshToken: tokenModel.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)))
+            await TokenManager.shared.setTokens(keychainModel)
+            tokens = keychainModel
         }
         
-        return accessToken
+        return tokens.accessToken
     }
     
     // MARK: -- SIGN UP
@@ -117,3 +102,4 @@ final class AuthHandler {
         }
     }
 }
+

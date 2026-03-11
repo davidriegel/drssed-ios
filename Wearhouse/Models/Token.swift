@@ -12,3 +12,9 @@ public struct TokenModel: Codable {
     let expires_in: Int
     let refresh_token: String
 }
+
+public struct TokenKeychainModel: Codable {
+    let accessToken: String
+    let refreshToken: String
+    let expiryDate: Date
+}

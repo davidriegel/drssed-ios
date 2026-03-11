@@ -8,6 +8,7 @@
 import UIKit
 
 class ClothesGalleryController: UIViewController {
+    private let clothingRepo: ClothingRepository = AppRepository.shared.clothingRepository
     
     private enum viewMode: CaseIterable {
         case SMALL
@@ -28,12 +29,15 @@ class ClothesGalleryController: UIViewController {
         super.viewDidLoad()
         
         configureViewComponents()
-        updateData()
+        reloadDataFromCoreData()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(onClothingChanged), name: .clothingUpdated, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(onClothingChanged), name: .clothingDeleted, object: nil)
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
+        reloadDataFromCoreData()
         uploadButton.layer.add(createUploadButtonHover(), forKey: "hoverAnimation")
     }
     
@@ -45,7 +49,7 @@ class ClothesGalleryController: UIViewController {
 
     // MARK: --
     
-    var dataSource: [ClothingAPI] = [] {
+    var dataSource: [Clothing] = [] {
         didSet {
             uploadNowButton.isHidden = !dataSource.isEmpty
             uploadNowButton.isEnabled = dataSource.isEmpty
@@ -59,33 +63,33 @@ class ClothesGalleryController: UIViewController {
         case main
     }
     
-    private lazy var diffableDataSource: UICollectionViewDiffableDataSource<Section, ClothingAPI> = UICollectionViewDiffableDataSource<Section, ClothingAPI>(
+    private lazy var diffableDataSource: UICollectionViewDiffableDataSource<Section, Clothing> = UICollectionViewDiffableDataSource<Section, Clothing>(
         collectionView: self.clothingCollectionView,
-        cellProvider: { (collectionView: UICollectionView, indexPath: IndexPath, item: ClothingAPI) -> UICollectionViewCell? in
+        cellProvider: { (collectionView: UICollectionView, indexPath: IndexPath, item: Clothing) -> UICollectionViewCell? in
             let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: ClothesGallery_ViewCell.identifier,
+                withReuseIdentifier: ClothingCollectionViewCell.identifier,
                 for: indexPath
-            ) as! ClothesGallery_ViewCell
-            cell.configureViewComponents(with: item.image_id, and: item.name)
+            ) as! ClothingCollectionViewCell
+            cell.configureViewComponents(with: item.imageID, and: item.name)
             return cell
         }
     )
     
-    func applySnapshot(items: [ClothingAPI], animatingDifferences: Bool = true) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, ClothingAPI>()
+    func applySnapshot(items: [Clothing], animatingDifferences: Bool = true) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Clothing>()
         snapshot.appendSections([.main])
         snapshot.appendItems(items, toSection: .main)
         diffableDataSource.apply(snapshot, animatingDifferences: animatingDifferences)
     }
     
     
-    var sortedAndFilteredDataSource: [ClothingAPI] = [] {
+    var sortedAndFilteredDataSource: [Clothing] = [] {
         didSet {
             applySnapshot(items: sortedAndFilteredDataSource)
         }
     }
     
-    var searchDataSource: [ClothingAPI] = [] {
+    var searchDataSource: [Clothing] = [] {
         didSet {
             applySnapshot(items: searchDataSource)
         }
@@ -100,19 +104,19 @@ class ClothesGalleryController: UIViewController {
         }
     }
     
-    var clothingTypesSelected: clothingTypes? = nil {
+    var selectedCategory: ClothingCategories? = nil {
         didSet {
             sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
     
-    var clothingSeasonsSelected: [clothingSeasons] = [] {
+    var selectedSeasons: [Seasons] = [] {
         didSet {
             sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
     
-    var clothingTagsSelected: [clothingTags] = [] {
+    var selectedTags: [Tags] = [] {
         didSet {
             sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
@@ -122,31 +126,6 @@ class ClothesGalleryController: UIViewController {
         case Name
         case Date
         case Edit
-    }
-    
-    enum clothingTypes: CaseIterable {
-        case Tops
-        case Bottoms
-        case Footwear
-        case Accessoires
-        
-        static func withLabel(_ label: String) -> clothingTypes? {
-            return self.allCases.first{ "\($0)" == label }
-        }
-    }
-    
-    enum clothingSeasons {
-        case Spring
-        case Summer
-        case Autumn
-        case Winter
-    }
-    
-    enum clothingTags {
-        case Casual
-        case Formal
-        case Sports
-        case Vintage
     }
     
     // MARK: --
@@ -167,7 +146,7 @@ class ClothesGalleryController: UIViewController {
         let view =  UICollectionView(frame: .zero, collectionViewLayout: layout)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.scrollsToTop = true
-        view.register(ClothesGallery_ViewCell.self, forCellWithReuseIdentifier: ClothesGallery_ViewCell.identifier)
+        view.register(ClothingCollectionViewCell.self, forCellWithReuseIdentifier: ClothingCollectionViewCell.identifier)
         view.delegate = self
         view.showsVerticalScrollIndicator = true
         view.backgroundColor = .background
@@ -178,26 +157,27 @@ class ClothesGalleryController: UIViewController {
     
     lazy var clothingRefreshControll: UIRefreshControl = {
         let rc = UIRefreshControl()
-        rc.addTarget(self, action: #selector(updateData), for: .valueChanged)
+    
+        rc.addAction(UIAction(handler: { _ in
+            Task {
+                await SyncManager.shared.syncWithServer()
+                
+                DispatchQueue.main.async {
+                    self.reloadDataFromCoreData()
+                }
+            }
+        }), for: .valueChanged)
+        
         return rc
     }()
     
-    lazy var typeStackView: UIStackView = {
-        let sv = UIStackView()
-        sv.translatesAutoresizingMaskIntoConstraints = false
-        sv.axis = .horizontal
-        sv.distribution = .equalSpacing
-        sv.alignment = .leading
-        return sv
-    }()
-    
-    lazy var typeScrollView: UIScrollView = {
-        let sv = UIScrollView()
-        sv.translatesAutoresizingMaskIntoConstraints = false
-        sv.isScrollEnabled = true
-        sv.alwaysBounceHorizontal = true
-        sv.showsHorizontalScrollIndicator = false
-        return sv
+    lazy var categorySegmentControl: UISegmentedControl = {
+        let sc = UISegmentedControl(items: [String(localized: "common.all"), ClothingCategories.JACKET.localizedName, ClothingCategories.TOP.localizedName, ClothingCategories.BOTTOM.localizedName, ClothingCategories.FOOTWEAR.localizedName])
+        sc.translatesAutoresizingMaskIntoConstraints = false
+        sc.selectedSegmentIndex = 0
+        sc.tintColor = .secondarySystemBackground
+        sc.selectedSegmentTintColor = .accent
+        return sc
     }()
     
     lazy var uploadButton: UIButton = {
@@ -219,10 +199,26 @@ class ClothesGalleryController: UIViewController {
     
     // MARK: --
     
-    func showClothingDetails(of clothing: ClothingAPI) {
-        let clothingController = ClothingDetailsController(clothing)
-        clothingController.delegate = self
-        present(clothingController, animated: true)
+    func reloadDataFromCoreData() {
+        Task { @MainActor in
+            let items = await AppRepository.shared.clothingRepository.fetchClothes()
+            dataSource = items
+            clothingRefreshControll.endRefreshing()
+        }
+    }
+    
+    func showClothingDetails(of clothing: Clothing) {
+        let detailsController = DetailsController(clothing)
+        let navController = UINavigationController(rootViewController: detailsController)
+        navController.setNavigationBarHidden(true, animated: false)
+        
+        if let sheet = navController.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+        }
+        
+        navigationController?.present(navController, animated: true)
+        
     }
     
     func generateSortMenu() -> UIMenu {
@@ -245,7 +241,7 @@ class ClothesGalleryController: UIViewController {
         self.navigationItem.rightBarButtonItems?.last!.menu = generateSortMenu()
     }
     
-    func sortClothes(source: [ClothingAPI]? = nil) -> [ClothingAPI] {
+    func sortClothes(source: [Clothing]? = nil) -> [Clothing] {
         switch clothingSortSelected {
         case .Name:
             sortByName(source: source)
@@ -256,8 +252,8 @@ class ClothesGalleryController: UIViewController {
         }
     }
     
-    private func sortByName(source: [ClothingAPI]? = nil) -> [ClothingAPI] {
-        var tempSortedDataSource: [ClothingAPI] = source != nil ? source! : dataSource
+    private func sortByName(source: [Clothing]? = nil) -> [Clothing] {
+        var tempSortedDataSource: [Clothing] = source != nil ? source! : dataSource
         tempSortedDataSource.sort {
             return ($0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending)
         }
@@ -265,23 +261,15 @@ class ClothesGalleryController: UIViewController {
         return tempSortedDataSource
     }
     
-    private func sortByDate(source: [ClothingAPI]? = nil) -> [ClothingAPI] {
-        var tempSortedDataSource: [ClothingAPI] = source != nil ? source! : dataSource
-        tempSortedDataSource.sort {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "YYYY-MM-DD hh-mm-ss"
-            //let first = formatter.date(from: $0.created_at) ?? Date()
-            let first = $0.seasons.count
-            let second = $1.seasons.count
-            //let second = formatter.date(from: $1.created_at) ?? Date()
-            return first > second
-        }
+    private func sortByDate(source: [Clothing]? = nil) -> [Clothing] {
+        var tempSortedDataSource: [Clothing] = source != nil ? source! : dataSource
+        tempSortedDataSource.sort { $0.createdAt > $1.createdAt }
         
         return tempSortedDataSource
     }
     
     // sortByEdit currently not available due to API, edits date not being saved to database
-    private func sortByEdit(source _: [ClothingAPI]? = nil) -> [ClothingAPI] {
+    private func sortByEdit(source _: [Clothing]? = nil) -> [Clothing] {
         return dataSource
     }
     
@@ -301,36 +289,36 @@ class ClothesGalleryController: UIViewController {
     
     func generateScaleMenu() -> UIMenu {
         let scaleMenuItems: [UIAction] = [
-            UIAction(title: String(localized: "scale_small"), attributes: .keepsMenuPresented, state: selectedViewMode == .SMALL ? .on : .mixed, handler: { _ in
+            UIAction(title: String(localized: "common.scale.small"), attributes: .keepsMenuPresented, state: selectedViewMode == .SMALL ? .on : .mixed, handler: { _ in
                 self.selectedViewMode = .SMALL
                 self.navigationItem.leftBarButtonItem?.menu = self.generateScaleMenu()
             }),
-            UIAction(title: String(localized: "scale_medium"), attributes: .keepsMenuPresented, state: selectedViewMode == .MEDIUM ? .on : .mixed, handler: { _ in
+            UIAction(title: String(localized: "common.scale.medium"), attributes: .keepsMenuPresented, state: selectedViewMode == .MEDIUM ? .on : .mixed, handler: { _ in
                 self.selectedViewMode = .MEDIUM
                 self.navigationItem.leftBarButtonItem?.menu = self.generateScaleMenu()
             }),
-            UIAction(title: String(localized: "scale_large"), attributes: .keepsMenuPresented, state: selectedViewMode == .LARGE ? .on : .mixed, handler: { _ in
+            UIAction(title: String(localized: "common.scale.large"), attributes: .keepsMenuPresented, state: selectedViewMode == .LARGE ? .on : .mixed, handler: { _ in
                 self.selectedViewMode = .LARGE
                 self.navigationItem.leftBarButtonItem?.menu = self.generateScaleMenu()
             })
         ]
         
-        return UIMenu(title: String(localized: "scale_menu_title"), children: scaleMenuItems)
+        return UIMenu(title: String(localized: "common.scale.title"), children: scaleMenuItems)
     }
     
     func generateFilterMenu() -> UIMenu {
         let tagsMenuItems: [UIAction] = [
-            UIAction(title: "🌱 Spring", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Spring) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Spring) }),
-            UIAction(title: "☀️ Summer", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Summer) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Summer) }),
-            UIAction(title: "🍂 Autumn", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Autumn) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Autumn) }),
-            UIAction(title: "❄️ Winter", attributes: .keepsMenuPresented, state: clothingSeasonsSelected.contains(.Winter) ? .on : .mixed, handler: { (_) in self.filterBySeason(.Winter) })
+            UIAction(title: "🌱 Spring", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.SPRING) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SPRING) }),
+            UIAction(title: "☀️ Summer", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.SUMMER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SUMMER) }),
+            UIAction(title: "🍂 Autumn", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.AUTUMN) ? .on : .mixed, handler: { (_) in self.filterBySeason(.AUTUMN) }),
+            UIAction(title: "❄️ Winter", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.WINTER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.WINTER) })
         ]
         
         let seasonsMenuItems: [UIAction] = [
-            UIAction(title: "🧍🏻 Casual", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Casual) ? .on : .mixed, handler: { (_) in self.filterByTags(.Casual) }),
-            UIAction(title: "🕴🏻 Formal", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Formal) ? .on : .mixed, handler: { (_) in self.filterByTags(.Formal) }),
-            UIAction(title: "⛹🏻 Sports", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Sports) ? .on : .mixed, handler: { (_) in self.filterByTags(.Sports) }),
-            UIAction(title: "🧳 Vintage", attributes: .keepsMenuPresented, state: clothingTagsSelected.contains(.Vintage) ? .on : .mixed, handler: { (_) in self.filterByTags(.Vintage) })
+            UIAction(title: "🧍🏻 Casual", attributes: .keepsMenuPresented, state: selectedTags.contains(.CASUAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.CASUAL) }),
+            UIAction(title: "🕴🏻 Formal", attributes: .keepsMenuPresented, state: selectedTags.contains(.FORMAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.FORMAL) }),
+            UIAction(title: "⛹🏻 Sports", attributes: .keepsMenuPresented, state: selectedTags.contains(.SPORTS) ? .on : .mixed, handler: { (_) in self.filterByTags(.SPORTS) }),
+            UIAction(title: "🧳 Vintage", attributes: .keepsMenuPresented, state: selectedTags.contains(.VINTAGE) ? .on : .mixed, handler: { (_) in self.filterByTags(.VINTAGE) })
         ]
         
         var totalItems: [UIMenuElement] = []
@@ -341,41 +329,41 @@ class ClothesGalleryController: UIViewController {
         return menu
     }
     
-    func filterBySeason(_ seasonSelected: clothingSeasons) {
-        clothingSeasonsSelected.contains(seasonSelected) ? clothingSeasonsSelected.removeAll(where: { season in
+    func filterBySeason(_ seasonSelected: Seasons) {
+        selectedSeasons.contains(seasonSelected) ? selectedSeasons.removeAll(where: { season in
             return season == seasonSelected
-        }) : clothingSeasonsSelected.append(seasonSelected)
+        }) : selectedSeasons.append(seasonSelected)
         self.navigationItem.rightBarButtonItems?.first!.menu = generateFilterMenu()
     }
     
-    func filterClothesSeason(source: [ClothingAPI]? = nil) -> [ClothingAPI] {
-        let tempFilteredDataSource: [ClothingAPI] = source != nil ? source! : dataSource
+    func filterClothesSeason(source: [Clothing]? = nil) -> [Clothing] {
+        let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
         
         return tempFilteredDataSource.filter { clothing in
-            guard (!clothingSeasonsSelected.isEmpty) else {
+            guard (!selectedSeasons.isEmpty) else {
                 return true
             }
             
-            return clothingSeasonsSelected.allSatisfy { clothing.seasons.contains("\($0)")}
+            return selectedSeasons.allSatisfy { clothing.seasons.contains($0)}
         }
     }
     
-    func filterByTags(_ tagSelected: clothingTags) {
-        clothingTagsSelected.contains(tagSelected) ? clothingTagsSelected.removeAll(where: { season in
+    func filterByTags(_ tagSelected: Tags) {
+        selectedTags.contains(tagSelected) ? selectedTags.removeAll(where: { season in
             return season == tagSelected
-        }) : clothingTagsSelected.append(tagSelected)
+        }) : selectedTags.append(tagSelected)
         self.navigationItem.rightBarButtonItems?.first!.menu = generateFilterMenu()
     }
     
-    func filterClothesTags(source: [ClothingAPI]? = nil) -> [ClothingAPI] {
-        let tempFilteredDataSource: [ClothingAPI] = source != nil ? source! : dataSource
+    func filterClothesTags(source: [Clothing]? = nil) -> [Clothing] {
+        let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
         
         return tempFilteredDataSource.filter { clothing in
-            guard (!clothingTagsSelected.isEmpty) else {
+            guard (!selectedTags.isEmpty) else {
                 return true
             }
             
-            return clothingTagsSelected.allSatisfy { clothing.tags.contains("\($0)")}
+            return selectedTags.allSatisfy { clothing.tags.contains($0)}
         }
     }
     
@@ -424,85 +412,18 @@ class ClothesGalleryController: UIViewController {
         return hover
     }
     
-    func addTypeButtons() {
-        for arrView in typeStackView.arrangedSubviews {
-            typeStackView.removeArrangedSubview(arrView)
-        }
-    
-        let allButton = UIButton()
-        let attributedTitle = NSAttributedString(string: "All", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold)])
-        allButton.setAttributedTitle(attributedTitle, for: .normal)
-        allButton.setTitleColor(.label, for: .normal)
-        allButton.layer.cornerRadius = ( view.frame.size.height / 20 ) / 2
-        allButton.backgroundColor = .accent
-        allButton.layer.shadowColor = UIColor.label.cgColor
-        allButton.layer.shadowOpacity = 0.4
-        allButton.layer.shadowRadius = 6
-        allButton.layer.shadowOffset = CGSizeMake(6, 6)
-        allButton.addTarget(self, action: #selector(typeButtonAction(_:)), for: .touchUpInside)
+    func filterClothesType(source: [Clothing]? = nil) -> [Clothing] {
+        let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
+        guard let clothingType = selectedCategory else { return tempFilteredDataSource }
         
-        typeStackView.addArrangedSubview(allButton)
-        
-        allButton.widthAnchor.constraint(greaterThanOrEqualToConstant: view.frame.size.width / 5).isActive = true
-        allButton.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
-        
-        for type in clothingTypes.allCases {
-            let typeButton = UIButton()
-            let attributedTitle = NSAttributedString(string: "\(type)", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold)])
-            typeButton.setAttributedTitle(attributedTitle, for: .normal)
-            typeButton.setTitleColor(.secondaryLabel, for: .normal)
-            typeButton.layer.cornerRadius = ( view.frame.size.height / 20 ) / 2
-            typeButton.backgroundColor = .clear
-            typeButton.layer.shadowColor = UIColor.label.cgColor
-            typeButton.layer.shadowOpacity = 0.4
-            typeButton.layer.shadowRadius = 6
-            typeButton.layer.shadowOffset = CGSizeMake(6, 6)
-            typeButton.addTarget(self, action: #selector(typeButtonAction(_:)), for: .touchUpInside)
-            typeButton.isSelected = false
-            typeButton.contentEdgeInsets = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10) // All buttons need to be configurated w. the UIButtonConfigurations due to deprecation in near future ()
-            
-            typeStackView.addArrangedSubview(typeButton)
-            
-            typeButton.widthAnchor.constraint(greaterThanOrEqualToConstant: view.frame.size.width / 5).isActive = true
-            typeButton.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
-        }
-        
-        let spacing = UIView()
-        spacing.backgroundColor = .clear
-        
-        typeStackView.addArrangedSubview(spacing)
-        spacing.widthAnchor.constraint(greaterThanOrEqualToConstant: 10).isActive = true
-        spacing.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
+        return tempFilteredDataSource.filter { $0.category == clothingType }
     }
     
-    func filterClothesType(source: [ClothingAPI]? = nil) -> [ClothingAPI] {
-        let tempFilteredDataSource: [ClothingAPI] = source != nil ? source! : dataSource
-        let topsCategories: [String] = ["TOP", "T-Shirt", "Shirt", "Polo", "Sweater", "Hoodie", "Jacket", "Coat"]
-        let bottomsCategories: [String] = ["BOTTOM", "Jeans", "Shorts", "Pants", "Skirt"]
-        let footwearCategories: [String] = ["FOOTWEAR", "Sneakers", "Boots", "Sandals", "Heels", "Loafers"]
-        let accessoriesCategories: [String] = ["ACCESSORIES", "Hat", "Scarf", "Gloves", "Belt", "Bag", "Watch", "Accessory"]
-        
-        return tempFilteredDataSource.filter { clothing in
-            switch clothingTypesSelected {
-            case .Tops:
-                return topsCategories.contains(clothing.category.rawValue)
-            case .Bottoms:
-                return bottomsCategories.contains(clothing.category.rawValue)
-            case .Footwear:
-                return footwearCategories.contains(clothing.category.rawValue)
-            case .Accessoires:
-                return accessoriesCategories.contains(clothing.category.rawValue)
-            case nil:
-                return true
-            }
-        }
-    }
-    
-    func sortAndFilterDataSource(source: [ClothingAPI]? = nil) -> [ClothingAPI] {
-        let filterForTags: [ClothingAPI] = filterClothesTags(source: source != nil ? source! : dataSource)
-        let filterForSeasons: [ClothingAPI] = filterClothesSeason(source: filterForTags)
-        let filterForType: [ClothingAPI] = filterClothesType(source: filterForSeasons)
-        let sortClothesBy: [ClothingAPI] = sortClothes(source: filterForType)
+    func sortAndFilterDataSource(source: [Clothing]? = nil) -> [Clothing] {
+        let filterForTags: [Clothing] = filterClothesTags(source: source != nil ? source! : dataSource)
+        let filterForSeasons: [Clothing] = filterClothesSeason(source: filterForTags)
+        let filterForType: [Clothing] = filterClothesType(source: filterForSeasons)
+        let sortClothesBy: [Clothing] = sortClothes(source: filterForType)
         return sortClothesBy
     }
     
@@ -514,51 +435,9 @@ class ClothesGalleryController: UIViewController {
         vc.delegate = self
         navigationController?.pushViewController(vc, animated: true)
     }
-    
-    @objc
-    func typeButtonAction(_ sender: UIButton) {
-        for arrView in typeStackView.arrangedSubviews {
-            guard let buttonView = arrView as? UIButton, buttonView != sender else { continue }
-            
-            UIView.animate(withDuration: 0.4) {
-                buttonView.backgroundColor = .clear
-                buttonView.setTitleColor(.secondaryLabel, for: .normal)
-                buttonView.frame.origin.y = 0
-            }
-        }
-        
-        guard sender.frame.origin.y == 0 else {
-            return
-        }
-        
-        UIView.animate(withDuration: 0.4) {
-            sender.setTitleColor(.label, for: .normal)
-            sender.backgroundColor = .accent
-            sender.frame.origin.y -= 5
-        }
-        
-        guard let buttonTitle = sender.titleLabel?.text else { return }
-        guard let type = clothingTypes.withLabel(buttonTitle) else { clothingTypesSelected = nil; return }
-        clothingTypesSelected = type
-    }
-    
-    @objc
-    func updateData() {
-        Task {
-            //dataSource = try JSONDecoder().decode([Clothing].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data())
-            
-            do {
-                dataSource = try await APIHandler.shared.clothingHandler.getMyClothing(limit: 100, offset: 0).clothing
-                
-                if let encoded = try? JSONEncoder().encode(dataSource) {
-                    UserDefaults.standard.setValue(encoded, forKey: "userClothes")
-                }
-            } catch {
-                ErrorHandler.handle(error, suppressed: [.tooManyRequests])
-            }
-            
-            clothingRefreshControll.endRefreshing()
-        }
+
+    @objc private func onClothingChanged() {
+        reloadDataFromCoreData()
     }
     
     // MARK: --
@@ -575,34 +454,42 @@ class ClothesGalleryController: UIViewController {
         navigationItem.hidesSearchBarWhenScrolling = false
         navigationItem.largeTitleDisplayMode = .automatic
         
-        navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), menu: generateScaleMenu())
+        navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateScaleMenu())
         
         navigationItem.rightBarButtonItems = [UIBarButtonItem(image: UIImage(systemName: "slider.horizontal.2.square", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateFilterMenu()), UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateSortMenu())]
         
-        view.addSubview(typeScrollView)
-        typeScrollView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
-        typeScrollView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
-        typeScrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0).isActive = true
-        typeScrollView.heightAnchor.constraint(equalToConstant: view.frame.size.height / 10).isActive = true
+        view.addSubview(categorySegmentControl)
+        NSLayoutConstraint.activate([
+            categorySegmentControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            categorySegmentControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            categorySegmentControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
+        ])
         
-        typeScrollView.addSubview(typeStackView)
-        typeStackView.leadingAnchor.constraint(equalTo: typeScrollView.leadingAnchor).isActive = true
-        typeStackView.trailingAnchor.constraint(equalTo: typeScrollView.trailingAnchor).isActive = true
-        typeStackView.centerYAnchor.constraint(equalTo: typeScrollView.centerYAnchor).isActive = true
-        typeStackView.heightAnchor.constraint(equalToConstant: view.frame.size.height / 20).isActive = true
-        
-        addTypeButtons()
+        categorySegmentControl.addAction(UIAction { _ in
+            switch self.categorySegmentControl.selectedSegmentIndex {
+            case 1:
+                self.selectedCategory = .JACKET
+            case 2:
+                self.selectedCategory = .TOP
+            case 3:
+                self.selectedCategory = .BOTTOM
+            case 4:
+                self.selectedCategory = .FOOTWEAR
+            default:
+                self.selectedCategory = nil
+            }
+        }, for: .valueChanged)
         
         view.addSubview(clothingCollectionView)
-        clothingCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor).isActive = true
-        clothingCollectionView.bottomAnchor.constraint(equalTo: typeStackView.topAnchor, constant: -5).isActive = true
+        clothingCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        clothingCollectionView.topAnchor.constraint(equalTo: categorySegmentControl.bottomAnchor, constant: 20).isActive = true
         clothingCollectionView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
         clothingCollectionView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -5).isActive = true
         clothingCollectionView.refreshControl = clothingRefreshControll
         
         view.addSubview(uploadButton)
         uploadButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        uploadButton.bottomAnchor.constraint(equalTo: typeScrollView.topAnchor, constant: -10).isActive = true
+        uploadButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10).isActive = true
         
         clothingCollectionView.addSubview(uploadNowButton)
         NSLayoutConstraint.activate([
@@ -612,7 +499,7 @@ class ClothesGalleryController: UIViewController {
     }
 }
 
-extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UploadControllerDelegate, ClothingDetailsControllerDelegate {
+extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UploadControllerDelegate {
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
@@ -682,27 +569,7 @@ extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDe
         showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item])
     }
     
-    func didUploadClothing(_ clothing: ClothingAPI) {
-        dataSource.insert(clothing, at: 0)
-    }
-    
-    func didEditClothing(_ clothing: ClothingAPI) {
-        guard var clothingArray = try? JSONDecoder().decode([ClothingAPI].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data()) else { return updateData() }
-        
-        let unsafeIndex = clothingArray.firstIndex { $0.clothing_id == clothing.clothing_id }
-        guard let index = unsafeIndex else { return updateData() }
-        clothingArray[index] = clothing
-        
-        dataSource = clothingArray
-    }
-    
-    func didDeleteClothing(_ clothing: ClothingAPI) {
-        guard var clothingArray = try? JSONDecoder().decode([ClothingAPI].self, from: UserDefaults.standard.data(forKey: "userClothes") ?? Data()) else { return updateData() }
-        
-        let unsafeIndex = clothingArray.firstIndex { $0.clothing_id == clothing.clothing_id }
-        guard let index = unsafeIndex else { return updateData() }
-        clothingArray.remove(at: index)
-        
-        dataSource = clothingArray
+    func didUploadClothing(_ clothing: Clothing) {
+        reloadDataFromCoreData()
     }
 }

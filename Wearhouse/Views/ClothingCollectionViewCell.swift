@@ -1,5 +1,5 @@
 //
-//  ClothesGallery_ViewCell.swift
+//  ClothingCollectionViewCell.swift
 //  Clothing Booth
 //
 //  Created by David Riegel on 18.11.24.
@@ -9,13 +9,19 @@ import UIKit
 import SDWebImage
 import SkeletonView
 
-public class ClothesGallery_ViewCell: UICollectionViewCell {
-    public static let identifier: String = "clothing"
+public class ClothingCollectionViewCell: UICollectionViewCell {
+    public static let identifier: String = "ClothingCollectionViewCell"
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
         
         contentView.isSkeletonable = true
+    }
+    
+    public override var isSelected: Bool {
+        didSet {
+            selectedOverlay.isHidden = !isSelected
+        }
     }
     
     required init?(coder: NSCoder) {
@@ -27,6 +33,7 @@ public class ClothesGallery_ViewCell: UICollectionViewCell {
         
         layer.cornerRadius = CornerStyle.large.radius(for: contentView)
         imageViewWrapper.layer.cornerRadius = CornerStyle.large.radius(for: contentView) - 5
+        selectedOverlay.layer.cornerRadius = CornerStyle.large.radius(for: contentView) - 5
     }
     
     public override func prepareForReuse() {
@@ -65,7 +72,27 @@ public class ClothesGallery_ViewCell: UICollectionViewCell {
         return lb
     }()
     
-    public func configureViewComponents(with image_id: String,and name: String) {
+    private lazy var selectedOverlay: UIView = {
+        let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.backgroundColor = UIColor.black.withAlphaComponent(0.20)
+        v.isHidden = true
+
+        let check = UIImageView(image: UIImage(systemName: "checkmark.circle.fill", withConfiguration: UIImage.SymbolConfiguration(paletteColors: [.label, .accent])))
+        check.translatesAutoresizingMaskIntoConstraints = false
+        v.addSubview(check)
+
+        NSLayoutConstraint.activate([
+            check.centerXAnchor.constraint(equalTo: v.centerXAnchor),
+            check.centerYAnchor.constraint(equalTo: v.centerYAnchor),
+            check.widthAnchor.constraint(equalToConstant: 35),
+            check.heightAnchor.constraint(equalToConstant: 35)
+        ])
+
+        return v
+    }()
+    
+    public func configureViewComponents(with image_id: String,and name: String, isSelectable: Bool = false) {
         backgroundColor = .accent
         
         contentView.addSubview(imageViewWrapper)
@@ -89,6 +116,17 @@ public class ClothesGallery_ViewCell: UICollectionViewCell {
             nameLabel.topAnchor.constraint(equalTo: imageViewWrapper.bottomAnchor),
             nameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
+        
+        if isSelectable {
+            contentView.addSubview(selectedOverlay)
+            NSLayoutConstraint.activate([
+                selectedOverlay.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                selectedOverlay.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                selectedOverlay.topAnchor.constraint(equalTo: contentView.topAnchor),
+                selectedOverlay.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            ])
+        }
+        
         nameLabel.text = name
     }
 }

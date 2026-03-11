@@ -14,20 +14,20 @@ class OutfitCreation_Container: UIView {
             selectedClothing = dataSource[selectedIndex ?? 0]
         }
     }
-    private(set) var selectedClothing: ClothingAPI?
+    private(set) var selectedClothing: Clothing?
     private let multiplier: Int = 50
     
-    private var dataSource: [ClothingAPI] = [] {
+    private var dataSource: [Clothing] = [] {
         didSet {
             collectionView.reloadData()
         }
     }
     
-    public func getDataSource() -> [ClothingAPI] {
+    public func getDataSource() -> [Clothing] {
         return dataSource
     }
     
-    public func setDataSource(_ data: [ClothingAPI]) {
+    public func setDataSource(_ data: [Clothing]) {
         dataSource = data
     }
     
@@ -215,7 +215,7 @@ extension OutfitCreation_Container: UICollectionViewDataSource, UICollectionView
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OutfitCreationImageCell.identifier, for: indexPath) as! OutfitCreationImageCell
         
         let imageIndex = indexPath.item % dataSource.count
-        cell.configure(with: dataSource[imageIndex].image_id)
+        cell.configure(with: dataSource[imageIndex].imageID)
         
         return cell
     }

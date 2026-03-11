@@ -12,7 +12,7 @@ import SkeletonView
 final class ClothingDetailsController: UIViewController {
     
     weak var delegate: ClothingDetailsControllerDelegate?
-    let clothing: ClothingAPI
+    var clothing: Clothing
     var editable: Bool = true
     
     let clothingTypes = [
@@ -45,7 +45,7 @@ final class ClothingDetailsController: UIViewController {
         "Accessory"
     ]
     
-    init(_ clothing: ClothingAPI, editable: Bool = true) {
+    init(_ clothing: Clothing, editable: Bool = true) {
         self.clothing = clothing
         self.editable = editable
         
@@ -79,13 +79,13 @@ final class ClothingDetailsController: UIViewController {
     
     // MARK: --
     
-    var selectedSeasonsArray: Array = [String]() {
+    var selectedSeasonsArray: Array<Seasons> = [Seasons]() {
         didSet {
             var selected = [String]()
-            if selectedSeasonsArray.contains("Spring") { selected.append("Spring")}
-            if selectedSeasonsArray.contains("Summer") { selected.append("Summer")}
-            if selectedSeasonsArray.contains("Autumn") { selected.append("Autumn")}
-            if selectedSeasonsArray.contains("Winter") { selected.append("Winter")}
+            if selectedSeasonsArray.contains(.SPRING) { selected.append("common.season.spring")}
+            if selectedSeasonsArray.contains(.SUMMER) { selected.append("common.season.summer")}
+            if selectedSeasonsArray.contains(.AUTUMN) { selected.append("common.season.autumn")}
+            if selectedSeasonsArray.contains(.WINTER) { selected.append("common.season.winter")}
             
             
             clothingSeasonsLabel.text = selected.joined(separator: ", ")
@@ -98,13 +98,13 @@ final class ClothingDetailsController: UIViewController {
         }
     }
     
-    var selectedTagsArray: Array = [String]() {
+    var selectedTagsArray: Array = [Tags]() {
         didSet {
             var selected = [String]()
-            if selectedTagsArray.contains("Casual") { selected.append("Casual")}
-            if selectedTagsArray.contains("Formal") { selected.append("Formal")}
-            if selectedTagsArray.contains("Sports") { selected.append("Sports")}
-            if selectedTagsArray.contains("Vintage") { selected.append("Vintage")}
+            if selectedTagsArray.contains(.CASUAL) { selected.append("common.tag.casual")}
+            if selectedTagsArray.contains(.FORMAL) { selected.append("common.tag.formal")}
+            if selectedTagsArray.contains(.SPORTS) { selected.append("common.tag.sports")}
+            if selectedTagsArray.contains(.VINTAGE) { selected.append("common.tag.vintage")}
             
             
             clothingTagsLabel.text = selected.joined(separator: ", ")
@@ -189,7 +189,7 @@ final class ClothingDetailsController: UIViewController {
         label.textColor = .label
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 13, weight: .heavy)
-        label.text = clothing.category.rawValue
+        label.text = clothing.category.localizedName
         return label
     }()
     
@@ -211,7 +211,7 @@ final class ClothingDetailsController: UIViewController {
     lazy var clothingColorButton: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = UIColor(hex: clothing.color)
+        button.backgroundColor = clothing.color
         button.layer.borderWidth = 2
         button.layer.borderColor = UIColor.secondaryLabel.cgColor
         button.layer.cornerRadius = (self.view.frame.height / 20) / 4.16
@@ -237,7 +237,7 @@ final class ClothingDetailsController: UIViewController {
         label.textColor = .label
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 13, weight: .heavy)
-        label.text = clothing.seasons.joined(separator: ", ")
+        label.text = ""
         return label
     }()
     
@@ -257,7 +257,6 @@ final class ClothingDetailsController: UIViewController {
         label.textColor = .label
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 13, weight: .heavy)
-        label.text = clothing.tags.joined(separator: ", ")
         return label
     }()
     
@@ -317,7 +316,7 @@ final class ClothingDetailsController: UIViewController {
         view.addSubview(clothingImageView)
         clothingImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         clothingImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20).isActive = true
-        clothingImageView.sd_setImage(with: URL(string: clothing.image_id, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
+        clothingImageView.sd_setImage(with: URL(string: clothing.imageID, relativeTo: URL(string: "https://api.clothing-booth.com/uploads/clothing_images/")))
         
         let imageTap = UITapGestureRecognizer(target: self, action: #selector(uploadImage))
         clothingImageView.addGestureRecognizer(imageTap)

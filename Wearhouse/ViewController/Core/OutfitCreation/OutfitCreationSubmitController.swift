@@ -8,19 +8,19 @@
 import UIKit
 
 class OutfitCreationSubmitController: UIViewController, ClothingImagePreviewDelegate {
-    func didTapOnImage(_ clothing: ClothingAPI) {
+    func didTapOnImage(_ clothing: Clothing) {
         present(ClothingDetailsController(clothing, editable: false), animated: true)
     }
     
-    private var outfitClothes: [ClothingAPI] = []
+    private var outfitClothes: [Clothing] = []
     
     var selectedSeasonsArray: [Seasons] = [] {
         didSet {
             var selected = [String]()
-            if selectedSeasonsArray.contains(.SPRING) { selected.append("Spring")}
-            if selectedSeasonsArray.contains(.SUMMER) { selected.append("Summer")}
-            if selectedSeasonsArray.contains(.AUTUMN) { selected.append("Autumn")}
-            if selectedSeasonsArray.contains(.WINTER) { selected.append("Winter")}
+            if selectedSeasonsArray.contains(.SPRING) { selected.append(String(localized: "common.season.spring"))}
+            if selectedSeasonsArray.contains(.SUMMER) { selected.append(String(localized: "common.season.summer"))}
+            if selectedSeasonsArray.contains(.AUTUMN) { selected.append(String(localized: "common.season.autumn"))}
+            if selectedSeasonsArray.contains(.WINTER) { selected.append(String(localized: "common.season.winter"))}
             
             
             seasonsSelection.text = selected.joined(separator: ", ")
@@ -33,7 +33,7 @@ class OutfitCreationSubmitController: UIViewController, ClothingImagePreviewDele
         }
     }
     
-    init(outfitClothes clothes: [ClothingAPI]) {
+    init(outfitClothes clothes: [Clothing]) {
         super.init(nibName: nil, bundle: nil)
         
         self.outfitClothes = clothes
@@ -165,11 +165,11 @@ class OutfitCreationSubmitController: UIViewController, ClothingImagePreviewDele
             var clothing_ids: [String] = []
             
             for clothing in outfitClothes {
-                clothing_ids.append(clothing.clothing_id)
+                clothing_ids.append(clothing.id)
             }
             
             do {
-                let _ = try await APIHandler.shared.outfitHandler.createNewOutfit(name: "nameTextField.text2", is_public: true, clothing_ids: clothing_ids, description: nil, tags: nil, seasons: nil)
+                //let _ = try await APIHandler.shared.outfitHandler.createNewOutfit(name: "nameTextField.text2", is_public: true, clothing_ids: clothing_ids, description: nil, tags: nil, seasons: nil)
                 
                 print("Successfully created outfit.")
             } catch {
@@ -247,35 +247,11 @@ class OutfitCreationSubmitController: UIViewController, ClothingImagePreviewDele
 }
 
 extension OutfitCreationSubmitController: SeasonsPickerViewDelegate {
-    func springSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .SPRING) {
-            selectedSeasonsArray.remove(at: index)
+    func seasonSelected(_ season: Seasons) {
+        if let idx = selectedSeasonsArray.firstIndex(of: season) {
+            selectedSeasonsArray.remove(at: idx)
         } else {
-            selectedSeasonsArray.append(.SPRING)
-        }
-    }
-    
-    func summerSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .SUMMER) {
-            selectedSeasonsArray.remove(at: index)
-        } else {
-            selectedSeasonsArray.append(.SUMMER)
-        }
-    }
-    
-    func autumnSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .AUTUMN) {
-            selectedSeasonsArray.remove(at: index)
-        } else {
-            selectedSeasonsArray.append(.AUTUMN)
-        }
-    }
-    
-    func winterSeasonSelected() {
-        if let index = selectedSeasonsArray.firstIndex(of: .WINTER) {
-            selectedSeasonsArray.remove(at: index)
-        } else {
-            selectedSeasonsArray.append(.WINTER)
+            selectedSeasonsArray.append(season)
         }
     }
     

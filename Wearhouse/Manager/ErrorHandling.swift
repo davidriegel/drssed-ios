@@ -10,20 +10,46 @@ import UIKit
 public enum ErrorHandler {
     // MARK: -- Handle error
     
-    public static func handle(_ error: Error, suppressed: [APIError] = [], _ file: String = #file, _ function: String = #function, _ line: Int = #line) {
+    public static func handle(_ error: Error, _ file: String = #file, _ function: String = #function, _ line: Int = #line) {
         logError(error, file, function, line)
         
-        if let apiError = error as? APIError {
-            guard !suppressed.contains(apiError) else { return }
-            
-            return handleAPIError(apiError)
+        let appError = mapErrorToAppError(error)
+        switch appError {
+        case .api(let apiError):
+            handleAPIError(apiError)
+        case .coreData(let coreDataError):
+            handleCoreDataError(coreDataError)
+        case .system(let error):
+            showAlert(error.localizedDescription)
         }
         
         if let customError = error as? CustomError {
             return handleCustomError(customError)
         }
-        
-        showAlert("An unknown error occurred.")
+    }
+    
+    private static func mapErrorToAppError(_ error: Error) -> AppError {
+        switch error {
+            case let error as APIError:
+                return .api(error)
+            case let error as CoreDataError:
+                return .coreData(error)
+        default:
+            return .system(error)
+        }
+    }
+    
+    private static func handleCoreDataError(_ error: CoreDataError) {
+        switch error {
+        case .saveFailed(let reason):
+            print("CoreData save failed: \(reason)")
+        case .fetchFailed(let reason):
+            print("CoreData fetch failed: \(reason)")
+        case .deleteFailed(let reason):
+            print("CoreData delete failed: \(reason)")
+        @unknown default:
+            break
+        }
     }
     
     private static func handleAPIError(_ error: APIError) {
@@ -115,9 +141,9 @@ public enum ErrorHandler {
     
     private static func logError(_ error: Error, _ file: String = #file, _ function: String = #function, _ line: Int = #line) {
         #if DEBUG
-        print(error)
         let fileName = (file as NSString).lastPathComponent
         print("Error: \(error.localizedDescription)\nFile: \(fileName) \nFunction: \(function) \nLine: \(line)")
+        dump(error)
         #endif
     }
 }
