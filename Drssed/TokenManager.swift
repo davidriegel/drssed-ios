@@ -1,6 +1,6 @@
 //
 //  TokenManager.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 24.09.25.
 //
@@ -10,7 +10,7 @@ import Foundation
 actor TokenManager {
     static let shared = TokenManager()
     private let account = "tokens"
-    private let service = "com.wearhouse.auth"
+    private let service = "com.Drssed.auth"
     private var cachedTokens: TokenKeychainModel?
     
     func currentTokens() -> TokenKeychainModel? {

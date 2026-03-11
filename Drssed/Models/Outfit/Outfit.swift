@@ -1,6 +1,6 @@
 //
 //  Outfit.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 10.08.25.
 //

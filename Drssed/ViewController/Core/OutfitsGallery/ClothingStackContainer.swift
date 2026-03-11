@@ -1,6 +1,6 @@
 //
 //  ClothingStackContainer.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 24.11.25.
 //

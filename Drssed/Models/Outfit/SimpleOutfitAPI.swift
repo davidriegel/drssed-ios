@@ -1,6 +1,6 @@
 //
 //  SimpleOutfitAPI.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 09.03.26.
 //

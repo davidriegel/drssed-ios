@@ -1,6 +1,6 @@
 //
 //  InfiniteCollectionView.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 17.09.25.
 //

@@ -1,6 +1,6 @@
 //
 //  OutfitsGalleryViewController.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 18.11.24.
 //

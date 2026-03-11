@@ -1,6 +1,6 @@
 //
 //  ClothingRepository.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 16.09.25.
 //

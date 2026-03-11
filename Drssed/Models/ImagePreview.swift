@@ -1,6 +1,6 @@
 //
 //  ImagePreview.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 12.08.25.
 //

@@ -1,6 +1,6 @@
 //
 //  SyncronizationResponse.swift
-//  Wearhouse
+//  Drssed
 //
 //  Created by David Riegel on 11.03.26.
 //
