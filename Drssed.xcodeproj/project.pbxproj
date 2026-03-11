@@ -15,6 +15,7 @@
 		63E874822C680C7D00A907FD /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = 63E874812C680C7D00A907FD /* SDWebImage */; };
 		C91885C32E843B9000D9F8DE /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91885C22E843B8700D9F8DE /* KeychainHelper.swift */; };
 		C91885C52E84426400D9F8DE /* TokenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C91885C42E84426400D9F8DE /* TokenManager.swift */; };
+		C918BC552F61E3F100663AF4 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = C918BC542F61E3EB00663AF4 /* .gitignore */; };
 		C95C4B302E7727A900844DC8 /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B2F2E7727A900844DC8 /* CropViewController */; };
 		C95C4B322E7727A900844DC8 /* TOCropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B312E7727A900844DC8 /* TOCropViewController */; };
 		C9D40AFD2E79BC360087611B /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D40AFC2E79BC2F0087611B /* PersistenceController.swift */; };
@@ -49,6 +50,7 @@
 		637D860E2BE94CCC0010BDBF /* OutfitterUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitterUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		C91885C22E843B8700D9F8DE /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		C91885C42E84426400D9F8DE /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenManager.swift; sourceTree = "<group>"; };
+		C918BC542F61E3EB00663AF4 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		C9D40AFC2E79BC2F0087611B /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		C9D40B032E79C2FA0087611B /* SyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
 		C9DE0FC02E61D78A00DED96E /* TODO.MD */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.MD; sourceTree = "<group>"; };
@@ -117,6 +119,7 @@
 		637D85EA2BE94CC90010BDBF /* Drssed */ = {
 			isa = PBXGroup;
 			children = (
+				C918BC542F61E3EB00663AF4 /* .gitignore */,
 				C92749032EAE573100BC3BFC /* LocalDataSources */,
 				C9895C702EABE3AD0019F070 /* Repositories */,
 				C91885C22E843B8700D9F8DE /* KeychainHelper.swift */,
@@ -278,6 +281,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C918BC552F61E3F100663AF4 /* .gitignore in Resources */,
 				C9DE0FC12E61D78A00DED96E /* TODO.MD in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
