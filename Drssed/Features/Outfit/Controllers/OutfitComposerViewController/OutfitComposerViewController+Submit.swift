@@ -187,6 +187,14 @@ class OutfitComposerViewController_Submit: UIViewController {
         navigationController?.popViewController(animated: true)
     }
     
+    func returnToLookbook() {
+        tabBarController?.tabBar.isHidden = false
+        
+        guard let lookbookVC = navigationController?.viewControllers.compactMap({ $0 as? OutfitsGalleryViewController }).first else { return }
+        
+        navigationController?.popToViewController(lookbookVC, animated: true)
+    }
+    
     @objc func showSeasonsPickerView() {
         seasonsPickerView.showSeasonsPickerView()
         showInteractionBlocker()
@@ -289,6 +297,7 @@ class OutfitComposerViewController_Submit: UIViewController {
             finishButton.heightAnchor.constraint(equalToConstant: 45),
             finishButton.widthAnchor.constraint(equalToConstant: self.view.frame.width / 2)
         ])
+        
         finishButton.addAction(UIAction(handler: { _ in
             Task {
                 let outfit = Outfit(
@@ -300,7 +309,14 @@ class OutfitComposerViewController_Submit: UIViewController {
                     scene: self.outfitScene
                 )
                 
-                await self.outfitRepo.addOrUpdateOutfit(from: outfit)//, previewImageData: self.initialPreviewImage.compressedData(maxSizeMB: 1))
+                await self.outfitRepo.addOrUpdateOutfit(from: outfit)
+                
+                let alert = UIAlertController(title: nil, message: String(localized: "outfitcomposer.alert.success"), preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
+                    self.returnToLookbook()
+                }))
+                        
+                return self.present(alert, animated: true)
             }
         }), for: .primaryActionTriggered)
         
@@ -366,4 +382,3 @@ extension OutfitComposerViewController_Submit: TagsPickerViewDelegate {
         hideTagsPickerView()
     }
 }
-

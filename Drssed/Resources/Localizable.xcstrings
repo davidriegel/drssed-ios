@@ -1004,6 +1004,22 @@
         }
       }
     },
+    "outfitcomposer.alert.success" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outfit gespeichert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Successfully created outfit and saved to wardrobe"
+          }
+        }
+      }
+    },
     "outfitcomposer.clear" : {
       "localizations" : {
         "de" : {
