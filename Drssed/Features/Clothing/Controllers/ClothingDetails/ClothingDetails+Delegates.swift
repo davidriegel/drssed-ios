@@ -35,9 +35,9 @@ extension ClothingDetailsController: UIImagePickerControllerDelegate, UINavigati
             clothingImageView.image = nil
             clothingImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             do {
-                let (clothingURL, clothingColor, _) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
+                let (imageID, clothingURL, clothingColor, _) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
                 
-                updatedImageID = clothingURL.deletingPathExtension().lastPathComponent
+                updatedImageID = imageID
                 colorPickerView.selectedColor = clothingColor
                 
 //                if let index = clothingCategoriesDataSource.firstIndex(of: clothingCategory.localizedName) {
