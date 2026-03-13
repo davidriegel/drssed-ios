@@ -49,7 +49,7 @@ class UploadController: UIViewController {
         }
     }
     
-    var imageURL: URL?
+    var imageID: String = ""
     
     var selectedTagsArray: [Tags] = [] {
         didSet {
@@ -352,12 +352,7 @@ class UploadController: UIViewController {
         errorAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
         
         
-        var imageID: String = ""
-
-        
-        if let imageURL = imageURL {
-            imageID = String(imageURL.lastPathComponent.split(separator: ".").first ?? "")
-        } else {
+        if imageID.isEmpty {
             errorAlert.message = String(localized: "clothingupload.error.missing.image")
         }
         
@@ -719,9 +714,9 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
             cropViewController.dismiss(animated: true)
             
             do {
-                let (clothingURL, clothingColor, clothingCategory) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
+                let (imageID, clothingURL, clothingColor, clothingCategory) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
                 
-                imageURL = clothingURL
+                self.imageID = imageID
                 colorPickerView.selectedColor = clothingColor
                 clothingColorPickerButton.backgroundColor = clothingColor
                 
@@ -733,13 +728,13 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
                 uploadImageView.sd_setImage(with: clothingURL)
                 uploadImageView.hideSkeleton()
             } catch APIError.payloadTooLarge {
-                self.imageURL = nil
+                self.imageID = ""
                 self.uploadImageView.image = UIImage(named: "upload_placeholder")
                 self.uploadImageView.hideSkeleton()
                 
                 ErrorHandler.handle(APIError.payloadTooLargeWithMessage(String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
             } catch APIError.unprocessableContent {
-                self.imageURL = nil
+                self.imageID = ""
                 self.uploadImageView.image = UIImage(named: "upload_placeholder")
                 self.uploadImageView.hideSkeleton()
                 

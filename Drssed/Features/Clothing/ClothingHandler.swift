@@ -29,14 +29,14 @@ final class ClothingHandler {
     
     // MARK: -- POST REMOVE CLOTHING BACKGROUND
     
-    public func removeClothingBackground(from image: UIImage) async throws -> (URL, UIColor, ClothingCategories) {
+    public func removeClothingBackground(from image: UIImage) async throws -> (String, URL, UIColor, ClothingCategories) {
         let request = try await APIClient.shared.createRequest(withImage: image, endpoint: "/images/preview", method: .POST)
         
         let imageResponse: ImagePreview = try await APIClient.shared.executeRequestAndDecode(request: request)
         
         guard let url = URL(string: imageResponse.image_url, relativeTo: APIClient.baseURL) else { throw URLError(.badURL) }
         
-        return (url, UIColor(hex: imageResponse.image_color) ?? UIColor.white, imageResponse.image_category)
+        return (imageResponse.image_id, url, UIColor(hex: imageResponse.image_color) ?? UIColor.white, imageResponse.image_category)
     }
     
     // MARK: -- POST UPLOAD CLOATHING
