@@ -801,11 +801,9 @@ extension DetailsController: PHPickerViewControllerDelegate, CropViewControllerD
 
         Task {
             do {
-                let (clothingURL, clothingColor, _) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
+                let (imageID, clothingURL, clothingColor, _) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
                 
-                guard let imageID = clothingURL.lastPathComponent.split(separator: ".").first else { print("image ID not found"); return }
-                
-                item.imageID = String(imageID)
+                item.imageID = imageID
                 item.color = clothingColor
                 
                 DispatchQueue.main.async {
