@@ -12,6 +12,19 @@ import SkeletonView
 public class ClothingCollectionViewCell: UICollectionViewCell {
     public static let identifier: String = "ClothingCollectionViewCell"
     
+    public override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(
+                withDuration: 0.5,
+                delay: 0,
+                usingSpringWithDamping: 0.7,
+                initialSpringVelocity: 0.5
+            ) {
+                self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.96, y: 0.96) : .identity
+            }
+        }
+    }
+    
     public override init(frame: CGRect) {
         super.init(frame: frame)
         

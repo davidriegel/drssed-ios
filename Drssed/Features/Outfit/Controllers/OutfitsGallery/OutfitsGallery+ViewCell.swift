@@ -13,7 +13,20 @@ protocol OutfitsGallery_ViewCellDelegate: AnyObject {
 
 // MARK: - Custom Collection View Cell
 class OutfitsGallery_ViewCell: UICollectionViewCell {
-static let identifier = "OutfitsGallery_ViewCell"
+    static let identifier = "OutfitsGallery_ViewCell"
+    
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(
+                withDuration: 0.5,
+                delay: 0,
+                usingSpringWithDamping: 0.7,
+                initialSpringVelocity: 0.5
+            ) {
+                self.transform = self.isHighlighted ? CGAffineTransform(scaleX: 0.96, y: 0.96) : .identity
+            }
+        }
+    }
     
     weak var delegate: OutfitsGallery_ViewCellDelegate?
 
