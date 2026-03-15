@@ -12,7 +12,7 @@ public enum Tags: String, Sendable {
     case SPORTS
     
     var localizedName: String {
-        let key = String.LocalizationValue("tags_" + self.rawValue.lowercased())
+        let key = String.LocalizationValue("common.tag." + self.rawValue.lowercased())
         return String(localized: key)
     }
 }

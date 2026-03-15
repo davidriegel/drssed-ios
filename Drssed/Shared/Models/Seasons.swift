@@ -12,7 +12,7 @@ public enum Seasons: String, Sendable {
     case WINTER
     
     var localizedName: String {
-        let key = String.LocalizationValue("seasons_" + self.rawValue.lowercased())
+        let key = String.LocalizationValue("common.season." + self.rawValue.lowercased())
         return String(localized: key)
     }
 }
