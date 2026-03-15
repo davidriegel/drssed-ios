@@ -39,18 +39,6 @@ static let identifier = "OutfitsGallery_ViewCell"
         v.isUserInteractionEnabled = false
         return v
     }()
-    
-    private let gradientLayer: CAGradientLayer = {
-        let layer = CAGradientLayer()
-        layer.colors = [
-            UIColor.clear.cgColor,
-            UIColor.black.withAlphaComponent(0.75).cgColor
-        ]
-        layer.locations = [0.0, 1.0]
-        layer.startPoint = CGPoint(x: 0.5, y: 0.0)
-        layer.endPoint = CGPoint(x: 0.5, y: 1.0)
-        return layer
-    }()
 
     private let titleLabel: UILabel = {
         let label = UILabel()
@@ -75,15 +63,14 @@ required init?(coder: NSCoder) {
         super.layoutSubviews()
 
         cardView.layer.cornerRadius = CornerStyle.medium.radius(for: contentView)
+        cardView.layer.borderWidth = 0.5
+        cardView.layer.borderColor = UIColor.separator.cgColor
 
         contentView.layer.shadowColor = UIColor.black.cgColor
         contentView.layer.shadowOpacity = 0.18
         contentView.layer.shadowRadius = 10
         contentView.layer.shadowOffset = CGSize(width: 0, height: 6)
         contentView.layer.masksToBounds = false
-        contentView.layer.shadowPath = UIBezierPath(roundedRect: cardView.frame, cornerRadius: 18).cgPath
-        
-        gradientLayer.frame = gradientOverlayView.bounds
     }
 
     private func setupUI() {
@@ -93,7 +80,7 @@ required init?(coder: NSCoder) {
         contentView.addSubview(cardView)
         cardView.addSubview(imageView)
         cardView.addSubview(gradientOverlayView)
-        gradientOverlayView.addSubview(titleLabel)
+        cardView.addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
             // CardView fills the contentView with a small inset
@@ -108,20 +95,11 @@ required init?(coder: NSCoder) {
             imageView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
             imageView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
 
-            // Gradient overlay fills the card vertically so it scales with cell height
-            gradientOverlayView.topAnchor.constraint(equalTo: cardView.topAnchor),
-            gradientOverlayView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            gradientOverlayView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
-            gradientOverlayView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
-
-            // Title label inside the gradient overlay
-            titleLabel.leadingAnchor.constraint(equalTo: gradientOverlayView.leadingAnchor, constant: 10),
-            titleLabel.trailingAnchor.constraint(equalTo: gradientOverlayView.trailingAnchor, constant: -10),
-            titleLabel.bottomAnchor.constraint(equalTo: gradientOverlayView.bottomAnchor, constant: -6)
+            // Title label on top of ImageView
+            titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 10),
+            titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -10),
+            titleLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -6)
         ])
-
-        // Add a gradient layer to the overlay view
-        gradientOverlayView.layer.insertSublayer(gradientLayer, at: 0)
     }
 
     func configure(with outfit: Outfit, title: String? = nil) {
@@ -144,6 +122,5 @@ required init?(coder: NSCoder) {
         super.apply(layoutAttributes)
         setNeedsLayout()
         layoutIfNeeded()
-        gradientLayer.frame = gradientOverlayView.bounds
     }
 }
