@@ -310,24 +310,24 @@ class ClothesGalleryController: UIViewController {
     
     func generateFilterMenu() -> UIMenu {
         let tagsMenuItems: [UIAction] = [
-            UIAction(title: "🌱 Spring", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.SPRING) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SPRING) }),
-            UIAction(title: "☀️ Summer", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.SUMMER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SUMMER) }),
-            UIAction(title: "🍂 Autumn", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.AUTUMN) ? .on : .mixed, handler: { (_) in self.filterBySeason(.AUTUMN) }),
-            UIAction(title: "❄️ Winter", attributes: .keepsMenuPresented, state: selectedSeasons.contains(.WINTER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.WINTER) })
+            UIAction(title: "🌱 " + Seasons.SPRING.localizedName, attributes: .keepsMenuPresented, state: selectedSeasons.contains(.SPRING) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SPRING) }),
+            UIAction(title: "☀️ " + Seasons.SUMMER.localizedName, attributes: .keepsMenuPresented, state: selectedSeasons.contains(.SUMMER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SUMMER) }),
+            UIAction(title: "🍂 " + Seasons.AUTUMN.localizedName, attributes: .keepsMenuPresented, state: selectedSeasons.contains(.AUTUMN) ? .on : .mixed, handler: { (_) in self.filterBySeason(.AUTUMN) }),
+            UIAction(title: "❄️ " + Seasons.WINTER.localizedName, attributes: .keepsMenuPresented, state: selectedSeasons.contains(.WINTER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.WINTER) })
         ]
         
         let seasonsMenuItems: [UIAction] = [
-            UIAction(title: "🧍🏻 Casual", attributes: .keepsMenuPresented, state: selectedTags.contains(.CASUAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.CASUAL) }),
-            UIAction(title: "🕴🏻 Formal", attributes: .keepsMenuPresented, state: selectedTags.contains(.FORMAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.FORMAL) }),
-            UIAction(title: "⛹🏻 Sports", attributes: .keepsMenuPresented, state: selectedTags.contains(.SPORTS) ? .on : .mixed, handler: { (_) in self.filterByTags(.SPORTS) }),
-            UIAction(title: "🧳 Vintage", attributes: .keepsMenuPresented, state: selectedTags.contains(.VINTAGE) ? .on : .mixed, handler: { (_) in self.filterByTags(.VINTAGE) })
+            UIAction(title: "🧍🏻 " + Tags.CASUAL.localizedName, attributes: .keepsMenuPresented, state: selectedTags.contains(.CASUAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.CASUAL) }),
+            UIAction(title: "🕴🏻 " + Tags.FORMAL.localizedName, attributes: .keepsMenuPresented, state: selectedTags.contains(.FORMAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.FORMAL) }),
+            UIAction(title: "⛹🏻 " + Tags.SPORTS.localizedName, attributes: .keepsMenuPresented, state: selectedTags.contains(.SPORTS) ? .on : .mixed, handler: { (_) in self.filterByTags(.SPORTS) }),
+            UIAction(title: "🧳 " + Tags.VINTAGE.localizedName, attributes: .keepsMenuPresented, state: selectedTags.contains(.VINTAGE) ? .on : .mixed, handler: { (_) in self.filterByTags(.VINTAGE) })
         ]
         
         var totalItems: [UIMenuElement] = []
         totalItems.append(UIMenu(title: "", options: .displayInline, children: tagsMenuItems))
         totalItems += seasonsMenuItems
         
-        let menu = UIMenu(title: "Filter by", options: [], children: totalItems)
+        let menu = UIMenu(title: String(localized: "common.filter.menu"), options: [], children: totalItems)
         return menu
     }
     
