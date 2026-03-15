@@ -41,6 +41,15 @@ static let identifier = "OutfitsGallery_ViewCell"
         label.numberOfLines = 2
         return label
     }()
+    
+    private let itemCountLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .boldSystemFont(ofSize: 11)
+        label.textColor = .accent
+        label.textAlignment = .right
+        return label
+    }()
 
 override init(frame: CGRect) {
     super.init(frame: frame)
@@ -73,6 +82,7 @@ required init?(coder: NSCoder) {
         contentView.addSubview(cardView)
         cardView.addSubview(imageView)
         cardView.addSubview(titleLabel)
+        cardView.addSubview(itemCountLabel)
 
         NSLayoutConstraint.activate([
             // CardView fills the contentView with a small inset
@@ -90,12 +100,18 @@ required init?(coder: NSCoder) {
             // Title label on top of ImageView
             titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 10),
             titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -10),
-            titleLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -6)
+            titleLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -6),
+            
+            // Item count label on top of ImageView
+            itemCountLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 10),
+            itemCountLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -10),
+            itemCountLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 6)
         ])
     }
 
     func configure(with outfit: Outfit, title: String? = nil) {
         titleLabel.text = title
+        itemCountLabel.text = "● " + String(outfit.scene.count)
 
         imageView.sd_setImage(with: URL(string: outfit.imageID, relativeTo: APIClient.outfitImagesURL)) { [weak self] image, _, _, _ in
             guard let self = self, let image = image else { return }
@@ -107,6 +123,7 @@ required init?(coder: NSCoder) {
         super.prepareForReuse()
         imageView.image = nil
         titleLabel.text = nil
+        itemCountLabel.text = nil
     }
 
 
