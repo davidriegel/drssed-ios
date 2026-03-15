@@ -223,12 +223,12 @@ class ClothesGalleryController: UIViewController {
     
     func generateSortMenu() -> UIMenu {
         let menuItems: [UIAction] = [
-            UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Name ? .on : .mixed, handler: { (_) in self.sortBy(.Name) }),
-            UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Date ? .on : .mixed, handler: { (_) in self.sortBy(.Date) }),
-            UIAction(title: "Recently edited", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Edit ? .on : .mixed, handler: { (_) in self.sortBy(.Edit) })
+            UIAction(title: String(localized: "common.sort.name"), image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Name ? .on : .mixed, handler: { (_) in self.sortBy(.Name) }),
+            UIAction(title: String(localized: "common.sort.date"), image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Date ? .on : .mixed, handler: { (_) in self.sortBy(.Date) }),
+            UIAction(title: String(localized: "common.sort.edit"), image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Edit ? .on : .mixed, handler: { (_) in self.sortBy(.Edit) })
         ]
         
-        let menu = UIMenu(title: "Sort by (descending)", image: nil, identifier: nil, options: [], children: menuItems)
+        let menu = UIMenu(title: String(localized: "common.sort.menu"), image: nil, identifier: nil, options: [], children: menuItems)
         return menu
     }
     
