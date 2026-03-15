@@ -225,7 +225,7 @@ class ClothesGalleryController: UIViewController {
         let menuItems: [UIAction] = [
             UIAction(title: "Name", image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Name ? .on : .mixed, handler: { (_) in self.sortBy(.Name) }),
             UIAction(title: "Date added", image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Date ? .on : .mixed, handler: { (_) in self.sortBy(.Date) }),
-            UIAction(title: "Recently edited (wip)", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Edit ? .on : .mixed, handler: { (_) in self.sortBy(.Edit) })
+            UIAction(title: "Recently edited", image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: clothingSortSelected == .Edit ? .on : .mixed, handler: { (_) in self.sortBy(.Edit) })
         ]
         
         let menu = UIMenu(title: "Sort by (descending)", image: nil, identifier: nil, options: [], children: menuItems)
@@ -268,9 +268,11 @@ class ClothesGalleryController: UIViewController {
         return tempSortedDataSource
     }
     
-    // sortByEdit currently not available due to API, edits date not being saved to database
-    private func sortByEdit(source _: [Clothing]? = nil) -> [Clothing] {
-        return dataSource
+    private func sortByEdit(source: [Clothing]? = nil) -> [Clothing] {
+        var tempSortedDataSource: [Clothing] = source != nil ? source! : dataSource
+        tempSortedDataSource.sort { $0.updatedAt > $1.updatedAt }
+        
+        return tempSortedDataSource
     }
     
     lazy var uploadNowButton: UIButton = {
