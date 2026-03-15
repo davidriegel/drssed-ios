@@ -33,13 +33,6 @@ static let identifier = "OutfitsGallery_ViewCell"
         return iv
     }()
 
-    private let gradientOverlayView: UIView = {
-        let v = UIView()
-        v.translatesAutoresizingMaskIntoConstraints = false
-        v.isUserInteractionEnabled = false
-        return v
-    }()
-
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -79,7 +72,6 @@ required init?(coder: NSCoder) {
 
         contentView.addSubview(cardView)
         cardView.addSubview(imageView)
-        cardView.addSubview(gradientOverlayView)
         cardView.addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
