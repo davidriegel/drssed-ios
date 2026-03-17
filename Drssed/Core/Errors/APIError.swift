@@ -145,3 +145,25 @@ extension APIError: LocalizedError {
         }
     }
 }
+
+extension APIError {
+    func isNetworkRelated() -> Bool {
+        let networkError: [APIError] = [.offline, .timeout]
+        
+        if networkError.contains(self) {
+            return true
+        }
+        
+        return false
+    }
+    
+    func isServerRelated() -> Bool {
+        let serverError: [APIError] = [.internalServerError, .serverUnavailable]
+        
+        if serverError.contains(self) {
+            return true
+        }
+        
+        return false
+    }
+}

@@ -4,7 +4,7 @@
 //
 //  Created by David Riegel on 17.03.26.
 //
-/*
+
 import Foundation
 import JWTDecode
 
@@ -23,7 +23,7 @@ actor AuthenticationManager {
     func determineCurrentAuthState() async -> AuthState {
         guard let tokens = await TokenManager.shared.currentTokens() else { return .unauthenticated }
         
-        if Date().addingTimeInterval(TimeInterval(60 * 5)) >= tokens.expiryDate {
+        if Date().addingTimeInterval(TimeInterval(60 * 10)) >= tokens.expiryDate {
             do {
                 _ = try await APIClient.shared.authHandler.getAndRenewAccessToken()
                 let state = await getUserType()
@@ -31,10 +31,19 @@ actor AuthenticationManager {
                 
                 return state
             } catch let error as APIError {
-                return 
+                if error.isNetworkRelated() || error.isServerRelated() {
+                    // TODO: Implement offline mode
+                    let state = await getUserType()
+                    authState = state
+                    return authState
+                }
+                
                 await TokenManager.shared.clearTokens()
                 authState = .unauthenticated
-                return .unauthenticated
+                return authState
+            } catch {
+                authState = .unauthenticated
+                return authState
             }
         }
         
@@ -47,13 +56,33 @@ actor AuthenticationManager {
     private func getUserType() async -> AuthState {
         guard let tokens = await TokenManager.shared.currentTokens() else { return .unauthenticated }
         
-        let jwt = try decode(jwt: tokens.accessToken)
-        
-        if let userType = jwt.claim(name: "is_guest").boolean, userType == true {
-            return .guest
+        do {
+            let jwt = try decode(jwt: tokens.accessToken)
+            
+            if let userType = jwt.claim(name: "is_guest").boolean, userType == true {
+                return .guest
+            }
+        } catch {
+            return .unauthenticated
         }
         
         return .authenticated
     }
+    
+    func registerAsGuest() async throws {
+        do {
+            let tokenModel = try await APIClient.shared.authHandler.registerAsGuest()
+            authState = .guest
+        } catch {
+            authState = .unauthenticated
+            throw error
+        }
+    }
+    
+    // TODO: Add upgrade account logic
+    
+    func signOut() async {
+        await TokenManager.shared.clearTokens()
+        authState = .unauthenticated
+    }
 }
-*/

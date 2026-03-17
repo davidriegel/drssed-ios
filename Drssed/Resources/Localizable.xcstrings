@@ -165,23 +165,6 @@
         }
       }
     },
-    "clothingupload.error.missing.name" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Du musst einen Namen angeben"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You need to provide a name"
-          }
-        }
-      }
-    },
     "clothingupload.error.missing.seasons" : {
       "localizations" : {
         "de" : {

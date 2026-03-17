@@ -10,7 +10,7 @@ import Foundation
 actor TokenManager {
     static let shared = TokenManager()
     private let account = "tokens"
-    private let service = "com.Drssed.auth"
+    private let service = "com.drssed.auth"
     private var cachedTokens: TokenKeychainModel?
     
     func currentTokens() -> TokenKeychainModel? {

@@ -17,4 +17,5 @@ public struct TokenKeychainModel: Codable {
     let accessToken: String
     let refreshToken: String
     let expiryDate: Date
+    let isGuest: Bool
 }

@@ -168,7 +168,7 @@ class welcomeController: UIViewController {
     
     @objc
     func proceed() {
-        Task {
+        Task {/*
             do {
                 let tokenResponse = try await APIClient.shared.authHandler.signUpWith(email: self.email!, username: self.usernameTextField.text!, password: self.password!, andProfilePicture: self.defaultAvatar.replacingOccurrences(of: "profilepicture", with: "light"))
                 UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
@@ -208,6 +208,7 @@ class welcomeController: UIViewController {
                     present(alert, animated: true)
                 }
             }
+               */
             
             view.window?.rootViewController = TabBarController()
         }
