@@ -1,149 +1,273 @@
 //
 //  ErrorHandler.swift
-//  Clothing Booth
+//  Drssed
 //
 //  Created by David Riegel on 23.04.25.
 //
 
 import UIKit
+import Foundation
 
 public enum ErrorHandler {
-    // MARK: -- Handle error
     
-    public static func handle(_ error: Error, _ file: String = #file, _ function: String = #function, _ line: Int = #line) {
+    // MARK: - Public Interface
+    
+    public static func handle(
+        _ error: Error,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line,
+        presentingViewController: UIViewController? = nil
+    ) {
         logError(error, file, function, line)
         
-        let appError = mapErrorToAppError(error)
-        switch appError {
-        case .api(let apiError):
-            handleAPIError(apiError)
-        case .coreData(let coreDataError):
-            handleCoreDataError(coreDataError)
-        case .system(let error):
-            showAlert(error.localizedDescription)
-        }
-        
-        if let customError = error as? CustomError {
-            return handleCustomError(customError)
-        }
+        let appError = mapToAppError(error)
+        presentError(appError, from: presentingViewController)
     }
     
-    private static func mapErrorToAppError(_ error: Error) -> AppError {
-        switch error {
-            case let error as APIError:
-                return .api(error)
-            case let error as CoreDataError:
-                return .coreData(error)
-        default:
+    public static func handleSilently(
+        _ error: Error,
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line
+    ) {
+        logError(error, file, function, line)
+    }
+    
+    // MARK: - Error Mapping
+    
+    private static func mapToAppError(_ error: Error) -> AppError {
+        if let apiError = error as? APIError {
+            return .api(apiError)
+        } else if let coreDataError = error as? CoreDataError {
+            return .coreData(coreDataError)
+        } else if let authError = error as? AuthenticationError {
+            return .authentication(authError)
+        } else if let customError = error as? CustomError {
+            return .custom(customError)
+        } else {
             return .system(error)
         }
     }
     
-    private static func handleCoreDataError(_ error: CoreDataError) {
-        switch error {
-        case .saveFailed(let reason):
-            print("CoreData save failed: \(reason)")
-        case .fetchFailed(let reason):
-            print("CoreData fetch failed: \(reason)")
-        case .deleteFailed(let reason):
-            print("CoreData delete failed: \(reason)")
-        @unknown default:
-            break
-        }
-    }
+    // MARK: - Error Presentation
     
-    private static func handleAPIError(_ error: APIError) {
-        var message = ""
-        var solution: String?
-        switch error {
-        case .internalServerError, .methodNotAllowed, .badRequest:
-            message = "There was an issue processing your request."
-            solution = "Please try again or contact support if the problem persists."
-        case .tooManyRequests:
-            message = "You're going too fast. Please try again later."
-        case .unprocessableContent:
-            message = "The content of your request is invalid."
-            solution = "Please ensure the data you're sending is correct and try again."
-        case .unprocessableContentWithMessage(let msg, suggestion: let suggestion):
-            message = msg
-            solution = suggestion
-        case .payloadTooLarge:
-            message = "The data you're trying to send is too large."
-            solution = "Please reduce the size of your request and try again."
-        case .payloadTooLargeWithMessage(let msg, suggestion: let suggestion):
-            message = msg
-            solution = suggestion
-        case .conflict:
-            message = "There was a conflict with the request."
-            solution = "Please ensure no conflicting actions are being made and try again."
-        case .notFound:
-            message = "The requested resource was not found."
-            solution = "Please check if the resource exists and try again."
-        case .forbidden:
-            message = "You don't have permission to access this resource."
-            solution = "Ensure you have the correct permissions and try again."
-        case .unauthorized:
-            message = "You are not authorized to make this request."
-            solution = "Please log in or provide the necessary credentials."
-        case .offline:
-            message = "There's a problem with your internet connection."
-            solution = "Please ensure a stable internet connection to connect to online services."
-        case .custom(let string):
-            message = "An unknown API error occurred."
-            solution = string
-        case .unknown:
-            message = "An unknown API error occurred."
-            solution = "Please try again later."
-        }
+    private static func presentError(_ error: AppError, from viewController: UIViewController?) {
+        let (title, message, actions) = errorDetails(for: error)
         
-        showAlert(message, solution: solution)
-    }
-    
-    private static func handleCustomError(_ error: CustomError) {
-        var message = ""
-        var solution: String?
-        
-        switch error {
-        case .formInvalid(let field, let suggestion):
-            message = "\(field) is invalid."
-            solution = suggestion
-        case .valueTooLong(let field, let maxLength):
-            message = "\(field) can only be \(maxLength) characters long."
-        case .valueTooShort(let field, let minLength):
-            message = "\(field) must be at least \(minLength) characters long."
-        case .missingValue(let field, let suggestion):
-            message = "\(field) is missing before you can continue."
-            solution = suggestion
-        case .custom(let string, let suggestion):
-            message = string
-            solution = suggestion
-        }
-        
-        showAlert(message, solution: solution)
-    }
-    
-    // MARK: -- Show alerts
-    
-    private static func showAlert(_ msg: String, solution: String? = nil) {
-        var alertMsg = msg
-        if let solution = solution {
-            alertMsg += "\n\n\(solution)"
-        }
         DispatchQueue.main.async {
-            let alert = UIAlertController(title: "Error", message: alertMsg, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Ok", style: .default))
-            
-            UIApplication.shared.topMostViewController()?.present(alert, animated: true)
+            showAlert(
+                title: title,
+                message: message,
+                actions: actions,
+                from: viewController
+            )
         }
     }
     
-    // MARK: -- Log error
+    private static func errorDetails(for error: AppError) -> (title: String, message: String, actions: [AlertAction]) {
+        switch error {
+        case .api(let apiError):
+            return apiErrorDetails(apiError)
+        case .coreData(let coreDataError):
+            return coreDataErrorDetails(coreDataError)
+        case .authentication(let authError):
+            return authenticationErrorDetails(authError)
+        case .custom(let customError):
+            return customErrorDetails(customError)
+        case .system(let systemError):
+            return systemErrorDetails(systemError)
+        }
+    }
     
-    private static func logError(_ error: Error, _ file: String = #file, _ function: String = #function, _ line: Int = #line) {
+    // MARK: - API Error Details
+    
+    private static func apiErrorDetails(_ error: APIError) -> (String, String, [AlertAction]) {
+        let title = String(localized: "error.title.api")
+        
+        var message = error.localizedDescription
+        if let suggestion = error.recoverySuggestion {
+            message += "\n\n\(suggestion)"
+        }
+        
+        return (title, message, [.dismiss])
+    }
+    
+    // MARK: - CoreData Error Details
+    
+    private static func coreDataErrorDetails(_ error: CoreDataError) -> (String, String, [AlertAction]) {
+        let title = String(localized: "error.title.coreData")
+        
+        var message = error.localizedDescription
+        if let suggestion = error.recoverySuggestion {
+            message += "\n\n\(suggestion)"
+        }
+                
+        return (title, message, [.dismiss])
+    }
+    
+    // MARK: - Authentication Error Details
+    
+    private static func authenticationErrorDetails(_ error: AuthenticationError) -> (String, String, [AlertAction]) {
+        let title = String(localized: "error.title.authentication")
+        
+        var message = error.localizedDescription
+        if let suggestion = error.recoverySuggestion {
+            message += "\n\n\(suggestion)"
+        }
+        
+        return (title, message, [.dismiss])
+    }
+    
+    // MARK: - Custom Error Details
+    
+    private static func customErrorDetails(_ error: CustomError) -> (String, String, [AlertAction]) {
+        let title = String(localized: "error.title.validation")
+        
+        var message = error.localizedDescription
+        if let suggestion = error.recoverySuggestion {
+            message += "\n\n\(suggestion)"
+        }
+        
+        return (title, message, [.dismiss])
+    }
+    
+    // MARK: - System Error Details
+    
+    private static func systemErrorDetails(_ error: Error) -> (String, String, [AlertAction]) {
+        let title = String(localized: "error.title.system")
+        
+        let message = error.localizedDescription
+        
+        return (title, message, [.dismiss])
+    }
+    
+    // MARK: - Alert Presentation
+    
+    private static func showAlert(
+        title: String,
+        message: String,
+        actions: [AlertAction],
+        from viewController: UIViewController?
+    ) {
+        let alert = UIAlertController(
+            title: title,
+            message: message,
+            preferredStyle: .alert
+        )
+        
+        for action in actions {
+            alert.addAction(action.uiAlertAction)
+        }
+        
+        // Präsentiere den Alert
+        presentAlert(alert, from: viewController)
+    }
+    
+    private static func presentAlert(
+        _ alert: UIAlertController,
+        from viewController: UIViewController?,
+        retryCount: Int = 0
+    ) {
+        let presenter = viewController ?? UIApplication.shared.topMostViewController()
+        
+        guard let presenter = presenter else {
+            #if DEBUG
+            print("⚠️ No view controller available to present alert")
+            #endif
+            return
+        }
+        
+        // Prüfe ob der ViewController präsentieren kann
+        if presenter.isBeingDismissed || presenter.isBeingPresented || presenter.presentedViewController != nil {
+            // ViewController ist gerade busy, versuche es gleich nochmal
+            if retryCount < 3 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    presentAlert(alert, from: viewController, retryCount: retryCount + 1)
+                }
+            } else {
+                #if DEBUG
+                print("⚠️ Failed to present alert after 3 retries")
+                #endif
+            }
+            return
+        }
+        
+        // Prüfe ob der View im Window ist
+        if presenter.view.window == nil {
+            // View ist nicht im Window, versuche es gleich nochmal
+            if retryCount < 3 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    presentAlert(alert, from: viewController, retryCount: retryCount + 1)
+                }
+            } else {
+                #if DEBUG
+                print("⚠️ Presenter view is not in window hierarchy after 3 retries")
+                #endif
+            }
+            return
+        }
+        
+        // Alles OK, präsentiere den Alert
+        presenter.present(alert, animated: true)
+    }
+    
+    // MARK: - Logging
+    
+    private static func logError(
+        _ error: Error,
+        _ file: String,
+        _ function: String,
+        _ line: Int
+    ) {
         #if DEBUG
         let fileName = (file as NSString).lastPathComponent
-        print("Error: \(error.localizedDescription)\nFile: \(fileName) \nFunction: \(function) \nLine: \(line)")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🔴 ERROR OCCURRED")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("📄 File:     \(fileName)")
+        print("⚙️  Function: \(function)")
+        print("📍 Line:     \(line)")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("💬 Description: \(error.localizedDescription)")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🔍 Full Error:")
         dump(error)
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
         #endif
+    }
+}
+
+// Alertaction for better consistency
+
+private enum AlertAction {
+    case dismiss
+    case retry
+    case login
+    
+    var uiAlertAction: UIAlertAction {
+        switch self {
+        case .dismiss:
+            return UIAlertAction(
+                title: String(localized: "common.ok"),
+                style: .default
+            )
+            
+        case .retry:
+            return UIAlertAction(
+                title: String(localized: "error.action.retry"),
+                style: .default
+            ) { _ in
+                // TODO: Implement retry logic
+            }
+            
+        case .login:
+            return UIAlertAction(
+                title: String(localized: "error.action.login"),
+                style: .default
+            ) { _ in
+                // TODO: Navigate to login screen
+            }
+        }
     }
 }

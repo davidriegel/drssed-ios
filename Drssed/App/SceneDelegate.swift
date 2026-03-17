@@ -17,34 +17,59 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let _ = PersistenceController.shared
         
+        window.rootViewController = LoadingViewController()
+        window.makeKeyAndVisible()
+        self.window = window
+        
         Task {
-            do {
-                try await checkUserIsSignedIn()
-                print("checked if user is signed in")
-            } catch AuthenticationError.userNotSignedIn {
-                print("user not signed in -> registering as guest")
-                await TokenManager.shared.clearTokens()
-                _ = try await APIClient.shared.authHandler.registerAsGuest()
+            await initializeApp()
+        }
+    }
+    
+    private func initializeApp() async {
+        let authState = await AuthenticationManager.shared.determineCurrentAuthState()
+        
+        switch authState {
+        case .unknown, .unauthenticated:
+            await handleUnauthenticatedState()
+        case .guest:
+            await showMainApp(asGuest: true)
+        case .authenticated:
+            await showMainApp(asGuest: false)
+        }
+    }
+    
+    private func handleUnauthenticatedState() async {
+        do {
+            try await AuthenticationManager.shared.registerAsGuest()
+            await showMainApp(asGuest: true)
+        } catch {
+            await MainActor.run {
+                self.window?.rootViewController = ErrorViewController(
+                    error: error,
+                    retryAction: { [weak self] in
+                        Task {
+                            await self?.initializeApp()
+                        }
+                    }
+                )
             }
+        }
+    }
+    
+    private func showMainApp(asGuest: Bool) async {
+        await MainActor.run {
+            let tabBar = TabBarController()
+            // setup specifically for guest or signed in user
+            self.window?.rootViewController = tabBar
             
-            window.rootViewController = TabBarController()
-            window.makeKeyAndVisible()
-            self.window = window
-
             Task {
                 await NetworkManager.shared.checkServerReachable()
-                
                 if NetworkManager.shared.isReachable {
                     await SyncManager.shared.syncWithServer()
                 }
             }
         }
-    }
-    
-    func checkUserIsSignedIn() async throws {
-        guard let tokens = await TokenManager.shared.currentTokens() else { throw AuthenticationError.userNotSignedIn }
-        
-        print(tokens)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

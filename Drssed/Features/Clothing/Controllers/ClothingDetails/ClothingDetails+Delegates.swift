@@ -52,14 +52,14 @@ extension ClothingDetailsController: UIImagePickerControllerDelegate, UINavigati
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
-                    ErrorHandler.handle(APIError.payloadTooLargeWithMessage("The image background couldn't be removed.", suggestion: "Use a smaller image or a image with lower resolution."))                }
+                    ErrorHandler.handle(APIError.payloadTooLarge(message: "The image background couldn't be removed.", suggestion: "Use a smaller image or a image with lower resolution."))                }
             } catch APIError.unprocessableContent {
                 self.updatedImageID = nil
                 self.clothingImageView.sd_setImage(with: URL(string: self.clothing.imageID, relativeTo: URL(string: "uploads/clothing_images/", relativeTo: APIClient.baseURL)))
                 self.clothingImageView.hideSkeleton()
                 
                 picker.dismiss(animated: true) {
-                    ErrorHandler.handle(APIError.unprocessableContentWithMessage("The image backround couldn't be removed.", suggestion: "Use a brighter enviroment and ensure a high contrast for the best results."))
+                    ErrorHandler.handle(APIError.unprocessableContent(message: "The image backround couldn't be removed.", suggestion: "Use a brighter enviroment and ensure a high contrast for the best results."))
                 }
             } catch {
                 self.updatedImageID = nil

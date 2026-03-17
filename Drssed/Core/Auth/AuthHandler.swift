@@ -23,8 +23,11 @@ final class AuthHandler {
         let tokenResponse = try JSONDecoder().decode(TokenModel.self, from: data)
         
         let jwt = try decode(jwt: tokenResponse.access_token)
+        
+        guard let is_guest = jwt.claim(name: "is_guest").boolean else { throw AuthenticationError.tokenInvalid }
+        
         UserDefaults.standard.set(jwt.subject, forKey: "user_id")
-        let keychainModel = TokenKeychainModel(accessToken: tokenResponse.access_token, refreshToken: tokenResponse.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)))
+        let keychainModel = TokenKeychainModel(accessToken: tokenResponse.access_token, refreshToken: tokenResponse.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), isGuest: is_guest)
         await TokenManager.shared.setTokens(keychainModel)
         
         return tokenResponse
@@ -40,8 +43,14 @@ final class AuthHandler {
             let request = try await APIClient.shared.createRequest(endpoint: "/auth/refresh", method: .POST, body: uploadData, authentication: false)
             
             let tokenModel: TokenModel = try await APIClient.shared.executeRequestAndDecode(request: request)
+            
+            let jwt = try decode(jwt: tokenModel.access_token)
+            
+            guard let is_guest = jwt.claim(name: "is_guest").boolean else {
+                throw AuthenticationError.tokenInvalid
+            }
                 
-            let keychainModel = TokenKeychainModel(accessToken: tokenModel.access_token, refreshToken: tokenModel.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)))
+            let keychainModel = TokenKeychainModel(accessToken: tokenModel.access_token, refreshToken: tokenModel.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)), isGuest: is_guest)
             await TokenManager.shared.setTokens(keychainModel)
             tokens = keychainModel
         }
@@ -49,29 +58,7 @@ final class AuthHandler {
         return tokens.accessToken
     }
     
-    // MARK: -- SIGN UP
-    
-    public func signUpWith(email: String, username: String, password: String, andProfilePicture profilepicture: String) async throws -> TokenModel {
-        guard let uploadData = try? JSONEncoder().encode(["email": email, "username": username, "password": password, "profile_picture": profilepicture]) else {
-            fatalError("JSONEncoder failed for known-safe dictionary encoding.")
-        }
-        
-        let request = try await APIClient.shared.createRequest(endpoint: "/auth/register", method: .POST, body: uploadData, authentication: false)
-        
-        do {
-            let (data, response) = try await APIClient.shared.executeRequest(request: request, ignoreError: [.conflict])
-            
-            do {
-                try APIClient.shared.handleHTTPResponse(response, data: data)
-            } catch APIError.conflict {
-                throw try mapConflictsError(data: data)
-            }
-            
-            let fetchedData = try JSONDecoder().decode(TokenModel.self, from: data)
-            
-            return fetchedData
-        }
-    }
+    // MARK: -- Upgrade account request logic
     
     // MARK: -- SIGN IN
     
@@ -98,7 +85,7 @@ final class AuthHandler {
         case "username":
             return .usernameAlreadyInUse
         default:
-            return .unknown
+            return .unknown()
         }
     }
 }

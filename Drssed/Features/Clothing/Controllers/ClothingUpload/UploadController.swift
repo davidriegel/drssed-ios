@@ -361,7 +361,7 @@ class UploadController: UIViewController {
         if let clothingName = clothingNameField.fieldInput.text, clothingName != "" {
             name = clothingName
         } else {
-            errorAlert.message = String(localized: "clothingupload.error.missing.name")
+            return ErrorHandler.handle(CustomError.missingValue(field: String(localized: "common.name.title")))
         }
         
         var category: ClothingCategories!
@@ -732,14 +732,14 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
                 self.uploadImageView.image = UIImage(named: "upload_placeholder")
                 self.uploadImageView.hideSkeleton()
                 
-                ErrorHandler.handle(APIError.payloadTooLargeWithMessage(String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
+                ErrorHandler.handle(APIError.payloadTooLarge(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
             } catch APIError.unprocessableContent {
                 self.imageID = ""
                 self.uploadImageView.image = UIImage(named: "upload_placeholder")
                 self.uploadImageView.hideSkeleton()
                 
                 
-                ErrorHandler.handle(APIError.unprocessableContentWithMessage(String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.uploadimage.hint")))
+                ErrorHandler.handle(APIError.unprocessableContent(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.uploadimage.hint")))
             } catch {
                 ErrorHandler.handle(error)
             }

@@ -1,6 +1,6 @@
 //
 //  APIClient.swift
-//  Outfitter
+//  Drssed
 //
 //  Created by David Riegel on 09.05.24.
 //
@@ -65,20 +65,24 @@ final public class APIClient {
     // MARK: -- Error Handling
     
     public func handleHTTPResponse(_ response: HTTPURLResponse?, data: Data?) throws {
-        guard let statusCode = response?.statusCode else { throw APIError.unknown }
-        
-        if !((200...299).contains(statusCode)) {
-            if let data = data {
-                print(try JSONDecoder().decode(APIErrorResponse.self, from: data).error)
-            }
+        guard let statusCode = response?.statusCode else {
+            throw APIError.unknown(statusCode: nil)
         }
-                
         
-        switch statusCode {
-        case 200...299:
+        if (200...299).contains(statusCode) {
             return
+        }
+        
+        var errorMessage: String?
+        
+        if let data = data, let errorResponse = try? JSONDecoder().decode(APIErrorResponse.self, from: data) {
+            errorMessage = errorResponse.error
+        }
+        
+        // Map status codes to APIError
+        switch statusCode {
         case 400:
-            throw APIError.badRequest
+            throw APIError.badRequest(message: errorMessage)
         case 401:
             throw APIError.unauthorized
         case 403:
@@ -88,27 +92,26 @@ final public class APIClient {
         case 405:
             throw APIError.methodNotAllowed
         case 409:
-            throw APIError.conflict
+            throw APIError.conflict(message: errorMessage)
         case 413:
-            throw APIError.payloadTooLarge
+            throw APIError.payloadTooLarge(message: errorMessage, suggestion: nil)
         case 422:
-            throw APIError.unprocessableContent
+            throw APIError.unprocessableContent(message: errorMessage, suggestion: nil)
         case 429:
             throw APIError.tooManyRequests
-        case 502...504:
-            throw APIError.offline
+        case 503:
+            throw APIError.serverUnavailable
         case 500...599:
             throw APIError.internalServerError
         default:
-            let message = data.flatMap { String(data: $0, encoding: .utf8) } ?? "Unknown error"
-            throw APIError.custom(message + " Status code: [\(statusCode)]")
+            throw APIError.unknown(statusCode: statusCode)
         }
     }
     
     // MARK: -- Create requests
     
     public func createRequest(endpoint: String, method: requestMethods, body: Data? = nil, headers: [String: String]? = nil, authentication: Bool = true, timeoutIntervall: Double? = nil) async throws -> URLRequest {
-        guard let url = URL(string: endpoint, relativeTo: APIClient.baseURL) else { throw APIError.badRequest }
+        guard let url = URL(string: endpoint, relativeTo: APIClient.baseURL) else { throw APIError.badRequest(message: "Invalid endpoint URL") }
         
         var request = URLRequest(url: url)
         request.httpMethod = "\(method)"
@@ -153,7 +156,7 @@ final public class APIClient {
     
     public func createRequest(withImage image: UIImage, endpoint: String, method: requestMethods) async throws -> URLRequest {
         guard let imageData = image.compressedData(maxSizeMB: 4.8) else {
-            fatalError("couldn't compress image")
+            throw APIError.payloadTooLarge(message: "Image compression failed", suggestion: "Please try a different image")
         }
         
         #if DEBUG
@@ -220,7 +223,6 @@ final public class APIClient {
     
     public func executeRequest(request: URLRequest, ignoreError: [APIError] = []) async throws -> (Data, HTTPURLResponse?) {
         guard NetworkManager.shared.isReachable else {
-            print("Server not reachable, skipping request")
             throw APIError.offline
         }
         
@@ -237,12 +239,7 @@ final public class APIClient {
             
             return (data, response as? HTTPURLResponse)
         } catch let error as URLError {
-            switch error.code {
-            case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotConnectToHost, .cannotFindHost:
-                throw APIError.offline
-            default:
-                throw APIError.custom(error.localizedDescription)
-            }
+            throw mapURLError(error)
         }
     }
     
@@ -253,9 +250,29 @@ final public class APIClient {
             return try decoder.decode(T.self, from: data)
         } catch {
             #if DEBUG
-            print("📄 Response:\n\(String(data: data, encoding: .utf8) ?? "No Data")")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            print("🔴 DECODING ERROR")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            print("Expected Type: \(T.self)")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            print("📄 Response Data:")
+            print(String(data: data, encoding: .utf8) ?? "No Data")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            print("Error: \(error)")
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
             #endif
             throw error
+        }
+    }
+    
+    private func mapURLError(_ error: URLError) -> APIError {
+        switch error.code {
+        case .notConnectedToInternet, .networkConnectionLost, .cannotConnectToHost, .cannotFindHost:
+            return .offline
+        case .timedOut:
+            return .timeout
+        default:
+            return .unknown(statusCode: nil)
         }
     }
 }
