@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="24127" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <device id="retina6_12" orientation="portrait" appearance="dark"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24063"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -16,27 +16,26 @@
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" text="Welcome" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="IR7-O9-XLJ">
-                                <rect key="frame" x="86" y="358" width="221" height="137"/>
-                                <fontDescription key="fontDescription" type="system" weight="black" pointSize="43"/>
-                                <nil key="textColor"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="hanger" translatesAutoresizingMaskIntoConstraints="NO" id="m86-2B-v0G">
-                                <rect key="frame" x="71.666666666666686" y="139" width="250" height="250"/>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="hanger" translatesAutoresizingMaskIntoConstraints="NO" id="m86-2B-v0G">
+                                <rect key="frame" x="-315.66666666666669" y="152" width="1024.3333333333333" height="255.66666666666663"/>
                             </imageView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="QIU-CJ-R0m">
+                                <rect key="frame" x="85.666666666666686" y="407.66666666666669" width="222" height="37"/>
+                                <color key="backgroundColor" name="backgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="37" id="Q9y-jl-n5X"/>
+                                    <constraint firstAttribute="width" secondItem="QIU-CJ-R0m" secondAttribute="height" multiplier="6:1" id="jjd-eN-aVw"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" name="backgroundColor"/>
                         <constraints>
-                            <constraint firstItem="IR7-O9-XLJ" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="Bep-Ve-hge"/>
-                            <constraint firstItem="m86-2B-v0G" firstAttribute="centerX" secondItem="IR7-O9-XLJ" secondAttribute="centerX" id="CNf-Xn-iZ1"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="m86-2B-v0G" secondAttribute="bottom" constant="429" id="SVL-h4-hYs"/>
-                            <constraint firstItem="IR7-O9-XLJ" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="TyT-cL-21N"/>
-                            <constraint firstItem="m86-2B-v0G" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="80" id="X4E-tG-oSB"/>
-                            <constraint firstItem="m86-2B-v0G" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="71.666666666666686" id="dCh-AC-lWP"/>
-                            <constraint firstItem="IR7-O9-XLJ" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="299" id="gsN-1s-7wK"/>
-                            <constraint firstItem="IR7-O9-XLJ" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="86" id="tb7-jf-3hC"/>
+                            <constraint firstItem="QIU-CJ-R0m" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1C6-pS-bCR"/>
+                            <constraint firstItem="QIU-CJ-R0m" firstAttribute="top" secondItem="m86-2B-v0G" secondAttribute="bottom" id="Bwb-mu-zQA"/>
+                            <constraint firstItem="QIU-CJ-R0m" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="Lvl-U9-wUz"/>
+                            <constraint firstItem="m86-2B-v0G" firstAttribute="height" secondItem="Ze5-6b-2t3" secondAttribute="height" multiplier="0.3" id="N7m-At-omj"/>
+                            <constraint firstItem="m86-2B-v0G" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Z08-xr-HVK"/>
                         </constraints>
                     </view>
                 </viewController>
