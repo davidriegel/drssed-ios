@@ -92,25 +92,34 @@ extension UIViewController {
 }
 
 extension UIApplication {
-    func topMostViewController(base: UIViewController? = UIApplication.shared.connectedScenes
-        .filter { $0.activationState == .foregroundActive }
-        .compactMap { ($0 as? UIWindowScene)?.keyWindow }
-        .first?.rootViewController) -> UIViewController? {
-        
-        if let nav = base as? UINavigationController {
-            return topMostViewController(base: nav.visibleViewController)
+    func topMostViewController() -> UIViewController? {
+        guard let windowScene = connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }),
+              let rootViewController = windowScene.windows
+            .first(where: { $0.isKeyWindow })?.rootViewController else {
+            return nil
         }
         
-        if let tab = base as? UITabBarController,
-           let selected = tab.selectedViewController {
-            return topMostViewController(base: selected)
+        return topViewController(from: rootViewController)
+    }
+    
+    private func topViewController(from viewController: UIViewController) -> UIViewController {
+        if let presented = viewController.presentedViewController {
+            return topViewController(from: presented)
         }
         
-        if let presented = base?.presentedViewController {
-            return topMostViewController(base: presented)
+        if let navigationController = viewController as? UINavigationController,
+           let visible = navigationController.visibleViewController {
+            return topViewController(from: visible)
         }
         
-        return base
+        if let tabBarController = viewController as? UITabBarController,
+           let selected = tabBarController.selectedViewController {
+            return topViewController(from: selected)
+        }
+        
+        return viewController
     }
 }
 

@@ -8,11 +8,7 @@
 public enum AppError: Error {
     case api(APIError)
     case coreData(CoreDataError)
+    case authentication(AuthenticationError)
+    case custom(CustomError)
     case system(Error)
-}
-
-public enum CoreDataError: Error {
-    case saveFailed(String)
-    case fetchFailed(String)
-    case deleteFailed(String)
 }

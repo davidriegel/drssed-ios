@@ -59,7 +59,7 @@ final class AuthHandler {
         let request = try await APIClient.shared.createRequest(endpoint: "/auth/register", method: .POST, body: uploadData, authentication: false)
         
         do {
-            let (data, response) = try await APIClient.shared.executeRequest(request: request, ignoreError: [.conflict])
+            let (data, response) = try await APIClient.shared.executeRequest(request: request, ignoreError: [.conflict()])
             
             do {
                 try APIClient.shared.handleHTTPResponse(response, data: data)
@@ -98,7 +98,7 @@ final class AuthHandler {
         case "username":
             return .usernameAlreadyInUse
         default:
-            return .unknown
+            return .unknown()
         }
     }
 }

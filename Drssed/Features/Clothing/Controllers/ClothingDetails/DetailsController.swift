@@ -811,11 +811,11 @@ extension DetailsController: PHPickerViewControllerDelegate, CropViewControllerD
                 }
                 
             } catch APIError.payloadTooLarge {
-                ErrorHandler.handle(APIError.payloadTooLargeWithMessage(String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
+                ErrorHandler.handle(APIError.payloadTooLarge(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
             } catch APIError.unprocessableContent {
                 
                 
-                ErrorHandler.handle(APIError.unprocessableContentWithMessage(String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.uploadimage.hint")))
+                ErrorHandler.handle(APIError.unprocessableContent(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.uploadimage.hint")))
             } catch {
                 ErrorHandler.handle(error)
             }
