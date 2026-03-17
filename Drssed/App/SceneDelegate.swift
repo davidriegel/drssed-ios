@@ -24,29 +24,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         Task {
             await initializeApp()
         }
-            
-        /*
-        Task {
-            do {
-                try await checkUserIsSignedIn()
-                print("checked if user is signed in")
-            } catch AuthenticationError.userNotSignedIn {
-                print("user not signed in -> registering as guest")
-                await TokenManager.shared.clearTokens()
-                _ = try await APIClient.shared.authHandler.registerAsGuest()
-            }
-            
-            window.rootViewController = TabBarController()
-            window.makeKeyAndVisible()
-            self.window = window
-
-            Task {
-                await NetworkManager.shared.checkServerReachable()
-                
-                if NetworkManager.shared.isReachable {
-                    await SyncManager.shared.syncWithServer()
-                }
-        }*/
     }
     
     private func initializeApp() async {
