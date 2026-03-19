@@ -139,4 +139,12 @@ public final class ClothingLocalDataSource {
             try ctx.saveIfNeeded()
         }
     }
+    
+    func deleteAll() async throws {
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = ClothingLocal.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        try ctx.execute(deleteRequest)
+        try ctx.saveIfNeeded()
+    }
 }
