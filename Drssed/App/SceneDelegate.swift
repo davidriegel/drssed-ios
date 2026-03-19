@@ -42,6 +42,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func handleUnauthenticatedState() async {
         do {
             try await AuthenticationManager.shared.registerAsGuest()
+            await SyncManager.shared.clearSyncState()
             await showMainApp(asGuest: true)
         } catch {
             await MainActor.run {
