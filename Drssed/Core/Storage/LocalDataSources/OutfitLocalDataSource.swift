@@ -138,4 +138,12 @@ public final class OutfitLocalDataSource {
             try ctx.saveIfNeeded()
         }
     }
+    
+    func deleteAll() async throws {
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = OutfitLocal.fetchRequest()
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        try ctx.execute(deleteRequest)
+        try ctx.saveIfNeeded()
+    }
 }

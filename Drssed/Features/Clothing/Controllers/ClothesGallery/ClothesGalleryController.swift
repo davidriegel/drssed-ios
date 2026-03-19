@@ -208,7 +208,7 @@ class ClothesGalleryController: UIViewController {
     }
     
     func showClothingDetails(of clothing: Clothing) {
-        let detailsController = DetailsController(clothing)
+        let detailsController = ClothingDetailsController(clothing)
         let navController = UINavigationController(rootViewController: detailsController)
         navController.setNavigationBarHidden(true, animated: false)
         

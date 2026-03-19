@@ -221,7 +221,7 @@ class OutfitComposerViewController_Submit: UIViewController {
     
     func configureViewComponents() {
         view.backgroundColor = .background
-        title = String(localized: "outfitcreator.title")
+        title = String(localized: "outfitcomposer.submit.title")
         
         tabBarController?.tabBar.isHidden = true
         

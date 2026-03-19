@@ -117,6 +117,14 @@ public final class OutfitRepository {
             return false
         }
     }
+    
+    public func deleteAllLocal() async {
+        do {
+            try await localDataSource.deleteAll()
+        } catch {
+            ErrorHandler.handle(AppError.coreData(.deleteFailed(error.localizedDescription)))
+        }
+    }
 
     // MARK: - Private
     private func upsertOutfit(_ domainModel: Outfit) async {
