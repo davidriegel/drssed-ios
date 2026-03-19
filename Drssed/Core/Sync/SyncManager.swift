@@ -24,6 +24,13 @@ final class SyncManager {
         await pullFromServer()
     }
     
+    func clearSyncState() async {
+        UserDefaults.standard.removeObject(forKey: "clothing_last_sync")
+        UserDefaults.standard.removeObject(forKey: "outfit_last_sync")
+        
+        await clothesRepo.deleteAllLocal()
+        await outfitRepo.deleteAllLocal()
+    }
     
     private func pullFromServer() async {
         do {
