@@ -1,161 +1,422 @@
 //
 //  ClothingDetailsController.swift
-//  Clothing Booth
+//  Drssed
 //
-//  Created by David Riegel on 02.08.24.
+//  Created by David Riegel on 04.11.25.
 //
 
 import UIKit
-import SDWebImage
-import SkeletonView
+import CropViewController
+import PhotosUI
 
 final class ClothingDetailsController: UIViewController {
     
-    weak var delegate: ClothingDetailsControllerDelegate?
-    var clothing: Clothing
-    var editable: Bool = true
-    
-    let clothingTypes = [
-        "*🤫🌟",
-        "T-Shirt",
-        "Shirt",
-        "Polo",
-        "Sweater",
-        "Hoodie",
-        "Jacket",
-        "Coat",
-        "*🤫🌟",
-        "Jeans",
-        "Shorts",
-        "Pants",
-        "Skirt",
-        "*🤫🌟",
-        "Sneakers",
-        "Boots",
-        "Sandals",
-        "Heels",
-        "Loafers",
-        "*🤫🌟",
-        "Hat",
-        "Scarf",
-        "Gloves",
-        "Belt",
-        "Bag",
-        "Watch",
-        "Accessory"
-    ]
-    
-    init(_ clothing: Clothing, editable: Bool = true) {
-        self.clothing = clothing
-        self.editable = editable
+    init(_ item: Clothing, allowsEditing: Bool = false) {
+        self.item = item
+        self.savedItem = item
+        self.allowsEditing = allowsEditing
         
         super.init(nibName: nil, bundle: nil)
-        
-        selectedSeasonsArray = clothing.seasons
-        selectedTagsArray = clothing.tags
-        
-        presentationController?.delegate = self
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    let colorPickerView = UIColorPickerViewController()
-    var updatedImageID: String?
-    
-    var isEditingClothing = false {
-        didSet {
-            isModalInPresentation = isEditingClothing
-            setEditingMode()
-        }
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+        self.selectedSeasonsArray = item.seasons
+        self.selectedTagsArray = item.tags
+        self.selectedCategory = item.category
         configureViewComponents()
+        
+        view.addGestureRecognizer(dismissKeyboardTapGesture)
     }
     
-    // MARK: --
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.navigationController?.isModalInPresentation = true
+        self.navigationController?.presentationController?.delegate = self
+    }
     
-    var selectedSeasonsArray: Array<Seasons> = [Seasons]() {
+    // MARK: - Global variables
+    
+    var item: Clothing {
         didSet {
-            var selected = [String]()
-            if selectedSeasonsArray.contains(.SPRING) { selected.append("common.season.spring")}
-            if selectedSeasonsArray.contains(.SUMMER) { selected.append("common.season.summer")}
-            if selectedSeasonsArray.contains(.AUTUMN) { selected.append("common.season.autumn")}
-            if selectedSeasonsArray.contains(.WINTER) { selected.append("common.season.winter")}
-            
-            
-            clothingSeasonsLabel.text = selected.joined(separator: ", ")
-            clothingSeasonsLabel.textColor = .label
-            
-            if selected.isEmpty {
-                clothingSeasonsLabel.textColor = .placeholderText
-                clothingSeasonsLabel.text = "none"
+            DispatchQueue.main.async {
+                self.updateUIFromItem()
+                let hasChanges = self.unsavedChanges()
+                self.itemDoneButton.isEnabled = hasChanges
             }
         }
     }
     
-    var selectedTagsArray: Array = [Tags]() {
+    var savedItem: Clothing {
         didSet {
-            var selected = [String]()
-            if selectedTagsArray.contains(.CASUAL) { selected.append("common.tag.casual")}
-            if selectedTagsArray.contains(.FORMAL) { selected.append("common.tag.formal")}
-            if selectedTagsArray.contains(.SPORTS) { selected.append("common.tag.sports")}
-            if selectedTagsArray.contains(.VINTAGE) { selected.append("common.tag.vintage")}
-            
-            
-            clothingTagsLabel.text = selected.joined(separator: ", ")
-            clothingTagsLabel.textColor = .label
-            
-            if selected.isEmpty {
-                clothingTagsLabel.textColor = .placeholderText
-                clothingTagsLabel.text = "none"
+            let hasChanges = self.unsavedChanges()
+            self.itemDoneButton.isEnabled = hasChanges
+        }
+    }
+    let allowsEditing: Bool
+    let colorPickerView = UIColorPickerViewController()
+    
+    var selectedCategory: ClothingCategories = .TOP {
+        didSet {
+            itemCategorySelection.text = selectedCategory.localizedName
+            Task { @MainActor in
+                itemCategoryPicker.selectRow(itemCategoriesDataSource.firstIndex(of: itemCategorySelection.text ?? "") ?? 0, inComponent: 0, animated: false)
             }
         }
     }
     
-    // MARK: -- Image
+    var selectedSeasonsArray: [Seasons] = [] {
+        didSet {
+            var selected = [String]()
+            if selectedSeasonsArray.contains(.SPRING) { selected.append(String(localized: "common.season.spring"))}
+            if selectedSeasonsArray.contains(.SUMMER) { selected.append(String(localized: "common.season.summer"))}
+            if selectedSeasonsArray.contains(.AUTUMN) { selected.append(String(localized: "common.season.autumn"))}
+            if selectedSeasonsArray.contains(.WINTER) { selected.append(String(localized: "common.season.winter"))}
+            
+            
+            itemSeasonsSelection.text = selected.joined(separator: ", ")
+            itemSeasonsSelection.textColor = .label
+            
+            if selected.isEmpty {
+                itemSeasonsSelection.textColor = .placeholderText
+                itemSeasonsSelection.text = String(localized: "common.none")
+            }
+        }
+    }
     
-    lazy var clothingImageView: UIImageView = {
+    let itemCategoriesDataSource: [String] = {
+        var ar: [String] = ["*"]
+        for clothingCategory in ClothingCategories.allCases {
+            ar.append(clothingCategory.localizedName)
+            ar.append("*")
+        }
+        
+        return ar
+    }()
+    
+    var selectedTagsArray: [Tags] = [] {
+        didSet {
+            var selected = [String]()
+            if selectedTagsArray.contains(.CASUAL) { selected.append(String(localized: "common.tag.casual"))}
+            if selectedTagsArray.contains(.FORMAL) { selected.append(String(localized: "common.tag.formal"))}
+            if selectedTagsArray.contains(.SPORTS) { selected.append(String(localized: "common.tag.sports"))}
+            if selectedTagsArray.contains(.VINTAGE) { selected.append(String(localized: "common.tag.vintage"))}
+            
+            
+            itemTagsSelection.text = selected.joined(separator: ", ")
+            itemTagsSelection.textColor = .label
+            
+            if selected.isEmpty {
+                itemTagsSelection.textColor = .placeholderText
+                itemTagsSelection.text = String(localized: "common.none")
+            }
+        }
+    }
+    
+    private var itemImageHeightConstraint: NSLayoutConstraint?
+    
+    private lazy var dismissKeyboardTapGesture: UITapGestureRecognizer = {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        tap.cancelsTouchesInView = false
+        return tap
+    }()
+    
+    lazy var dismissPickerAction: UIAction = {
+        let ac = UIAction {_ in
+            self.dismissPickers()
+        }
+        return ac
+    }()
+    
+    // MARK: - Functions
+    
+    func promptUnsavedChanges(dismissAfterSave dismiss: Bool = false) -> Void {
+        let alert = UIAlertController(title: String(localized: "details.unsaved.title"), message: nil, preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.save"), style: .default, handler: { _ in
+            Task {
+                await self.saveItemChanges()
+                
+                DispatchQueue.main.async {
+                    if !self.unsavedChanges() && dismiss {
+                        alert.dismiss(animated: true)
+                    }
+                }
+            }
+        }))
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.undo"), style: .destructive, handler: { _ in
+            self.item = self.savedItem
+        }))
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel, handler: { _ in
+            return
+        }))
+        
+        present(alert, animated: true)
+    }
+    
+    func dismissPickers() -> Void {
+        self.itemSeasonsPickerView.hideSeasonsPickerView()
+        self.itemTagsPickerView.hideTagsPickerView()
+        
+        UIView.animate(withDuration: 0.3) {
+            self.itemCategoryPicker.alpha = 0
+            self.itemCategoryPickerDone.alpha = 0
+        } completion: { _ in
+            self.itemCategoryPicker.isHidden = true
+            self.itemCategoryPickerDone.isHidden = true
+        }
+    }
+    
+    func disableEditing() -> Void {
+        guard !unsavedChanges() else {
+            promptUnsavedChanges()
+            segmentController.selectedSegmentIndex = 1
+            
+            return
+        }
+        itemImageView.isUserInteractionEnabled = false
+        
+        itemNameField.fieldInput.isUserInteractionEnabled = false
+        
+        itemCategoryField.fieldInput.isUserInteractionEnabled = false
+        itemCategoryField.indicatorImageView.isHidden = true
+        
+        itemColorButton.isUserInteractionEnabled = false
+        
+        itemSeasonsField.fieldInput.isUserInteractionEnabled = false
+        itemSeasonsField.indicatorImageView.isHidden = true
+        
+        itemTagsField.fieldInput.isUserInteractionEnabled = false
+        itemTagsField.indicatorImageView.isHidden = true
+        
+        itemImageHeightConstraint?.isActive = false
+        itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 1.0)
+        itemImageHeightConstraint?.isActive = true
+        
+        dismissPickers()
+        
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut]) {
+            self.view.layoutIfNeeded()
+        }
+    }
+    
+    func enableEditing() -> Void {
+        itemImageView.isUserInteractionEnabled = true
+        
+        itemNameField.fieldInput.isUserInteractionEnabled = true
+        
+        itemCategoryField.fieldInput.isUserInteractionEnabled = true
+        itemCategoryField.indicatorImageView.isHidden = false
+        
+        itemColorButton.isUserInteractionEnabled = true
+        
+        itemSeasonsField.fieldInput.isUserInteractionEnabled = true
+        itemSeasonsField.indicatorImageView.isHidden = false
+        
+        itemTagsField.fieldInput.isUserInteractionEnabled = true
+        itemTagsField.indicatorImageView.isHidden = false
+        
+        itemImageHeightConstraint?.isActive = false
+        itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 0.3)
+        itemImageHeightConstraint?.isActive = true
+        
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut]) {
+            self.view.layoutIfNeeded()
+        }
+    }
+    
+    func saveItemChanges() async -> Void {
+        if await AppRepository.shared.clothingRepository.addOrUpdateClothing(from: item) {
+            savedItem = item
+            NotificationCenter.default.post(name: .clothingUpdated, object: nil)
+        }
+    }
+    
+    func deleteItem() async -> Void {
+        let alert = UIAlertController(title: String(localized: "details.delete.title"), message: String(localized: "details.delete.question"), preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.delete"), style: .destructive, handler: { _ in
+            Task {
+                if await AppRepository.shared.clothingRepository.deleteClothing(with: self.item.id) {
+                    NotificationCenter.default.post(name: .clothingDeleted, object: nil)
+                    self.dismiss(animated: true)
+                }
+            }
+        }))
+        
+        present(alert, animated: true)
+    }
+    
+    func unsavedChanges() -> Bool {
+        return savedItem != item
+    }
+    
+    private func updateUIFromItem() {
+        Task { @MainActor in
+            self.itemNameField.fieldInput.text = self.item.name
+            
+            self.itemColorButton.backgroundColor = self.item.color
+            self.colorPickerView.selectedColor = self.item.color
+            
+            self.selectedCategory = self.item.category
+            self.selectedSeasonsArray = self.item.seasons
+            self.selectedTagsArray = self.item.tags
+        }
+    }
+    
+    private func presentCropView(with image: UIImage) {
+        let cropViewController = CropViewController(image: image)
+        cropViewController.delegate = self
+        cropViewController.cancelButtonColor = .systemRed
+        cropViewController.doneButtonColor = .accent
+        
+        
+        
+        navigationController?.pushViewController(cropViewController, animated: true)
+    }
+    
+    // MARK: - ObjC Functions
+    
+    @objc
+    private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
+    @objc
+    private func imagePickerPrompt() {
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "common.camera"), style: .default, handler: { _ in
+            //self.present(UIImagePickerController().setViewControllers(), animated: true)
+        }))
+        
+        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
+            actionSheet.addAction(UIAlertAction(title: String(localized: "common.photoLibrary"), style: .default, handler: { _ in
+                self.present(self.itemImagePicker, animated: true)
+            }))
+        }
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+        
+        present(actionSheet, animated: true)
+    }
+    
+    // MARK: - UI Elements
+    
+    /// Segment Controller UI
+    
+    lazy var segmentController: UISegmentedControl = {
+        let sc = UISegmentedControl(items: [String(localized: "common.view"), String(localized: "common.edit")])
+        sc.translatesAutoresizingMaskIntoConstraints = false
+        sc.selectedSegmentIndex = 0
+        sc.tintColor = .secondarySystemBackground
+        sc.selectedSegmentTintColor = .accent
+        return sc
+    }()
+    
+    /// Done UI
+    
+    lazy var itemDoneButton: UIButton = {
+        let bt = UIButton(type: .system, primaryAction: UIAction {_ in
+            Task {
+                await self.saveItemChanges()
+            }
+        })
+        let title = String(localized: "common.save")
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setTitle(title, for: .normal)
+        bt.titleLabel?.font = .preferredFont(forTextStyle: .headline)
+        bt.setTitleColor(.accent, for: .normal)
+        bt.setTitleColor(.lightGray, for: .disabled)
+        bt.isEnabled = false
+        return bt
+    }()
+    
+    lazy var itemDeleteButton: UIButton = {
+        let bt = UIButton(primaryAction: UIAction {_ in
+            Task {
+                await self.deleteItem()
+            }
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setImage(UIImage(systemName: "trash", withConfiguration: UIImage.SymbolConfiguration(font: .preferredFont(forTextStyle: .headline), scale: .large)), for: .normal)
+        bt.tintColor = .systemRed
+        return bt
+    }()
+    
+    /// Image UI
+    
+    lazy var itemImageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFit
         iv.clipsToBounds = true
-        iv.heightAnchor.constraint(equalToConstant: self.view.frame.width * (2 / 3)).isActive = true
-        iv.widthAnchor.constraint(equalToConstant: self.view.frame.width * (2 / 3)).isActive = true
         iv.isUserInteractionEnabled = false
+        
+        let imageTap = UITapGestureRecognizer(target: self, action: #selector(imagePickerPrompt))
+        iv.addGestureRecognizer(imageTap)
+        
+        iv.sd_setImage(with: URL(string: item.imageID, relativeTo: APIClient.clothingImagesURL), placeholderImage: UIImage(named: "placeholder.upload"))
         return iv
     }()
     
-    lazy var imagePickerController: UIImagePickerController = {
-        let picker = UIImagePickerController()
-        picker.allowsEditing = true
+    lazy var itemImagePicker: PHPickerViewController = {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: config)
         picker.delegate = self
+        picker.modalPresentationStyle = .fullScreen
         return picker
     }()
     
-    // MARK: -- Name
+    /// Name UI
     
-    lazy var clothingNameField: CustomTextFieldInput = {
-        let view = CustomTextFieldInput(fieldTitle: "name", placeholder: "super cool t-shirt", text: clothing.name, charCounterWithCharacters: 50)
+    lazy var itemNameField: CustomTextFieldInput = {
+        let view = CustomTextFieldInput(fieldTitle: String(localized: "common.name.title"), placeholder: String(localized: "common.placeholder.name"), text: item.name, charCounterWithCharacters: 50)
         view.fieldInput.delegate = self
         view.fieldInput.isUserInteractionEnabled = false
         return view
     }()
     
-    // MARK: -- Type
+    /// Category UI
     
-    lazy var clothingTypeField: CustomButtonInput = {
-        let view = CustomButtonInput(fieldTitle: "type of clothing")
-        view.fieldInput.isUserInteractionEnabled = false
-        view.fieldInput.addTarget(self, action: #selector(showPickerView), for: .touchUpInside)
+    lazy var itemCategoryField: CustomButtonInput = {
+        let view = CustomButtonInput(fieldTitle: String(localized: "common.category.title"))
+        view.fieldInput.isUserInteractionEnabled = true
+        view.indicatorImageView.isHidden = true
+        view.fieldInput.addAction(UIAction {_ in
+        UIView.animate(withDuration: 0.3) {
+            self.itemCategoryPicker.isHidden = false
+            self.itemCategoryPickerDone.isHidden = false
+            
+            self.itemCategoryPicker.alpha = 1
+            self.itemCategoryPickerDone.alpha = 1
+        }}, for: .primaryActionTriggered)
         return view
     }()
     
-    lazy var typePicker: UIPickerView = {
+    lazy var itemCategorySelection: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 1
+        label.textColor = .label
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 13, weight: .heavy)
+        label.text = item.category.localizedName
+        return label
+    }()
+    
+    lazy var itemCategoryPicker: UIPickerView = {
         let pv = UIPickerView()
         pv.isHidden = true
         pv.translatesAutoresizingMaskIntoConstraints = false
@@ -171,10 +432,10 @@ final class ClothingDetailsController: UIViewController {
         return pv
     }()
     
-    lazy var typePickerDone: UIButton = {
+    lazy var itemCategoryPickerDone: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
-        let title = NSAttributedString(string: "Done", attributes: [.font : UIFont.systemFont(ofSize: 18, weight: .bold)])
+        let title = NSAttributedString(string: String(localized: "common.done"), attributes: [.font : UIFont.systemFont(ofSize: 18, weight: .bold)])
         button.isHidden = true
         button.alpha = 0
         button.setAttributedTitle(title, for: .normal)
@@ -182,241 +443,384 @@ final class ClothingDetailsController: UIViewController {
         return button
     }()
     
-    lazy var clothingTypeLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.numberOfLines = 1
-        label.textColor = .label
-        label.textAlignment = .center
-        label.font = .systemFont(ofSize: 13, weight: .heavy)
-        label.text = clothing.category.localizedName
-        return label
-    }()
+    /// Color UI
     
-    // MARK: -- Color
+    lazy var itemColorPickerField = CustomInputBackground(fieldTitle: String(localized: "common.color.title"))
     
-    lazy var colorPickerLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.numberOfLines = 1
-        label.textColor = .label
-        label.textAlignment = .left
-        label.font = .systemFont(ofSize: 12, weight: .black)
-        label.text = "color"
-        return label
-    }()
-    
-    lazy var colorPickerField = CustomInputBackground(fieldTitle: "color")
-    
-    lazy var clothingColorButton: UIButton = {
+    lazy var itemColorButton: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = clothing.color
+        button.backgroundColor = item.color
         button.layer.borderWidth = 2
         button.layer.borderColor = UIColor.secondaryLabel.cgColor
         button.layer.cornerRadius = (self.view.frame.height / 20) / 4.16
-        button.addTarget(self, action: #selector(showColorPicker), for: .touchUpInside)
+        button.addAction(UIAction {_ in self.present(self.colorPickerView, animated: true)}, for: .primaryActionTriggered)
         button.isUserInteractionEnabled = false
         return button
     }()
     
-    // MARK: -- Seasons
+    /// Seasons UI
     
-    lazy var clothingSeasonsField: CustomButtonInput = {
-        let view = CustomButtonInput(fieldTitle: "seasons")
+    lazy var itemSeasonsField: CustomButtonInput = {
+        let view = CustomButtonInput(fieldTitle: String(localized: "common.season.title"))
         view.fieldInput.isUserInteractionEnabled = false
-        view.fieldInput.addTarget(self, action: #selector(seasonButtonTapped), for: .touchUpInside)
+        view.indicatorImageView.isHidden = true
+        view.fieldInput.addAction(UIAction {_ in self.itemSeasonsPickerView.showSeasonsPickerView()}, for: .primaryActionTriggered)
         return view
     }()
-
     
-    lazy var clothingSeasonsLabel: UILabel = {
+    lazy var itemSeasonsSelection: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.numberOfLines = 1
-        label.textColor = .label
-        label.textAlignment = .center
-        label.font = .systemFont(ofSize: 13, weight: .heavy)
-        label.text = ""
-        return label
-    }()
-    
-    // MARK: -- Tags
-    
-    lazy var clothingTagsField: CustomButtonInput = {
-        let view = CustomButtonInput(fieldTitle: "tags")
-        view.fieldInput.isUserInteractionEnabled = false
-        view.fieldInput.addTarget(self, action: #selector(tagButtonTapped), for: .touchUpInside)
-        return view
-    }()
-
-    lazy var clothingTagsLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.numberOfLines = 1
-        label.textColor = .label
+        label.textColor = .placeholderText
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 13, weight: .heavy)
         return label
     }()
     
-    // MARK: -- Buttons
-    
-    lazy var deleteButton: UIButton = {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-//        button.setImage(UIImage(systemName: "trash", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.systemRed, renderingMode: .alwaysOriginal), for: .normal)
-        button.setAttributedTitle(NSAttributedString(string: "delete", attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
-        button.setTitleColor(.systemRed, for: .normal)
-        button.backgroundColor = .systemRed.withAlphaComponent(0.2)
-        button.heightAnchor.constraint(equalToConstant: 45).isActive = true
-        button.widthAnchor.constraint(equalToConstant: (self.view.frame.width / 2) - 25).isActive = true
-        button.layer.cornerRadius = 45 / 5
-        return button
+    lazy var itemSeasonsPickerView: SeasonsPickerView = {
+        let view = SeasonsPickerView(delegate: self, item.seasons)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.isHidden = true
+        view.alpha = 0
+        view.layer.borderColor = UIColor.darkGray.cgColor
+        view.layer.borderWidth = 1
+        return view
     }()
     
-    lazy var editButton: UIButton = {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-//        button.setImage(UIImage(systemName: "square.and.pencil", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.systemYellow, renderingMode: .alwaysOriginal), for: .normal)
-        button.setAttributedTitle(NSAttributedString(string: "edit", attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
-        button.setTitleColor(.systemYellow, for: .normal)
-        button.backgroundColor = .systemYellow.withAlphaComponent(0.2)
-        button.heightAnchor.constraint(equalToConstant: 45).isActive = true
-        button.widthAnchor.constraint(equalToConstant: (self.view.frame.width / 2) - 25).isActive = true
-        button.layer.cornerRadius = 45 / 5
-        return button
+    /// Tags UI
+    
+    lazy var itemTagsField: CustomButtonInput = {
+        let view = CustomButtonInput(fieldTitle: String(localized: "common.tag.title"))
+        view.fieldInput.isUserInteractionEnabled = false
+        view.indicatorImageView.isHidden = true
+        view.fieldInput.addAction(UIAction {_ in self.itemTagsPickerView.showTagsPickerView()}, for: .primaryActionTriggered)
+        return view
     }()
     
-    lazy var doneButton: UIButton = {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setAttributedTitle(NSAttributedString(string: "done", attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
-        button.setTitleColor(.accent, for: .normal)
-        button.backgroundColor = .accent.withAlphaComponent(0.2)
-        button.heightAnchor.constraint(equalToConstant: 45).isActive = true
-        button.layer.cornerRadius = 45 / 5
-        return button
+    lazy var itemTagsSelection: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 1
+        label.textColor = .placeholderText
+        label.textAlignment = .center
+        label.minimumScaleFactor = 0.5
+        label.adjustsFontSizeToFitWidth = true
+        label.font = .systemFont(ofSize: 13, weight: .heavy)
+        return label
     }()
-        
-    // MARK: --
     
-    func configureViewComponents() {
+    lazy var itemTagsPickerView: TagsPickerView = {
+        let view = TagsPickerView(delegate: self, item.tags)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.isHidden = true
+        view.alpha = 0
+        view.layer.borderColor = UIColor.darkGray.cgColor
+        view.layer.borderWidth = 1
+        return view
+    }()
+    
+    // MARK: - UI Setup
+    
+    func configureViewComponents() -> Void {
         view.backgroundColor = .background
-        
-        let tap = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing))
-        tap.cancelsTouchesInView = false
-        view.addGestureRecognizer(tap)
+
+        itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 1.0)
+        itemImageHeightConstraint?.isActive = true
         
         colorPickerView.supportsAlpha = false
-        colorPickerView.selectedColor = .label
+        colorPickerView.selectedColor = item.color
         colorPickerView.delegate = self
-        colorPickerView.title = "color picker"
         
-        view.addSubview(clothingImageView)
-        clothingImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        clothingImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20).isActive = true
-        clothingImageView.sd_setImage(with: URL(string: clothing.imageID, relativeTo: URL(string: "uploads/clothing_images/", relativeTo: APIClient.baseURL)))
+        //navigationController?.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneTapped))
         
-        let imageTap = UITapGestureRecognizer(target: self, action: #selector(uploadImage))
-        clothingImageView.addGestureRecognizer(imageTap)
-        
-        view.addSubview(clothingNameField)
-        NSLayoutConstraint.activate([
-            clothingNameField.topAnchor.constraint(equalTo: clothingImageView.bottomAnchor, constant: 10),
-            clothingNameField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            clothingNameField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            clothingNameField.heightAnchor.constraint(equalToConstant: self.view.frame.height / 13)
-        ])
-        
-        view.addSubview(clothingTypeField)
-        clothingTypeField.addSubview(clothingTypeLabel)
-        NSLayoutConstraint.activate([
-            clothingTypeField.topAnchor.constraint(equalTo: clothingNameField.bottomAnchor, constant: 10),
-            clothingTypeField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            clothingTypeField.widthAnchor.constraint(equalToConstant: ((view.safeAreaLayoutGuide.layoutFrame.width / 2) - 25)),
-            clothingTypeField.heightAnchor.constraint(equalToConstant: self.view.frame.height / 13),
-            
-            clothingTypeLabel.topAnchor.constraint(equalTo: clothingTypeField.fieldBackground.topAnchor),
-            clothingTypeLabel.leadingAnchor.constraint(equalTo: clothingTypeField.leadingAnchor),
-            clothingTypeLabel.trailingAnchor.constraint(equalTo: clothingTypeField.trailingAnchor),
-            clothingTypeLabel.bottomAnchor.constraint(equalTo: clothingTypeField.fieldBackground.bottomAnchor)
-        ])
-        
-        view.addSubview(colorPickerField)
-        colorPickerField.addSubview(clothingColorButton)
-        NSLayoutConstraint.activate([
-            colorPickerField.topAnchor.constraint(equalTo: clothingNameField.bottomAnchor, constant: 10),
-            colorPickerField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            colorPickerField.widthAnchor.constraint(equalToConstant: ((view.safeAreaLayoutGuide.layoutFrame.width / 2) - 25)),
-            colorPickerField.heightAnchor.constraint(equalToConstant: self.view.frame.height / 13),
-            
-            clothingColorButton.topAnchor.constraint(equalTo: colorPickerField.fieldBackground.topAnchor, constant: 5),
-            clothingColorButton.leadingAnchor.constraint(equalTo: colorPickerField.fieldBackground.leadingAnchor, constant: 5),
-            clothingColorButton.trailingAnchor.constraint(equalTo: colorPickerField.fieldBackground.trailingAnchor, constant: -5),
-            clothingColorButton.bottomAnchor.constraint(equalTo: colorPickerField.fieldBackground.bottomAnchor, constant: -5)
-        ])
-        
-        view.addSubview(clothingSeasonsField)
-        clothingSeasonsField.addSubview(clothingSeasonsLabel)
-        NSLayoutConstraint.activate([
-            clothingSeasonsField.topAnchor.constraint(equalTo: clothingTypeField.bottomAnchor, constant: 10),
-            clothingSeasonsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            clothingSeasonsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            clothingSeasonsField.heightAnchor.constraint(equalToConstant: self.view.frame.height / 13),
-            
-            clothingSeasonsLabel.topAnchor.constraint(equalTo: clothingSeasonsField.fieldBackground.topAnchor),
-            clothingSeasonsLabel.leadingAnchor.constraint(equalTo: clothingSeasonsField.leadingAnchor),
-            clothingSeasonsLabel.trailingAnchor.constraint(equalTo: clothingSeasonsField.trailingAnchor),
-            clothingSeasonsLabel.bottomAnchor.constraint(equalTo: clothingSeasonsField.fieldBackground.bottomAnchor)
-        ])
-        
-        view.addSubview(clothingTagsField)
-        clothingTagsField.addSubview(clothingTagsLabel)
-        NSLayoutConstraint.activate([
-            clothingTagsField.topAnchor.constraint(equalTo: clothingSeasonsLabel.bottomAnchor, constant: 10),
-            clothingTagsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            clothingTagsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            clothingTagsField.heightAnchor.constraint(equalToConstant: self.view.frame.height / 13),
-            
-            clothingTagsLabel.topAnchor.constraint(equalTo: clothingTagsField.fieldBackground.topAnchor),
-            clothingTagsLabel.leadingAnchor.constraint(equalTo: clothingTagsField.leadingAnchor),
-            clothingTagsLabel.trailingAnchor.constraint(equalTo: clothingTagsField.trailingAnchor),
-            clothingTagsLabel.bottomAnchor.constraint(equalTo: clothingTagsField.fieldBackground.bottomAnchor)
-        ])
-        
-        let tagTap = UITapGestureRecognizer(target: self, action: #selector(tagButtonTapped))
-        clothingTagsLabel.addGestureRecognizer(tagTap)
-        
-        if editable {
-            view.addSubview(deleteButton)
-            deleteButton.topAnchor.constraint(equalTo: clothingTagsField.bottomAnchor, constant: 20).isActive = true
-            deleteButton.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-            deleteButton.addTarget(self, action: #selector(confirmDeleteClothing), for: .touchUpInside)
-            
-            view.addSubview(editButton)
-            editButton.topAnchor.constraint(equalTo: clothingTagsField.bottomAnchor, constant: 20).isActive = true
-            editButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-            editButton.addTarget(self, action: #selector(startEditing), for: .touchUpInside)
-            
-            view.addSubview(doneButton)
-            doneButton.topAnchor.constraint(equalTo: deleteButton.bottomAnchor, constant: 10).isActive = true
-            doneButton.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-            doneButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-            doneButton.addTarget(self, action: #selector(finishEditing), for: .touchUpInside)
+        [segmentController, itemDoneButton, itemDeleteButton, itemImageView, itemNameField, itemCategoryField, itemCategorySelection, itemCategoryPicker, itemCategoryPickerDone, itemColorPickerField, itemColorButton, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsSelection, itemTagsPickerView].forEach {
+            view.addSubview($0)
         }
         
-        view.addSubview(typePicker)
-        typePicker.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor).isActive = true
-        typePicker.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
-        typePicker.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        typePicker.delegate = self
-        typePicker.dataSource = self
-        typePicker.selectRow(clothingTypes.firstIndex(of: clothing.category.rawValue) ?? 0, inComponent: 0, animated: false)
+        NSLayoutConstraint.activate([
+            segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
+            segmentController.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
         
-        view.addSubview(typePickerDone)
-        typePickerDone.topAnchor.constraint(equalTo: typePicker.topAnchor, constant: 10).isActive = true
-        typePickerDone.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        typePickerDone.addTarget(self, action: #selector(hidePickerView), for: .touchUpInside)
+        segmentController.addAction(UIAction { _ in
+            self.segmentController.selectedSegmentIndex == 0 ? self.disableEditing() : self.enableEditing()
+        }, for: .valueChanged)
+        
+        NSLayoutConstraint.activate([
+            itemDoneButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
+            itemDoneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemDeleteButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
+            itemDeleteButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemImageView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 15),
+            itemImageView.leadingAnchor.constraint(lessThanOrEqualTo: view.leadingAnchor, constant: 20),
+            itemImageView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
+            itemImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemNameField.topAnchor.constraint(equalTo: itemImageView.bottomAnchor, constant: 20),
+            itemNameField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            itemNameField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            itemNameField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemCategoryField.topAnchor.constraint(equalTo: itemNameField.bottomAnchor, constant: 10),
+            itemCategoryField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            itemCategoryField.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -5),
+            itemCategoryField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            
+            itemCategorySelection.topAnchor.constraint(equalTo: itemCategoryField.fieldBackground.topAnchor),
+            itemCategorySelection.leadingAnchor.constraint(equalTo: itemCategoryField.leadingAnchor),
+            itemCategorySelection.trailingAnchor.constraint(equalTo: itemCategoryField.trailingAnchor),
+            itemCategorySelection.bottomAnchor.constraint(equalTo: itemCategoryField.fieldBackground.bottomAnchor)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemColorPickerField.topAnchor.constraint(equalTo: itemNameField.bottomAnchor, constant: 10),
+            itemColorPickerField.leadingAnchor.constraint(equalTo: view.centerXAnchor, constant: 5),
+            itemColorPickerField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            itemColorPickerField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            
+            itemColorButton.topAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.topAnchor, constant: 5),
+            itemColorButton.leadingAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.leadingAnchor, constant: 5),
+            itemColorButton.trailingAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.trailingAnchor, constant: -5),
+            itemColorButton.bottomAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.bottomAnchor, constant: -5)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemSeasonsField.topAnchor.constraint(equalTo: itemCategoryField.bottomAnchor, constant: 10),
+            itemSeasonsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            itemSeasonsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            itemSeasonsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            
+            itemSeasonsSelection.topAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.topAnchor),
+            itemSeasonsSelection.leadingAnchor.constraint(equalTo: itemSeasonsField.leadingAnchor),
+            itemSeasonsSelection.trailingAnchor.constraint(equalTo: itemSeasonsField.trailingAnchor),
+            itemSeasonsSelection.bottomAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.bottomAnchor)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemTagsField.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
+            itemTagsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            itemTagsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            itemTagsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            
+            itemTagsSelection.topAnchor.constraint(equalTo: itemTagsField.fieldBackground.topAnchor),
+            itemTagsSelection.leadingAnchor.constraint(equalTo: itemTagsField.leadingAnchor),
+            itemTagsSelection.trailingAnchor.constraint(equalTo: itemTagsField.trailingAnchor),
+            itemTagsSelection.bottomAnchor.constraint(equalTo: itemTagsField.fieldBackground.bottomAnchor)
+        ])
+        
+        view.bringSubviewToFront(itemSeasonsPickerView)
+        NSLayoutConstraint.activate([
+            itemSeasonsPickerView.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 15),
+            itemSeasonsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
+            itemSeasonsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            itemSeasonsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
+        ])
+        
+        view.bringSubviewToFront(itemTagsPickerView)
+        NSLayoutConstraint.activate([
+            itemTagsPickerView.topAnchor.constraint(equalTo: itemTagsField.bottomAnchor, constant: 15),
+            itemTagsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
+            itemTagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            itemTagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
+        ])
+        
+        view.addSubview(itemCategoryPicker)
+        itemCategoryPicker.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor).isActive = true
+        itemCategoryPicker.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
+        itemCategoryPicker.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        itemCategoryPicker.delegate = self
+        itemCategoryPicker.dataSource = self
+        itemCategoryPicker.selectRow(0, inComponent: 0, animated: false)
+         
+        view.addSubview(itemCategoryPickerDone)
+        itemCategoryPickerDone.topAnchor.constraint(equalTo: itemCategoryPicker.topAnchor, constant: 10).isActive = true
+        itemCategoryPickerDone.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
+        itemCategoryPickerDone.addAction(dismissPickerAction, for: .primaryActionTriggered)
+    }
+}
+
+extension ClothingDetailsController: UIPickerViewDelegate, UIPickerViewDataSource {
+    func numberOfComponents(in pickerView: UIPickerView) -> Int {
+        return 1
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return itemCategoriesDataSource.count
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusing view: UIView?) -> UIView {
+        guard itemCategoriesDataSource[row].contains("*") else {
+            let label = UILabel()
+            label.textAlignment = .center
+            label.text = itemCategoriesDataSource[row]
+            label.font = UIFont.systemFont(ofSize: 22)
+
+            return label
+        }
+        
+        let splitter = UIView()
+        splitter.backgroundColor = .lightGray
+        splitter.frame = CGRect(x: 0, y: 0, width: pickerView.frame.width, height: 2)
+        return splitter
+    }
+    
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        var newText = itemCategoriesDataSource[row]
+        let previousIndex = itemCategoriesDataSource.firstIndex(of: itemCategorySelection.text ?? "") ?? 0
+        
+        if newText.contains("*") {
+            pickerView.selectRow(row > previousIndex ? row - 1 : row + 1, inComponent: component, animated: true)
+            newText = itemCategoriesDataSource[row > previousIndex ? row - 1 : row + 1]
+        }
+        
+        itemCategorySelection.text = newText
+        selectedCategory = ClothingCategories.fromLocalized(newText) ?? .TOP
+        itemCategorySelection.textColor = .label
+        item.category = selectedCategory
+    }
+}
+
+extension ClothingDetailsController: SeasonsPickerViewDelegate, TagsPickerViewDelegate {
+    func seasonSelected(_ season: Seasons) {
+        if let idx = selectedSeasonsArray.firstIndex(of: season) {
+            selectedSeasonsArray.remove(at: idx)
+            item.seasons.remove(at: idx)
+        } else {
+            selectedSeasonsArray.append(season)
+            item.seasons.append(season)
+        }
+    }
+    
+    func tagSelected(_ tag: Tags) {
+        if let idx = selectedTagsArray.firstIndex(of: tag) {
+            selectedTagsArray.remove(at: idx)
+            item.tags.remove(at: idx)
+        } else {
+            selectedTagsArray.append(tag)
+            item.tags.append(tag)
+        }
+    }
+    
+    func tagsDoneButtonPressed() {
+        itemTagsPickerView.hideTagsPickerView()
+    }
+    
+    func seasonsDoneButtonPressed() {
+        itemSeasonsPickerView.hideSeasonsPickerView()
+    }
+}
+
+extension ClothingDetailsController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersInRanges ranges: [NSValue], replacementString string: String) -> Bool {
+        if textField == self.itemNameField.fieldInput {
+            if string == "" { item.name = itemNameField.fieldInput.text!.dropLast().description; return true }
+            
+            guard itemNameField.fieldInput.text?.count ?? 0 < 50 else { return false }
+            
+            item.name = itemNameField.fieldInput.text! + string
+        }
+        
+        return true
+    }
+}
+
+extension ClothingDetailsController: UIColorPickerViewControllerDelegate {
+    func colorPickerViewController(_ viewController: UIColorPickerViewController, didSelect color: UIColor, continuously: Bool) {
+        item.color = color
+    }
+}
+
+extension ClothingDetailsController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerShouldDismiss(_ presentationController: UIPresentationController) -> Bool {
+        if presentationController.presentedViewController !== self.navigationController { return true }
+        return !self.unsavedChanges()
+    }
+    
+    func presentationControllerDidAttemptToDismiss(_ presentationController: UIPresentationController) {
+        guard presentationController.presentedViewController === self.navigationController else { return }
+        guard self.unsavedChanges() else {
+            self.dismiss(animated: true)
+            return
+        }
+        promptUnsavedChanges(dismissAfterSave: true)
+    }
+}
+
+extension ClothingDetailsController: PHPickerViewControllerDelegate, CropViewControllerDelegate {
+    
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        guard let provider = results.first?.itemProvider,
+              provider.canLoadObject(ofClass: UIImage.self) else {
+            picker.dismiss(animated: true)
+            return
+        }
+
+        provider.loadObject(ofClass: UIImage.self) { object, _ in
+            guard let image = object as? UIImage else {
+                DispatchQueue.main.async { picker.dismiss(animated: true) }
+                return
+            }
+            DispatchQueue.main.async {
+                picker.dismiss(animated: true) {
+                    self.presentCropView(with: image)
+                }
+            }
+        }
+    }
+    
+    func cropViewController(_ crop: CropViewController, didFinishCancelled cancelled: Bool) {
+        navigationController?.popToRootViewController(animated: true)
+    }
+
+    func cropViewController(_ crop: CropViewController,
+                            didCropToImage image: UIImage,
+                            withRect cropRect: CGRect,
+                            angle: Int) {
+        //itemImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
+        
+        navigationController?.popToRootViewController(animated: true)
+
+        Task {
+            do {
+                let (imageID, clothingURL, clothingColor, _) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
+                
+                item.imageID = imageID
+                item.color = clothingColor
+                
+                DispatchQueue.main.async {
+                    self.itemImageView.sd_setImage(with: clothingURL)
+                }
+                
+            } catch APIError.payloadTooLarge {
+                ErrorHandler.handle(APIError.payloadTooLarge(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
+            } catch APIError.unprocessableContent {
+                
+                
+                ErrorHandler.handle(APIError.unprocessableContent(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.uploadimage.hint")))
+            } catch {
+                ErrorHandler.handle(error)
+            }
+            
+            //uploadImageView.hideSkeleton()
+        }
     }
 }
