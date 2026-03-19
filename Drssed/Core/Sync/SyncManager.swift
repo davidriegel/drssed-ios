@@ -15,13 +15,14 @@ final class SyncManager {
     
     private init() {}
     
-    func syncWithServer() async {
-        guard NetworkManager.shared.isReachable else {
-            print("No connection to server, skipping sync")
-            return
-        }
+    func syncWithServer(forceFull: Bool = false) async {
+        guard NetworkManager.shared.isReachable else { return }
         
-        await pullFromServer()
+        if forceFull {
+            await performFullSync()
+        } else {
+            await performIncrementalSync()
+        }
     }
     
     func clearSyncState() async {
@@ -65,31 +66,6 @@ final class SyncManager {
             ErrorHandler.handleSilently(error)
         } catch {
             ErrorHandler.handle(error)
-        }
-    }
-    
-    private func pullFromServer() async {
-        do {
-            let clothingLastSync = UserDefaults.standard.object(forKey: "clothing_last_sync") as? Date
-                        
-            let clothingSyncResponse = try await APIClient.shared.clothingHandler.syncClothes(updatedSince: clothingLastSync)
-                        
-            await self.clothesRepo.applyServerSync(updated: clothingSyncResponse.updated, deleted: clothingSyncResponse.deleted)
-            
-            UserDefaults.standard.set(clothingSyncResponse.serverTime, forKey: "clothing_last_sync")
-            
-            let outfitLastSync = UserDefaults.standard.object(forKey: "outfit_last_sync") as? Date
-                        
-            let outfitSyncResponse = try await APIClient.shared.outfitHandler.syncOutfits(updatedSince: outfitLastSync)
-                        
-            await self.outfitRepo.applyServerSync(updated: outfitSyncResponse.updated, deleted: outfitSyncResponse.deleted)
-            
-            UserDefaults.standard.set(outfitSyncResponse.serverTime, forKey: "outfit_last_sync")
-        } catch AuthenticationError.userNotSignedIn {
-            print("User not signed in skipping sync")
-        } catch {
-            ErrorHandler.handle(error)
-            print("Error while pulling from server: \(error)")
         }
     }
 }
