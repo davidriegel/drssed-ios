@@ -18,11 +18,28 @@ final class SyncManager {
     func syncWithServer(forceFull: Bool = false) async {
         guard NetworkManager.shared.isReachable else { return }
         
-        if forceFull {
+        if forceFull || shouldPerformFullSync(){
             await performFullSync()
         } else {
             await performIncrementalSync()
         }
+    }
+    
+    private func shouldPerformFullSync() -> Bool {
+        let clothingLastSync = UserDefaults.standard.object(forKey: "clothing_last_sync") as? Date
+        let outfitLastSync = UserDefaults.standard.object(forKey: "outfit_last_sync") as? Date
+        
+        if clothingLastSync == nil || outfitLastSync == nil {
+            return true
+        }
+        
+        // if last sync is > 7 days ago
+        if let lastSync = clothingLastSync,
+           Date().timeIntervalSince(lastSync) > 7 * 24 * 60 * 60 {
+            return true
+        }
+        
+        return false
     }
     
     func clearSyncState() async {
