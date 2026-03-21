@@ -313,6 +313,7 @@ class OutfitComposerViewController_Submit: UIViewController {
                 
                 let alert = UIAlertController(title: nil, message: String(localized: "outfitcomposer.alert.success"), preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
+                    NotificationCenter.default.post(name: .outfitCreated, object: nil)
                     self.returnToLookbook()
                 }))
                         

@@ -205,4 +205,5 @@ extension NSManagedObjectContext {
 extension Notification.Name {
     static let clothingUpdated = Notification.Name("clothingUpdated")
     static let clothingDeleted = Notification.Name("clothingDeleted")
+    static let outfitCreated = Notification.Name("outfitCreated")
 }

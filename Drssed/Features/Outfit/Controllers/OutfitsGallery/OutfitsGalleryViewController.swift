@@ -32,8 +32,7 @@ class OutfitsGalleryViewController: UIViewController {
         configureViewComponents()
         reloadDataFromCoreData()
         
-        //NotificationCenter.default.addObserver(self, selector: #selector(onClothingChanged), name: .clothingUpdated, object: nil)
-        //NotificationCenter.default.addObserver(self, selector: #selector(onClothingChanged), name: .clothingDeleted, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(reloadData), name: .outfitCreated, object: nil)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -183,6 +182,10 @@ class OutfitsGalleryViewController: UIViewController {
     }()
     
     // MARK: --
+    
+    @objc func reloadData() {
+        reloadDataFromCoreData()
+    }
     
     func reloadDataFromCoreData() {
         Task { @MainActor in
