@@ -42,6 +42,7 @@ actor AuthenticationManager {
                 authState = .unauthenticated
                 return authState
             } catch {
+                ErrorHandler.handleSilently(error)
                 authState = .unauthenticated
                 return authState
             }

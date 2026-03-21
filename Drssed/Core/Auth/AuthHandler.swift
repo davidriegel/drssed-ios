@@ -45,12 +45,12 @@ final class AuthHandler {
             let tokenModel: TokenModel = try await APIClient.shared.executeRequestAndDecode(request: request)
             
             let jwt = try decode(jwt: tokenModel.access_token)
-            
-            guard let is_guest = jwt.claim(name: "is_guest").boolean else {
+
+            guard let is_guest = jwt.claim(name: "is_guest").integer else {
                 throw AuthenticationError.tokenInvalid
             }
                 
-            let keychainModel = TokenKeychainModel(accessToken: tokenModel.access_token, refreshToken: tokenModel.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)), isGuest: is_guest)
+            let keychainModel = TokenKeychainModel(accessToken: tokenModel.access_token, refreshToken: tokenModel.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)), isGuest: is_guest != 0)
             await TokenManager.shared.setTokens(keychainModel)
             tokens = keychainModel
         }
