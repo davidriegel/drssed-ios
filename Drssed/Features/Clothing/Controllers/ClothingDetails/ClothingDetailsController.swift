@@ -9,7 +9,14 @@ import UIKit
 import CropViewController
 import PhotosUI
 
+protocol ClothingDetailsDelegate: ModalPresentationDelegate {
+    func didUpdateClothing()
+    func didDeleteClothing()
+}
+
 final class ClothingDetailsController: UIViewController {
+    
+    weak var delegate: ClothingDetailsDelegate?
     
     init(_ item: Clothing, allowsEditing: Bool = false) {
         self.item = item
@@ -234,6 +241,7 @@ final class ClothingDetailsController: UIViewController {
     
     func saveItemChanges() async -> Void {
         if await AppRepository.shared.clothingRepository.addOrUpdateClothing(from: item) {
+            self.delegate?.didUpdateClothing()
             savedItem = item
         }
     }
@@ -246,6 +254,7 @@ final class ClothingDetailsController: UIViewController {
         alert.addAction(UIAlertAction(title: String(localized: "common.delete"), style: .destructive, handler: { _ in
             Task {
                 if await AppRepository.shared.clothingRepository.deleteClothing(with: self.item.id) {
+                    self.delegate?.didDeleteClothing()
                     self.dismiss(animated: true)
                 }
             }

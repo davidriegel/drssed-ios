@@ -9,10 +9,17 @@ import UIKit
 import CropViewController
 import PhotosUI
 
+protocol OutfitDetailsDelegate: ModalPresentationDelegate {
+    func didUpdateOutfit()
+    func didDeleteOutfit()
+}
+
 final class OutfitDetailsController: UIViewController {
     var savedItem: Outfit
     var item: Outfit
     let clothingRepo = ClothingRepository()
+    
+    weak var delegate: OutfitDetailsDelegate?
     
     init(outfit: Outfit) {
         self.savedItem = outfit
@@ -106,6 +113,7 @@ final class OutfitDetailsController: UIViewController {
         alert.addAction(UIAlertAction(title: String(localized: "common.delete"), style: .destructive, handler: { _ in
             Task {
                 if await AppRepository.shared.outfitRepository.deleteOutfit(with: self.item.id) {
+                    self.delegate?.didDeleteOutfit()
                     self.dismiss(animated: true)
                 }
             }
