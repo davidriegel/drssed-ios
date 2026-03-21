@@ -108,6 +108,8 @@ public final class OutfitLocalDataSource {
                 let changes = [NSDeletedObjectsKey: deleted]
                 NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [ctx])
             }
+            
+            try ctx.saveIfNeeded()
         }
     }
     
