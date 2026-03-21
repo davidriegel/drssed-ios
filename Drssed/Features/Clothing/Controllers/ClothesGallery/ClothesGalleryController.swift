@@ -206,6 +206,7 @@ class ClothesGalleryController: UIViewController {
     
     func showClothingDetails(of clothing: Clothing) {
         let detailsController = ClothingDetailsController(clothing)
+        detailsController.delegate = self
         let navController = UINavigationController(rootViewController: detailsController)
         navController.setNavigationBarHidden(true, animated: false)
         
@@ -498,7 +499,14 @@ class ClothesGalleryController: UIViewController {
     }
 }
 
-extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UploadControllerDelegate {
+extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UploadControllerDelegate, ClothingDetailsDelegate {
+    func didUpdateClothing() {
+        reloadDataFromCoreData()
+    }
+    
+    func didDeleteClothing() {
+        reloadDataFromCoreData()
+    }
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
