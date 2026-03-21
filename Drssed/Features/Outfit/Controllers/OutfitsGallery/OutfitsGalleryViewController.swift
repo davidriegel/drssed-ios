@@ -195,9 +195,8 @@ class OutfitsGalleryViewController: UIViewController {
         }
     }
     
-    /*
-    func showClothingDetails(of clothing: Outfit) {
-        let detailsController = DetailsController(clothing)
+    func showOutfitDetails(of outfit: Outfit) {
+        let detailsController = OutfitDetailsController(outfit: outfit)
         let navController = UINavigationController(rootViewController: detailsController)
         navController.setNavigationBarHidden(true, animated: false)
         
@@ -207,8 +206,7 @@ class OutfitsGalleryViewController: UIViewController {
         }
         
         navigationController?.present(navController, animated: true)
-        
-    }*/
+    }
     
     func generateSortMenu() -> UIMenu {
         let menuItems: [UIAction] = [
@@ -537,7 +535,7 @@ extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionVi
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        //showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item])
+        showOutfitDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item])
     }
     
     func didUploadClothing(_ clothing: Clothing) {
