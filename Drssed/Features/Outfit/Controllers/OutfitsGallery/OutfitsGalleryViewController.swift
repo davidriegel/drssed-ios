@@ -31,8 +31,6 @@ class OutfitsGalleryViewController: UIViewController {
         
         configureViewComponents()
         reloadDataFromCoreData()
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(reloadData), name: .outfitCreated, object: nil)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -413,12 +411,7 @@ class OutfitsGalleryViewController: UIViewController {
     @objc
     func pushToOutfitCreation() {
         let vc = OutfitComposerViewController()
-        //vc.delegate = self
         navigationController?.pushViewController(vc, animated: true)
-    }
-    
-    @objc private func onOutfitChanged() {
-        reloadDataFromCoreData()
     }
     
     // MARK: --
@@ -458,7 +451,7 @@ class OutfitsGalleryViewController: UIViewController {
     }
 }
 
-extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UploadControllerDelegate {
+extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating {
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
@@ -536,9 +529,5 @@ extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionVi
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         showOutfitDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item])
-    }
-    
-    func didUploadClothing(_ clothing: Clothing) {
-        reloadDataFromCoreData()
     }
 }

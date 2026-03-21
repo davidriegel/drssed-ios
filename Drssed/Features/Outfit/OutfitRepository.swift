@@ -53,6 +53,7 @@ public final class OutfitRepository {
 
             let apiModel: OutfitAPI
             if let old = existing {
+                apiModel = old.toAPI()
                 //apiModel = try await APIHandler.shared.outfitHandler.patchEditClothing(oldClothing: old, newClothing: domainModel)
                 //apiModel = try await APIHandler.shared.outfitHandler.getMyOutfits().items.first!
             } else {
@@ -61,8 +62,8 @@ public final class OutfitRepository {
                 )
             }
 
-            //let syncedDomainModel = apiModel.toDomain()
-            //await upsertOutfit(syncedDomainModel)
+            let syncedDomainModel = apiModel.toDomain()
+            await upsertOutfit(syncedDomainModel)
             
             return true
         } catch {
