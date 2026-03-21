@@ -33,6 +33,30 @@ final class OutfitDetailsController: UIViewController {
     
     // MARK: - UI Elements -
     
+    // Segment Control
+    
+    lazy var segmentController: UISegmentedControl = {
+        let sc = UISegmentedControl(items: [String(localized: "common.view"), String(localized: "common.edit")])
+        sc.translatesAutoresizingMaskIntoConstraints = false
+        sc.selectedSegmentIndex = 0
+        sc.tintColor = .secondarySystemBackground
+        sc.selectedSegmentTintColor = .accent
+        return sc
+    }()
+    
+    // Delete button
+    
+    lazy var itemDeleteButton: UIButton = {
+        let bt = UIButton(primaryAction: UIAction {_ in
+            Task {
+                await self.deleteItem()
+            }
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setImage(UIImage(systemName: "trash", withConfiguration: UIImage.SymbolConfiguration(font: .preferredFont(forTextStyle: .headline), scale: .large)), for: .normal)
+        bt.tintColor = .systemRed
+        return bt
+    }()
     
     // Image UI
     
@@ -72,14 +96,46 @@ final class OutfitDetailsController: UIViewController {
         return cv
     }()
     
+    // MARK: - Functions -
+    
+    func deleteItem() async -> Void {
+        let alert = UIAlertController(title: String(localized: "outfitdetails.delete.title"), message: String(localized: "outfitdetails.delete.question"), preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.delete"), style: .destructive, handler: { _ in
+            Task {
+                if await AppRepository.shared.outfitRepository.deleteOutfit(with: self.item.id) {
+                    self.dismiss(animated: true)
+                }
+            }
+        }))
+        
+        present(alert, animated: true)
+    }
+    
     
     private func configureViewComponents() {
         view.backgroundColor = .background
         
-        [itemImageView, itemNameTextField, outfitItemsCollectionView].forEach { view.addSubview($0) }
+        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, outfitItemsCollectionView].forEach { view.addSubview($0) }
         
         NSLayoutConstraint.activate([
-            itemImageView.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+            segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
+            segmentController.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
+        
+        segmentController.addAction(UIAction { _ in
+            //self.segmentController.selectedSegmentIndex == 0 ? self.disableEditing() : self.enableEditing()
+        }, for: .valueChanged)
+        
+        NSLayoutConstraint.activate([
+            itemDeleteButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
+            itemDeleteButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20)
+        ])
+        
+        NSLayoutConstraint.activate([
+            itemImageView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 20),
             itemImageView.leadingAnchor.constraint(lessThanOrEqualTo: view.leadingAnchor, constant: 20),
             itemImageView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
             itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 1),
