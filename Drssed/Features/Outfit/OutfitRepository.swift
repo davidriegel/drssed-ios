@@ -107,7 +107,7 @@ public final class OutfitRepository {
     @discardableResult
     public func deleteOutfit(with id: String) async -> Bool {
         do {
-            try await APIClient.shared.clothingHandler.deleteClothingByID(clothingID: id)
+            try await APIClient.shared.outfitHandler.deleteOutfitByID(outfitID: id)
             try await localDataSource.delete(ids: [id])
             return true
         } catch let error as APIError {

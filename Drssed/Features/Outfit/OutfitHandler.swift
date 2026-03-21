@@ -137,5 +137,12 @@ final class OutfitHandler {
         
         return outfitsWrapper
     }
+    
+    // MARK: -- DELETE OUTFIT BY ID
+    
+    func deleteOutfitByID(outfitID: String) async throws -> Void {
+        let request = try await APIClient.shared.createRequest(endpoint: "/outfits/\(outfitID)", method: .DELETE)
+        _ = try await APIClient.shared.executeRequest(request: request)
+    }
 }
 
