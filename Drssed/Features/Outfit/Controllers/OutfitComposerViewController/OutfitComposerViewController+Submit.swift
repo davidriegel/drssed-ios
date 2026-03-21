@@ -264,7 +264,7 @@ class OutfitComposerViewController_Submit: UIViewController {
         ])
         
         let sv = UIStackView(arrangedSubviews: [outfitTagsField, outfitFavoriteField])
-        g
+        
         Task {
             let isAuthenticated = await AuthenticationManager.shared.authState == .authenticated
             
