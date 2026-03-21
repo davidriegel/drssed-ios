@@ -235,7 +235,6 @@ final class ClothingDetailsController: UIViewController {
     func saveItemChanges() async -> Void {
         if await AppRepository.shared.clothingRepository.addOrUpdateClothing(from: item) {
             savedItem = item
-            NotificationCenter.default.post(name: .clothingUpdated, object: nil)
         }
     }
     
@@ -247,7 +246,6 @@ final class ClothingDetailsController: UIViewController {
         alert.addAction(UIAlertAction(title: String(localized: "common.delete"), style: .destructive, handler: { _ in
             Task {
                 if await AppRepository.shared.clothingRepository.deleteClothing(with: self.item.id) {
-                    NotificationCenter.default.post(name: .clothingDeleted, object: nil)
                     self.dismiss(animated: true)
                 }
             }

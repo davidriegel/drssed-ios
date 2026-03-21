@@ -201,8 +201,3 @@ extension UIView {
 extension NSManagedObjectContext {
     func saveIfNeeded() throws { if hasChanges { try save() } }
 }
-
-extension Notification.Name {
-    static let clothingUpdated = Notification.Name("clothingUpdated")
-    static let clothingDeleted = Notification.Name("clothingDeleted")
-}

@@ -30,9 +30,6 @@ class ClothesGalleryController: UIViewController {
         
         configureViewComponents()
         reloadDataFromCoreData()
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(onClothingChanged), name: .clothingUpdated, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(onClothingChanged), name: .clothingDeleted, object: nil)
     }
     
     override func viewWillAppear(_ animated: Bool) {
