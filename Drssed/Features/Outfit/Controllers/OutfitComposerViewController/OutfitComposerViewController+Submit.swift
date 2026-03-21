@@ -264,9 +264,11 @@ class OutfitComposerViewController_Submit: UIViewController {
         ])
         
         let sv = UIStackView(arrangedSubviews: [outfitTagsField, outfitFavoriteField])
-        // check if user is signed in
-        if false {
-            sv.addArrangedSubview(outfitPublicField)
+        
+        Task {
+            let isAuthenticated = await AuthenticationManager.shared.authState == .authenticated
+            g
+            if isAuthenticated { sv.addArrangedSubview(self.outfitPublicField) }
         }
         
         sv.axis = .horizontal
