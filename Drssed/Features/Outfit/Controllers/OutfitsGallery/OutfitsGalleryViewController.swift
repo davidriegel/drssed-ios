@@ -181,10 +181,6 @@ class OutfitsGalleryViewController: UIViewController {
     
     // MARK: --
     
-    @objc func reloadData() {
-        reloadDataFromCoreData()
-    }
-    
     func reloadDataFromCoreData() {
         Task { @MainActor in
             let items = await AppRepository.shared.outfitRepository.fetchOutfits()
@@ -195,6 +191,7 @@ class OutfitsGalleryViewController: UIViewController {
     
     func showOutfitDetails(of outfit: Outfit) {
         let detailsController = OutfitDetailsController(outfit: outfit)
+        detailsController.delegate = self
         let navController = UINavigationController(rootViewController: detailsController)
         navController.setNavigationBarHidden(true, animated: false)
         
@@ -451,7 +448,15 @@ class OutfitsGalleryViewController: UIViewController {
     }
 }
 
-extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating {
+extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, OutfitDetailsDelegate {
+    func didUpdateOutfit() {
+        reloadDataFromCoreData()
+    }
+    
+    func didDeleteOutfit() {
+        reloadDataFromCoreData()
+    }
+    
     
     func updateSearchResults(for searchController: UISearchController) {
         guard let query = searchController.searchBar.text?.lowercased(), !query.isEmpty else {
