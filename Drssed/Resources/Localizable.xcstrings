@@ -2191,14 +2191,14 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sieht so aus, als hättest du noch keine Outfits..?\\n"
+            "state" : "needs_review",
+            "value" : "Sieht so aus, als hättest du noch keine Outfits..?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seems like you don't have any outfits yet..?\\n"
+            "value" : "Seems like you don't have any outfits yet..?"
           }
         }
       }
@@ -2396,14 +2396,14 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sieht so aus, als hättest du noch nichts hochgeladen..?\\n"
+            "state" : "needs_review",
+            "value" : "Sieht so aus, als hättest du noch nichts hochgeladen..?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seems like you have uploaded nothing yet..?\\n"
+            "value" : "Seems like you have uploaded nothing yet..?"
           }
         }
       }

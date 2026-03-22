@@ -277,10 +277,8 @@ class ClothesGalleryController: UIViewController {
         var btn = UIButton()
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.lineBreakMode = NSLineBreakMode.byWordWrapping
-        String(localized: "wardrobe.upload.cta1")
-        String(localized: "wardrobe.upload.cta2")
-        var attributedTitle = NSMutableAttributedString(string: "Seems like you have uploaded nothing yet..?\n", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.secondaryLabel])
-        let callToAction = NSAttributedString(string: "Upload your first clothing piece now!", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .heavy), .foregroundColor: UIColor.label])
+        var attributedTitle = NSMutableAttributedString(string: String(localized: "wardrobe.upload.cta1") + "\n", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.secondaryLabel])
+        let callToAction = NSAttributedString(string: String(localized: "wardrobe.upload.cta2"), attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .heavy), .foregroundColor: UIColor.label])
         attributedTitle.append(NSAttributedString(attributedString: callToAction))
         btn.setAttributedTitle(attributedTitle, for: .normal)
         btn.isHidden = true
@@ -496,7 +494,9 @@ class ClothesGalleryController: UIViewController {
         clothingCollectionView.addSubview(uploadNowButton)
         NSLayoutConstraint.activate([
             uploadNowButton.centerXAnchor.constraint(equalTo: clothingCollectionView.centerXAnchor),
-            uploadNowButton.topAnchor.constraint(equalTo: clothingCollectionView.topAnchor, constant: 20)
+            uploadNowButton.topAnchor.constraint(equalTo: clothingCollectionView.topAnchor, constant: 20),
+            uploadNowButton.leadingAnchor.constraint(equalTo: clothingCollectionView.leadingAnchor, constant: 20),
+            uploadNowButton.trailingAnchor.constraint(equalTo: clothingCollectionView.trailingAnchor, constant: -20)
         ])
     }
 }

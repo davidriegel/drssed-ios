@@ -261,7 +261,7 @@ class OutfitsGalleryViewController: UIViewController {
         var btn = UIButton()
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.lineBreakMode = NSLineBreakMode.byWordWrapping
-        var attributedTitle = NSMutableAttributedString(string: String(localized: "lookbook.upload.cta1"), attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.secondaryLabel])
+        var attributedTitle = NSMutableAttributedString(string: String(localized: "lookbook.upload.cta1") + "\n", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.secondaryLabel])
         let callToAction = NSAttributedString(string: String(localized: "lookbook.upload.cta2"), attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .heavy), .foregroundColor: UIColor.label])
         attributedTitle.append(NSAttributedString(attributedString: callToAction))
         btn.setAttributedTitle(attributedTitle, for: .normal)
@@ -443,7 +443,9 @@ class OutfitsGalleryViewController: UIViewController {
         outfitCollectionView.addSubview(createFirstButton)
         NSLayoutConstraint.activate([
             createFirstButton.centerXAnchor.constraint(equalTo: outfitCollectionView.centerXAnchor),
-            createFirstButton.topAnchor.constraint(equalTo: outfitCollectionView.topAnchor, constant: 20)
+            createFirstButton.topAnchor.constraint(equalTo: outfitCollectionView.topAnchor, constant: 20),
+            createFirstButton.leadingAnchor.constraint(equalTo: outfitCollectionView.leadingAnchor, constant: 20),
+            createFirstButton.trailingAnchor.constraint(equalTo: outfitCollectionView.trailingAnchor, constant: -20)
         ])
     }
 }
