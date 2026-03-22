@@ -37,6 +37,7 @@ final class OutfitDetailsController: UIViewController {
         
         configureViewComponents()
         selectedSeasonsArray = item.seasons
+        selectedTagsArray = item.tags
     }
     
     // MARK: - Variables -
@@ -56,6 +57,25 @@ final class OutfitDetailsController: UIViewController {
             if selected.isEmpty {
                 itemSeasonsSelection.textColor = .placeholderText
                 itemSeasonsSelection.text = String(localized: "common.none")
+            }
+        }
+    }
+    
+    var selectedTagsArray: [Tags] = [] {
+        didSet {
+            var selected = [String]()
+            if selectedTagsArray.contains(.CASUAL) { selected.append(String(localized: "common.tag.casual"))}
+            if selectedTagsArray.contains(.FORMAL) { selected.append(String(localized: "common.tag.formal"))}
+            if selectedTagsArray.contains(.SPORTS) { selected.append(String(localized: "common.tag.sports"))}
+            if selectedTagsArray.contains(.VINTAGE) { selected.append(String(localized: "common.tag.vintage"))}
+            
+            
+            itemTagsSelection.text = selected.joined(separator: ", ")
+            itemTagsSelection.textColor = .label
+            
+            if selected.isEmpty {
+                itemTagsSelection.textColor = .placeholderText
+                itemTagsSelection.text = String(localized: "common.none")
             }
         }
     }
@@ -138,6 +158,40 @@ final class OutfitDetailsController: UIViewController {
         view.layer.borderWidth = 1
         return view
     }()
+    
+    // Tags
+    
+    lazy var itemTagsField: CustomButtonInput = {
+        let view = CustomButtonInput(fieldTitle: String(localized: "common.tag.title"))
+        view.fieldInput.isUserInteractionEnabled = false
+        view.indicatorImageView.isHidden = true
+        view.fieldInput.addAction(UIAction {_ in self.itemTagsPickerView.showTagsPickerView()}, for: .primaryActionTriggered)
+        return view
+    }()
+    
+    lazy var itemTagsSelection: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 1
+        label.textColor = .placeholderText
+        label.textAlignment = .center
+        label.minimumScaleFactor = 0.5
+        label.adjustsFontSizeToFitWidth = true
+        label.font = .systemFont(ofSize: 13, weight: .heavy)
+        return label
+    }()
+    
+    lazy var itemTagsPickerView: TagsPickerView = {
+        let view = TagsPickerView(delegate: self, item.tags)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.isHidden = true
+        view.alpha = 0
+        view.layer.borderColor = UIColor.darkGray.cgColor
+        view.layer.borderWidth = 1
+        return view
+    }()
+
 
     
     // Outfit items
@@ -180,7 +234,7 @@ final class OutfitDetailsController: UIViewController {
     private func configureViewComponents() {
         view.backgroundColor = .background
         
-        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
+        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsSelection, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
         
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
@@ -200,7 +254,7 @@ final class OutfitDetailsController: UIViewController {
             itemImageView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 20),
             itemImageView.leadingAnchor.constraint(lessThanOrEqualTo: view.leadingAnchor, constant: 20),
             itemImageView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
-            itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 1),
+            itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 0.6),
             itemImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
         
@@ -224,7 +278,19 @@ final class OutfitDetailsController: UIViewController {
         ])
         
         NSLayoutConstraint.activate([
-            outfitItemsCollectionView.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
+            itemTagsField.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
+            itemTagsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            itemTagsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            itemTagsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            
+            itemTagsSelection.topAnchor.constraint(equalTo: itemTagsField.fieldBackground.topAnchor),
+            itemTagsSelection.leadingAnchor.constraint(equalTo: itemTagsField.leadingAnchor),
+            itemTagsSelection.trailingAnchor.constraint(equalTo: itemTagsField.trailingAnchor),
+            itemTagsSelection.bottomAnchor.constraint(equalTo: itemTagsField.fieldBackground.bottomAnchor)
+        ])
+        
+        NSLayoutConstraint.activate([
+            outfitItemsCollectionView.topAnchor.constraint(equalTo: itemTagsField.bottomAnchor, constant: 10),
             outfitItemsCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
             outfitItemsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
             outfitItemsCollectionView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.2)
@@ -265,7 +331,21 @@ extension OutfitDetailsController: UICollectionViewDataSource, UICollectionViewD
     }
 }
 
-extension OutfitDetailsController: SeasonsPickerViewDelegate {
+extension OutfitDetailsController: SeasonsPickerViewDelegate, TagsPickerViewDelegate {
+    func tagSelected(_ tag: Tags) {
+        if let idx = selectedTagsArray.firstIndex(of: tag) {
+            selectedTagsArray.remove(at: idx)
+            item.tags.remove(at: idx)
+        } else {
+            selectedTagsArray.append(tag)
+            item.tags.append(tag)
+        }
+    }
+    
+    func tagsDoneButtonPressed() {
+        self.itemTagsPickerView.hideTagsPickerView()
+    }
+    
     func seasonSelected(_ season: Seasons) {
         if let idx = selectedSeasonsArray.firstIndex(of: season) {
             selectedSeasonsArray.remove(at: idx)
