@@ -63,6 +63,16 @@ class OutfitsGallery_ViewCell: UICollectionViewCell {
         label.textAlignment = .right
         return label
     }()
+    
+    private let itemFavoriteImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFit
+        iv.clipsToBounds = true
+        iv.isHidden = true
+        iv.image = UIImage(systemName: "heart.fill")
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        return iv
+    }()
 
 override init(frame: CGRect) {
     super.init(frame: frame)
@@ -96,6 +106,7 @@ required init?(coder: NSCoder) {
         cardView.addSubview(imageView)
         cardView.addSubview(titleLabel)
         cardView.addSubview(itemCountLabel)
+        cardView.addSubview(itemFavoriteImageView)
 
         NSLayoutConstraint.activate([
             // CardView fills the contentView with a small inset
@@ -118,13 +129,20 @@ required init?(coder: NSCoder) {
             // Item count label on top of ImageView
             itemCountLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 10),
             itemCountLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -10),
-            itemCountLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 6)
+            itemCountLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 6),
+            
+            // Item heart button on top of ImageView
+            
+            itemFavoriteImageView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 10),
+            itemFavoriteImageView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 6),
+            itemFavoriteImageView.heightAnchor.constraint(equalTo: itemCountLabel.heightAnchor, multiplier: 1)
         ])
     }
 
     func configure(with outfit: Outfit, title: String? = nil) {
         titleLabel.text = title
         itemCountLabel.text = "● " + String(outfit.scene.count)
+        itemFavoriteImageView.isHidden = !outfit.isFavorite
 
         imageView.sd_setImage(with: URL(string: outfit.imageID, relativeTo: APIClient.outfitImagesURL)) { [weak self] image, _, _, _ in
             guard let self = self, let image = image else { return }
