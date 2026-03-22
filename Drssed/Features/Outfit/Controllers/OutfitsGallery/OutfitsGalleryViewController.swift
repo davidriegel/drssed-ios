@@ -94,7 +94,7 @@ class OutfitsGalleryViewController: UIViewController {
     }
     
     var isSearching: Bool = false
-    let placeholders: [String] = ["hallo ich bin outfit"]
+    let placeholders: [String] = [String(localized: "lookbook.search.placeholder")]
     
     var outfitSortSelected: sortOptions = .Date {
         didSet {
@@ -261,8 +261,8 @@ class OutfitsGalleryViewController: UIViewController {
         var btn = UIButton()
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.lineBreakMode = NSLineBreakMode.byWordWrapping
-        var attributedTitle = NSMutableAttributedString(string: "Seems like you don't have any outfits yet..?\n", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.secondaryLabel])
-        let callToAction = NSAttributedString(string: "Create your first outfit now!", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .heavy), .foregroundColor: UIColor.label])
+        var attributedTitle = NSMutableAttributedString(string: String(localized: "lookbook.upload.cta1"), attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.secondaryLabel])
+        let callToAction = NSAttributedString(string: String(localized: "lookbook.upload.cta2"), attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .heavy), .foregroundColor: UIColor.label])
         attributedTitle.append(NSAttributedString(attributedString: callToAction))
         btn.setAttributedTitle(attributedTitle, for: .normal)
         btn.isHidden = true

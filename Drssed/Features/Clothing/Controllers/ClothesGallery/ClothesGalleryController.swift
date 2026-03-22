@@ -93,7 +93,7 @@ class ClothesGalleryController: UIViewController {
     }
     
     var isSearching: Bool = false
-    let placeholders: [String] = ["super cool t-shirt", "fav hoodie", "zipper"]
+    let placeholders: [String] = [String(localized: "wardrobe.search.placeholder")]
     
     var clothingSortSelected: sortOptions = .Date {
         didSet {
@@ -277,6 +277,8 @@ class ClothesGalleryController: UIViewController {
         var btn = UIButton()
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.lineBreakMode = NSLineBreakMode.byWordWrapping
+        String(localized: "wardrobe.upload.cta1")
+        String(localized: "wardrobe.upload.cta2")
         var attributedTitle = NSMutableAttributedString(string: "Seems like you have uploaded nothing yet..?\n", attributes: [.font: UIFont.systemFont(ofSize: 16, weight: .bold), .foregroundColor: UIColor.secondaryLabel])
         let callToAction = NSAttributedString(string: "Upload your first clothing piece now!", attributes: [.font: UIFont.systemFont(ofSize: 18, weight: .heavy), .foregroundColor: UIColor.label])
         attributedTitle.append(NSAttributedString(attributedString: callToAction))
