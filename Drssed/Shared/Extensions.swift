@@ -179,20 +179,17 @@ public enum CornerStyle {
 
 extension UIView {
     func renderAsTransparentImage() -> UIImage? {
-        // Sicherstellen, dass Canvas Hintergrund transparent ist
         let originalBackground = backgroundColor
         backgroundColor = .clear
         
         let format = UIGraphicsImageRendererFormat()
-        format.scale = UIScreen.main.scale
-        format.opaque = false // 🔑 Transparent möglich
+        format.opaque = false
 
         let renderer = UIGraphicsImageRenderer(size: bounds.size, format: format)
         let image = renderer.image { ctx in
             layer.render(in: ctx.cgContext)
         }
         
-        // Hintergrund zurücksetzen
         backgroundColor = originalBackground
         return image
     }
