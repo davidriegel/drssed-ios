@@ -38,6 +38,7 @@ final class OutfitDetailsController: UIViewController {
         configureViewComponents()
         selectedSeasonsArray = item.seasons
         selectedTagsArray = item.tags
+        itemFavoriteField.fieldInput.isOn = item.isFavorite
     }
     
     // MARK: - Variables -
@@ -159,6 +160,14 @@ final class OutfitDetailsController: UIViewController {
         return view
     }()
     
+    // Favorite
+    
+    lazy var itemFavoriteField: CustomSwitchInput = {
+        let view = CustomSwitchInput(fieldTitle: String(localized: "common.favorite.title"))
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+    
     // Tags
     
     lazy var itemTagsField: CustomButtonInput = {
@@ -234,7 +243,7 @@ final class OutfitDetailsController: UIViewController {
     private func configureViewComponents() {
         view.backgroundColor = .background
         
-        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsSelection, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
+        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
         
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
@@ -277,12 +286,23 @@ final class OutfitDetailsController: UIViewController {
             itemSeasonsSelection.bottomAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.bottomAnchor)
         ])
         
+        let sv = UIStackView(arrangedSubviews: [itemTagsField, itemFavoriteField])
+        
+        sv.axis = .horizontal
+        sv.alignment = .center
+        sv.spacing = 5
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(sv)
         NSLayoutConstraint.activate([
-            itemTagsField.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
-            itemTagsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            itemTagsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            itemTagsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
+            sv.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
+            sv.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            sv.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            sv.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            itemTagsField.heightAnchor.constraint(equalTo: sv.heightAnchor)
+        ])
+        
+        itemTagsField.addSubview(itemTagsSelection)
+        NSLayoutConstraint.activate([
             itemTagsSelection.topAnchor.constraint(equalTo: itemTagsField.fieldBackground.topAnchor),
             itemTagsSelection.leadingAnchor.constraint(equalTo: itemTagsField.leadingAnchor),
             itemTagsSelection.trailingAnchor.constraint(equalTo: itemTagsField.trailingAnchor),
