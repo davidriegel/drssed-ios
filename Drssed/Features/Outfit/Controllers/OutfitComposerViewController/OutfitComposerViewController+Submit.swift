@@ -306,9 +306,11 @@ class OutfitComposerViewController_Submit: UIViewController {
                     name: self.outfitNameField.fieldInput.text ?? "",
                     imageID: "",
                     itemDescription: "",
+                    isPublic: self.outfitPublicField.fieldInput.isOn,
+                    isFavorite: self.outfitFavoriteField.fieldInput.isOn,
                     seasons: self.selectedSeasonsArray,
                     tags: self.selectedTagsArray,
-                    scene: self.outfitScene
+                    scene: self.outfitScene,
                 )
                 
                 await self.outfitRepo.addOrUpdateOutfit(from: outfit)
