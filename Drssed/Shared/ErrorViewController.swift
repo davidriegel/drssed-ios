@@ -27,7 +27,7 @@ final class ErrorViewController: UIViewController {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = String(localized: "error.title.system")  // "Etwas ist schiefgelaufen"
+        label.text = String(localized: "error.title.system")
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textColor = .label
         label.textAlignment = .center
@@ -48,7 +48,7 @@ final class ErrorViewController: UIViewController {
     
     private lazy var retryButton: UIButton = {
         var config = UIButton.Configuration.filled()
-        config.title = String(localized: "error.action.retry")  // "Erneut versuchen"
+        config.title = String(localized: "error.action.retry")
         config.cornerStyle = .medium
         config.buttonSize = .large
         
@@ -120,7 +120,6 @@ final class ErrorViewController: UIViewController {
             messageLabel.text = getMessageForAuthError(authError)
         } else {
             messageLabel.text = String(localized: "error.api.generic.suggestion")
-            // "Es gab ein Problem beim Starten der App. Bitte überprüfe deine Internetverbindung."
         }
     }
     
@@ -128,15 +127,12 @@ final class ErrorViewController: UIViewController {
         switch error {
         case .offline:
             return String(localized: "error.api.offline.description")
-            // "Keine Internetverbindung. Bitte überprüfe deine Verbindung und versuche es erneut."
             
         case .serverUnavailable:
             return String(localized: "error.api.serverUnavailable.description")
-            // "Der Server ist momentan nicht erreichbar. Bitte versuche es später erneut."
             
         case .timeout:
             return String(localized: "error.api.timeout.description")
-            // "Die Verbindung wurde unterbrochen. Bitte versuche es erneut."
             
         default:
             return String(localized: "error.api.generic.suggestion")
@@ -147,7 +143,6 @@ final class ErrorViewController: UIViewController {
         switch error {
         case .userNotSignedIn:
             return String(localized: "error.auth.unknown.description")
-            // "Fehler bei der Anmeldung. Bitte versuche es erneut."
             
         default:
             return String(localized: "error.api.generic.suggestion")
