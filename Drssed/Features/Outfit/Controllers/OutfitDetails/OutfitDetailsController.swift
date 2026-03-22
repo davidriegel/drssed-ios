@@ -86,7 +86,7 @@ final class OutfitDetailsController: UIViewController {
     // Segment Control
     
     lazy var segmentController: UISegmentedControl = {
-        let sc = UISegmentedControl(items: [String(localized: "common.view"), String(localized: "common.edit")])
+        let sc = UISegmentedControl(items: [String(localized: "common.view")])
         sc.translatesAutoresizingMaskIntoConstraints = false
         sc.selectedSegmentIndex = 0
         sc.tintColor = .secondarySystemBackground
