@@ -72,7 +72,7 @@ actor AuthenticationManager {
     
     func registerAsGuest() async throws {
         do {
-            let tokenModel = try await APIClient.shared.authHandler.registerAsGuest()
+            try await APIClient.shared.authHandler.registerAsGuest()
             authState = .guest
         } catch {
             authState = .unauthenticated

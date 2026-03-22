@@ -15,6 +15,7 @@ final class AuthHandler {
     
     // MARK: -- register as new guest
     
+    @discardableResult
     public func registerAsGuest() async throws -> TokenModel {
         let request = try await APIClient.shared.createRequest(endpoint: "/auth/guest", method: .POST, authentication: false)
         
