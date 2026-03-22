@@ -36,6 +36,28 @@ final class OutfitDetailsController: UIViewController {
         super.viewDidLoad()
         
         configureViewComponents()
+        selectedSeasonsArray = item.seasons
+    }
+    
+    // MARK: - Variables -
+    
+    var selectedSeasonsArray: [Seasons] = [] {
+        didSet {
+            var selected = [String]()
+            if selectedSeasonsArray.contains(.SPRING) { selected.append(String(localized: "common.season.spring"))}
+            if selectedSeasonsArray.contains(.SUMMER) { selected.append(String(localized: "common.season.summer"))}
+            if selectedSeasonsArray.contains(.AUTUMN) { selected.append(String(localized: "common.season.autumn"))}
+            if selectedSeasonsArray.contains(.WINTER) { selected.append(String(localized: "common.season.winter"))}
+            
+            
+            itemSeasonsSelection.text = selected.joined(separator: ", ")
+            itemSeasonsSelection.textColor = .label
+            
+            if selected.isEmpty {
+                itemSeasonsSelection.textColor = .placeholderText
+                itemSeasonsSelection.text = String(localized: "common.none")
+            }
+        }
     }
     
     // MARK: - UI Elements -
@@ -86,6 +108,38 @@ final class OutfitDetailsController: UIViewController {
         return view
     }()
     
+    // Seasons
+    
+    lazy var itemSeasonsField: CustomButtonInput = {
+        let view = CustomButtonInput(fieldTitle: String(localized: "common.season.title"))
+        view.fieldInput.isUserInteractionEnabled = false
+        view.indicatorImageView.isHidden = true
+        view.fieldInput.addAction(UIAction {_ in self.itemSeasonsPickerView.showSeasonsPickerView()}, for: .primaryActionTriggered)
+        return view
+    }()
+    
+    lazy var itemSeasonsSelection: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 1
+        label.textColor = .placeholderText
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 13, weight: .heavy)
+        return label
+    }()
+    
+    lazy var itemSeasonsPickerView: SeasonsPickerView = {
+        let view = SeasonsPickerView(delegate: self, item.seasons)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemBackground
+        view.isHidden = true
+        view.alpha = 0
+        view.layer.borderColor = UIColor.darkGray.cgColor
+        view.layer.borderWidth = 1
+        return view
+    }()
+
+    
     // Outfit items
     
     lazy var  outfitItemsCollectionView: UICollectionView = {
@@ -126,7 +180,7 @@ final class OutfitDetailsController: UIViewController {
     private func configureViewComponents() {
         view.backgroundColor = .background
         
-        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, outfitItemsCollectionView].forEach { view.addSubview($0) }
+        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
         
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
@@ -158,7 +212,19 @@ final class OutfitDetailsController: UIViewController {
         ])
         
         NSLayoutConstraint.activate([
-            outfitItemsCollectionView.topAnchor.constraint(equalTo: itemNameTextField.bottomAnchor, constant: 10),
+            itemSeasonsField.topAnchor.constraint(equalTo: itemNameTextField.bottomAnchor, constant: 10),
+            itemSeasonsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            itemSeasonsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            itemSeasonsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            
+            itemSeasonsSelection.topAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.topAnchor),
+            itemSeasonsSelection.leadingAnchor.constraint(equalTo: itemSeasonsField.leadingAnchor),
+            itemSeasonsSelection.trailingAnchor.constraint(equalTo: itemSeasonsField.trailingAnchor),
+            itemSeasonsSelection.bottomAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.bottomAnchor)
+        ])
+        
+        NSLayoutConstraint.activate([
+            outfitItemsCollectionView.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
             outfitItemsCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
             outfitItemsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
             outfitItemsCollectionView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.2)
@@ -196,5 +262,21 @@ extension OutfitDetailsController: UICollectionViewDataSource, UICollectionViewD
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let width = (collectionView.frame.width - 40) / 3
         return CGSize(width: width, height: width)
+    }
+}
+
+extension OutfitDetailsController: SeasonsPickerViewDelegate {
+    func seasonSelected(_ season: Seasons) {
+        if let idx = selectedSeasonsArray.firstIndex(of: season) {
+            selectedSeasonsArray.remove(at: idx)
+            item.seasons.remove(at: idx)
+        } else {
+            selectedSeasonsArray.append(season)
+            item.seasons.append(season)
+        }
+    }
+    
+    func seasonsDoneButtonPressed() {
+        self.itemSeasonsPickerView.hideSeasonsPickerView()
     }
 }
