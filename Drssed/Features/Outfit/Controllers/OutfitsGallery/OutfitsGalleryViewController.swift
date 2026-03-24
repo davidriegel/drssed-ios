@@ -36,7 +36,6 @@ class OutfitsGalleryViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         reloadDataFromCoreData()
-        createFABButton.layer.add(createUploadButtonHover(), forKey: "hoverAnimation")
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -165,17 +164,15 @@ class OutfitsGalleryViewController: UIViewController {
     lazy var createFABButton: UIButton = {
         let bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 18, weight: .bold))), for: .normal)
         bt.backgroundColor = .accent
-        bt.tintColor = .label
+        bt.configuration = .prominentGlass()
+        bt.configuration?.baseBackgroundColor = .accent
+        bt.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 18, weight: .bold))), for: .normal)
+        bt.configuration?.baseForegroundColor = .label
         bt.addTarget(self, action: #selector(pushToOutfitCreation), for: .touchUpInside)
         bt.heightAnchor.constraint(equalToConstant: self.view.bounds.height / 14).isActive = true
         bt.widthAnchor.constraint(equalToConstant: self.view.bounds.height / 14).isActive = true
         bt.layer.cornerRadius = (self.view.bounds.height / 14) / 2
-        bt.layer.shadowColor = UIColor.label.cgColor
-        bt.layer.shadowOpacity = 0.4
-        bt.layer.shadowRadius = 6
-        bt.layer.shadowOffset = CGSizeMake(6, 6)
         return bt
     }()
     
@@ -379,21 +376,6 @@ class OutfitsGalleryViewController: UIViewController {
         }
         
         return current[s2.count]
-    }
-    
-    func createUploadButtonHover() -> CABasicAnimation {
-        createFABButton.layer.removeAllAnimations()
-        
-        let hover = CABasicAnimation(keyPath: "position")
-            
-        hover.isAdditive = true
-        hover.fromValue = NSValue(cgPoint: CGPoint.zero)
-        hover.toValue = NSValue(cgPoint: CGPoint(x: 0.0, y: 10.0))
-        hover.autoreverses = true
-        hover.duration = 2
-        hover.repeatCount = Float.infinity
-        
-        return hover
     }
     
     func sortAndFilterDataSource(source: [Outfit]? = nil) -> [Outfit] {

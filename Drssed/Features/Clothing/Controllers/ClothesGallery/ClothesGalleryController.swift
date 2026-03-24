@@ -35,7 +35,6 @@ class ClothesGalleryController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         reloadDataFromCoreData()
-        uploadButton.layer.add(createUploadButtonHover(), forKey: "hoverAnimation")
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -180,17 +179,15 @@ class ClothesGalleryController: UIViewController {
     lazy var uploadButton: UIButton = {
         let bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 18, weight: .bold))), for: .normal)
         bt.backgroundColor = .accent
-        bt.tintColor = .label
+        bt.configuration = .prominentGlass()
+        bt.configuration?.baseBackgroundColor = .accent
+        bt.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 18, weight: .bold))), for: .normal)
+        bt.configuration?.baseForegroundColor = .label
         bt.addTarget(self, action: #selector(addClothingPiece), for: .touchUpInside)
         bt.heightAnchor.constraint(equalToConstant: self.view.bounds.height / 14).isActive = true
         bt.widthAnchor.constraint(equalToConstant: self.view.bounds.height / 14).isActive = true
         bt.layer.cornerRadius = (self.view.bounds.height / 14) / 2
-        bt.layer.shadowColor = UIColor.label.cgColor
-        bt.layer.shadowOpacity = 0.4
-        bt.layer.shadowRadius = 6
-        bt.layer.shadowOffset = CGSizeMake(6, 6)
         return bt
     }()
     
@@ -397,21 +394,6 @@ class ClothesGalleryController: UIViewController {
         return current[s2.count]
     }
     
-    func createUploadButtonHover() -> CABasicAnimation {
-        uploadButton.layer.removeAllAnimations()
-        
-        let hover = CABasicAnimation(keyPath: "position")
-            
-        hover.isAdditive = true
-        hover.fromValue = NSValue(cgPoint: CGPoint.zero)
-        hover.toValue = NSValue(cgPoint: CGPoint(x: 0.0, y: 10.0))
-        hover.autoreverses = true
-        hover.duration = 2
-        hover.repeatCount = Float.infinity
-        
-        return hover
-    }
-    
     func filterClothesType(source: [Clothing]? = nil) -> [Clothing] {
         let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
         guard let clothingType = selectedCategory else { return tempFilteredDataSource }
@@ -486,7 +468,7 @@ class ClothesGalleryController: UIViewController {
         clothingCollectionView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
         clothingCollectionView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -5).isActive = true
         clothingCollectionView.refreshControl = clothingRefreshControll
-        
+
         view.addSubview(uploadButton)
         uploadButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
         uploadButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10).isActive = true
