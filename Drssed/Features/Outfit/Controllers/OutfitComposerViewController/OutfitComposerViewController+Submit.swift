@@ -175,6 +175,9 @@ class OutfitComposerViewController_Submit: UIViewController {
     lazy var finishButton: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.configuration = .prominentGlass()
+        button.configuration?.baseBackgroundColor = .accent
+        button.configuration?.baseForegroundColor = .label
         button.setAttributedTitle(NSAttributedString(string: String(localized: "clothingupload.button.finish"), attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
         button.setTitleColor(.label, for: .normal)
         button.backgroundColor = .accent
