@@ -164,7 +164,7 @@ class OutfitsGalleryViewController: UIViewController {
     lazy var createFABButton: UIButton = {
         let bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.backgroundColor = .accent
+        bt.backgroundColor = .clear
         bt.configuration = .prominentGlass()
         bt.configuration?.baseBackgroundColor = .accent
         bt.setImage(UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 18, weight: .bold))), for: .normal)
