@@ -72,8 +72,8 @@ class OutfitComposerViewController: UIViewController {
     }()
     
     lazy var clearButton: UIButton = {
-        var config = UIButton.Configuration.plain()
-        config.cornerStyle = .capsule
+        var config = UIButton.Configuration.glass()
+        config.baseForegroundColor = .label
         config.titleLineBreakMode = .byClipping
         config.image = UIImage(systemName: "arrow.counterclockwise", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 14, weight: .bold)))
         config.imagePlacement = .top
@@ -89,17 +89,15 @@ class OutfitComposerViewController: UIViewController {
             }
         )
         bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.tintColor = .label
         bt.titleLabel?.adjustsFontSizeToFitWidth = true
         bt.titleLabel?.minimumScaleFactor = 0.5
         bt.titleLabel?.numberOfLines = 1
-        bt.backgroundColor = .accent
         return bt
     }()
     
     lazy var randomButton: UIButton = {
-        var config = UIButton.Configuration.plain()
-        config.cornerStyle = .capsule
+        var config = UIButton.Configuration.glass()
+        config.baseForegroundColor = .label
         config.titleLineBreakMode = .byClipping
         config.image = UIImage(systemName: "dice.fill", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 14, weight: .bold)))
         config.baseBackgroundColor = .accent
@@ -112,17 +110,15 @@ class OutfitComposerViewController: UIViewController {
             UIApplication.shared.topMostViewController()!.present(infoAlert, animated: true)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.tintColor = .label
         bt.titleLabel?.adjustsFontSizeToFitWidth = true
         bt.titleLabel?.minimumScaleFactor = 0.5
         bt.titleLabel?.numberOfLines = 1
-        bt.backgroundColor = .accent
         return bt
     }()
     
     lazy var addButton: UIButton = {
-        var config = UIButton.Configuration.plain()
-        config.cornerStyle = .capsule
+        var config = UIButton.Configuration.glass()
+        config.baseForegroundColor = .label
         config.titleLineBreakMode = .byClipping
         config.image = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 14, weight: .bold)))
         config.imagePlacement = .top
@@ -134,20 +130,20 @@ class OutfitComposerViewController: UIViewController {
             }
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.tintColor = .label
         bt.titleLabel?.adjustsFontSizeToFitWidth = true
         bt.titleLabel?.minimumScaleFactor = 0.5
         bt.titleLabel?.numberOfLines = 1
-        bt.backgroundColor = .accent
         return bt
     }()
     
     lazy var submitButton: UIButton = {
         let bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.configuration = .prominentGlass()
+        bt.configuration?.baseBackgroundColor = .accent
         bt.setAttributedTitle(NSAttributedString(string: String(localized: "common.continue"), attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
         bt.configuration?.titlePadding = 5
-        bt.setTitleColor(.label, for: .normal)
+        bt.configuration?.baseForegroundColor = .label
         bt.backgroundColor = .accent.withAlphaComponent(0.3)
         bt.isEnabled = false
         return bt
