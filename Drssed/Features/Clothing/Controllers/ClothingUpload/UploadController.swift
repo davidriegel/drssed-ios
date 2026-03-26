@@ -8,6 +8,7 @@
 import UIKit
 import SkeletonView
 import TOCropViewController
+import PhotosUI
 
 protocol UploadControllerDelegate: AnyObject {
     func didUploadClothing(_ clothing: Clothing)
@@ -87,7 +88,7 @@ class UploadController: UIViewController {
     
     // MARK: -- Image
     
-    lazy var uploadImageView: UIImageView = {
+    lazy var itemImageView: UIImageView = {
         let iv = UIImageView()
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.isSkeletonable = true
@@ -96,13 +97,6 @@ class UploadController: UIViewController {
         iv.isUserInteractionEnabled = true
         iv.contentMode = .scaleAspectFit
         return iv
-    }()
-    
-    lazy var imagePickerController: UIImagePickerController = {
-        let picker = UIImagePickerController()
-        picker.allowsEditing = false
-        picker.delegate = self
-        return picker
     }()
     
     // MARK: -- Name
@@ -326,25 +320,40 @@ class UploadController: UIViewController {
     }
     
     @objc
-    func uploadImage() {
-        let selectionAlert = UIAlertController(title: String(localized: "imagepicker.uploadimage.title"), message: String(localized: "imagepicker.uploadimage.hint"), preferredStyle: .alert)
-        selectionAlert.addAction(UIAlertAction(title: String(localized: "imagepicker.selectimage"), style: .default, handler: { _ in
-            self.present(self.imagePickerController, animated: true)
-        }))
-        selectionAlert.addAction(UIAlertAction(title: String(localized: "imagepicker.takeimage"), style: .default, handler: { _ in
-            let infoAlert = UIAlertController(title: "Soon", message: "This is currently not possible but very soon will be.", preferredStyle: .alert)
-            infoAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
-            self.present(infoAlert, animated: true)
-        }))
-        selectionAlert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
-        self.present(selectionAlert, animated: true)
+    func showImageSourceOptions() {
+        let actionSheet = UIAlertController(title: String(localized: "imagepicker.source.title"), message: String(localized: "imagepicker.source.message"), preferredStyle: .actionSheet)
+        
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.camera"), style: .default) { [weak self] _ in
+                self?.presentCamera()
+            })
+        }
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.library"), style: .default) { [weak self] _ in
+            self?.presentPhotoPicker()
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+        
+        present(actionSheet, animated: true)
     }
     
-    @objc
-    func soon() {
-        let infoAlert = UIAlertController(title: "🤫", message: String(localized: "workinprogress.message"), preferredStyle: .alert)
-        infoAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
-        self.present(infoAlert, animated: true)
+    private func presentPhotoPicker() {
+        var configuration = PHPickerConfiguration(photoLibrary: .shared())
+        configuration.selectionLimit = 1
+        configuration.filter = .images
+        
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+    
+    private func presentCamera() {
+        let camera = UIImagePickerController()
+        camera.sourceType = .camera
+        camera.allowsEditing = false
+        camera.delegate = self
+        present(camera, animated: true)
     }
     
     @objc
@@ -418,9 +427,9 @@ class UploadController: UIViewController {
     
     @objc func hidePickerView() {
         UIView.animate(withDuration: 0.3) {
-            let topConstraint = self.uploadImageView.constraintsAffectingLayout(for: .vertical).first { $0.firstAttribute == .top } // force unwrap needs to exist.
+            let topConstraint = self.itemImageView.constraintsAffectingLayout(for: .vertical).first { $0.firstAttribute == .top } // force unwrap needs to exist.
             topConstraint!.constant = 15
-            self.uploadImageView.setNeedsLayout()
+            self.itemImageView.setNeedsLayout()
             self.view.layoutIfNeeded()
             self.categoryPicker.alpha = 0
             self.categoryPickerDone.alpha = 0
@@ -463,7 +472,6 @@ class UploadController: UIViewController {
         navigationItem.largeTitleDisplayMode = .never
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(cancelTapped))
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "wand.and.stars", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(soon))
         
         let tap = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing))
         tap.cancelsTouchesInView = false
@@ -474,21 +482,21 @@ class UploadController: UIViewController {
         colorPickerView.delegate = self
         colorPickerView.title = "color picker"
         
-        view.addSubview(uploadImageView)
+        view.addSubview(itemImageView)
         NSLayoutConstraint.activate([
-            uploadImageView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20),
-            uploadImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
-            uploadImageView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.4),
-            uploadImageView.heightAnchor.constraint(equalTo: uploadImageView.widthAnchor)
+            itemImageView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20),
+            itemImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
+            itemImageView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.4),
+            itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor)
         ])
         
-        let imageTap = UITapGestureRecognizer(target: self, action: #selector(uploadImage))
-        uploadImageView.addGestureRecognizer(imageTap)
+        let imageTap = UITapGestureRecognizer(target: self, action: #selector(showImageSourceOptions))
+        itemImageView.addGestureRecognizer(imageTap)
         
         view.addSubview(clothingNameField)
         NSLayoutConstraint.activate([
-            clothingNameField.topAnchor.constraint(equalTo: uploadImageView.topAnchor, constant: 5),
-            clothingNameField.leadingAnchor.constraint(equalTo: uploadImageView.trailingAnchor, constant: 5),
+            clothingNameField.topAnchor.constraint(equalTo: itemImageView.topAnchor, constant: 5),
+            clothingNameField.leadingAnchor.constraint(equalTo: itemImageView.trailingAnchor, constant: 5),
             clothingNameField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             clothingNameField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
         ])
@@ -496,8 +504,8 @@ class UploadController: UIViewController {
         view.addSubview(clothingCategoryField)
         clothingCategoryField.addSubview(clothingCategorySelection)
         NSLayoutConstraint.activate([
-            clothingCategoryField.bottomAnchor.constraint(equalTo: uploadImageView.bottomAnchor, constant: -5),
-            clothingCategoryField.leadingAnchor.constraint(equalTo: uploadImageView.trailingAnchor, constant: 5),
+            clothingCategoryField.bottomAnchor.constraint(equalTo: itemImageView.bottomAnchor, constant: -5),
+            clothingCategoryField.leadingAnchor.constraint(equalTo: itemImageView.trailingAnchor, constant: 5),
             clothingCategoryField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             clothingCategoryField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
             
@@ -510,7 +518,7 @@ class UploadController: UIViewController {
         view.addSubview(clothingSeasonsField)
         clothingSeasonsField.addSubview(clothingSeasonsSelection)
         NSLayoutConstraint.activate([
-            clothingSeasonsField.topAnchor.constraint(equalTo: uploadImageView.bottomAnchor, constant: 10),
+            clothingSeasonsField.topAnchor.constraint(equalTo: itemImageView.bottomAnchor, constant: 10),
             clothingSeasonsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
             clothingSeasonsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             clothingSeasonsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
@@ -685,33 +693,60 @@ extension UploadController: UIPickerViewDelegate, UIPickerViewDataSource {
     }
 }
 
-extension UploadController: UIImagePickerControllerDelegate, UINavigationControllerDelegate, TOCropViewControllerDelegate {
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-        Task {
-            dismiss(animated: true)
+extension UploadController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        
+        guard let result = results.first else { return }
+        
+        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+            guard let self = self else { return }
             
-            let image = info[.originalImage] as? UIImage ?? UIImage()
-            
-            let assetPath = info[.imageURL] as! NSURL
-            self.fileExtension = (assetPath.absoluteString ?? "").components(separatedBy: ".").last ?? ""
-            
-            guard ["png", "jpg", "jpeg"].contains(fileExtension) else {
-                let alert = UIAlertController(title: "", message: "Unsupported file type for your profile picture. [\(fileExtension)]", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { _ in
-                    self.dismiss(animated: true)
-                }))
-                present(alert, animated: true)
+            if let error = error {
+                DispatchQueue.main.async {
+                    ErrorHandler.handle(error)
+                }
                 return
             }
             
-            presentCropView(with: image)
+            guard let image = object as? UIImage else { return }
             
+            if let identifier = result.itemProvider.registeredTypeIdentifiers.first {
+                if identifier.contains("png") {
+                    self.fileExtension = "png"
+                } else if identifier.contains("jpeg") || identifier.contains("jpg") {
+                    self.fileExtension = "jpg"
+                } else {
+                    self.fileExtension = "jpg"
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self.presentCropView(with: image)
+            }
         }
     }
+}
+
+extension UploadController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        dismiss(animated: true)
+        
+        guard let image = info[.originalImage] as? UIImage else { return }
+        self.fileExtension = "jpg"
+        
+        presentCropView(with: image)
+    }
     
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true)
+    }
+}
+
+extension UploadController: TOCropViewControllerDelegate {
     func cropViewController(_ cropViewController: TOCropViewController, didCropTo image: UIImage, with cropRect: CGRect, angle: Int) {
         Task {
-            uploadImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
+            itemImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             cropViewController.dismiss(animated: true)
             
             do {
@@ -726,18 +761,18 @@ extension UploadController: UIImagePickerControllerDelegate, UINavigationControl
                     categoryPicker.delegate?.pickerView?(categoryPicker, didSelectRow: index, inComponent: 0)
                 }
                 
-                uploadImageView.sd_setImage(with: clothingURL)
-                uploadImageView.hideSkeleton()
+                itemImageView.sd_setImage(with: clothingURL)
+                itemImageView.hideSkeleton()
             } catch APIError.payloadTooLarge {
                 self.imageID = ""
-                self.uploadImageView.image = UIImage(named: "upload_placeholder")
-                self.uploadImageView.hideSkeleton()
+                self.itemImageView.image = UIImage(named: "upload_placeholder")
+                self.itemImageView.hideSkeleton()
                 
                 ErrorHandler.handle(APIError.payloadTooLarge(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
             } catch APIError.unprocessableContent {
                 self.imageID = ""
-                self.uploadImageView.image = UIImage(named: "upload_placeholder")
-                self.uploadImageView.hideSkeleton()
+                self.itemImageView.image = UIImage(named: "upload_placeholder")
+                self.itemImageView.hideSkeleton()
                 
                 
                 ErrorHandler.handle(APIError.unprocessableContent(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.uploadimage.hint")))

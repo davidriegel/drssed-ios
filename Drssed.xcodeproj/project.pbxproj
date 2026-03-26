@@ -18,6 +18,7 @@
 		C918BC592F61EA8600663AF4 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C918BC582F61EA8600663AF4 /* LICENSE */; };
 		C95C4B302E7727A900844DC8 /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B2F2E7727A900844DC8 /* CropViewController */; };
 		C95C4B322E7727A900844DC8 /* TOCropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B312E7727A900844DC8 /* TOCropViewController */; };
+		C9D57F7F2F75B50E00757EBC /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D57F7E2F75B50E00757EBC /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,7 +40,6 @@
 
 /* Begin PBXFileReference section */
 		637D85E82BE94CC90010BDBF /* Drssed.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Drssed.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		637D85F92BE94CCC0010BDBF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		637D85FE2BE94CCC0010BDBF /* DrssedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DrssedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		637D86022BE94CCC0010BDBF /* OutfitterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitterTests.swift; sourceTree = "<group>"; };
 		637D86082BE94CCC0010BDBF /* DrssedUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DrssedUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -48,6 +48,9 @@
 		C918BC542F61E3EB00663AF4 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		C918BC562F61EA7C00663AF4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		C918BC582F61EA8600663AF4 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		C9D57F7D2F75B50E00757EBC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C9D57F802F75B51400757EBC /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C9D57F812F75B5AF00757EBC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -114,11 +117,12 @@
 		637D85EA2BE94CC90010BDBF /* Drssed */ = {
 			isa = PBXGroup;
 			children = (
+				C9D57F7E2F75B50E00757EBC /* InfoPlist.strings */,
 				C918BCBA2F61F02D00663AF4 /* Shared */,
 				C918BC842F61EEC400663AF4 /* Features */,
 				C918BC9F2F61EEC600663AF4 /* Core */,
 				C918BCAF2F61EEC900663AF4 /* App */,
-				637D85F92BE94CCC0010BDBF /* Info.plist */,
+				C9D57F812F75B5AF00757EBC /* Info.plist */,
 				636DAD272DB97D9B007F5CC1 /* Resources */,
 			);
 			path = Drssed;
@@ -267,6 +271,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C918BC592F61EA8600663AF4 /* LICENSE in Resources */,
+				C9D57F7F2F75B50E00757EBC /* InfoPlist.strings in Resources */,
 				C918BC572F61EA7C00663AF4 /* README.md in Resources */,
 				C918BC552F61E3F100663AF4 /* .gitignore in Resources */,
 			);
@@ -327,6 +332,18 @@
 			targetProxy = 637D86092BE94CCC0010BDBF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		C9D57F7E2F75B50E00757EBC /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C9D57F7D2F75B50E00757EBC /* en */,
+				C9D57F802F75B51400757EBC /* de */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		637D86102BE94CCC0010BDBF /* Debug */ = {
