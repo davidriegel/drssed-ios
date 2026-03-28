@@ -2231,7 +2231,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Sieht so aus, als hättest du noch keine Outfits..?"
           }
         },
@@ -2436,7 +2436,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Sieht so aus, als hättest du noch nichts hochgeladen..?"
           }
         },
