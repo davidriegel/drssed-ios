@@ -21,7 +21,12 @@ final class OutfitDetailsController: UIViewController {
             self.itemDoneButton.isEnabled = hasChanges
         }
     }
-    var item: Outfit
+    var item: Outfit {
+        didSet {
+            let hasChanges = self.checkForUnsavedChanges()
+            self.itemDoneButton.isEnabled = hasChanges
+        }
+    }
     let clothingRepo = ClothingRepository()
     
     weak var delegate: OutfitDetailsDelegate?
@@ -91,7 +96,7 @@ final class OutfitDetailsController: UIViewController {
     // Segment Control
     
     lazy var segmentController: UISegmentedControl = {
-        let sc = UISegmentedControl(items: [String(localized: "common.view")])
+        let sc = UISegmentedControl(items: [String(localized: "common.view"), String(localized: "common.edit")])
         sc.translatesAutoresizingMaskIntoConstraints = false
         sc.selectedSegmentIndex = 0
         sc.tintColor = .secondarySystemBackground
@@ -147,6 +152,7 @@ final class OutfitDetailsController: UIViewController {
     lazy var itemNameTextField: CustomTextFieldInput = {
         let view = CustomTextFieldInput(fieldTitle: String(localized: "common.name.title"), placeholder: String(localized: "common.placeholder.name"), text: item.name, charCounterWithCharacters: 50)
         view.fieldInput.isUserInteractionEnabled = false
+        view.fieldInput.delegate = self
         return view
     }()
     
@@ -156,7 +162,7 @@ final class OutfitDetailsController: UIViewController {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.season.title"))
         view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in self.itemSeasonsPickerView.showSeasonsPickerView()}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction {_ in self.showInteractionBlocker(); self.view.bringSubviewToFront(self.itemSeasonsPickerView); self.itemSeasonsPickerView.showSeasonsPickerView()}, for: .primaryActionTriggered)
         return view
     }()
     
@@ -185,7 +191,8 @@ final class OutfitDetailsController: UIViewController {
     
     lazy var itemFavoriteField: CustomSwitchInput = {
         let view = CustomSwitchInput(fieldTitle: String(localized: "common.favorite.title"))
-        view.isUserInteractionEnabled = false
+        view.fieldInput.isUserInteractionEnabled = false
+        view.fieldInput.addTarget(self, action: #selector(favoriteToggled), for: .valueChanged)
         return view
     }()
     
@@ -195,7 +202,7 @@ final class OutfitDetailsController: UIViewController {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.tag.title"))
         view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in self.itemTagsPickerView.showTagsPickerView()}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction {_ in self.showInteractionBlocker(); self.view.bringSubviewToFront(self.itemTagsPickerView); self.itemTagsPickerView.showTagsPickerView()}, for: .primaryActionTriggered)
         return view
     }()
     
@@ -221,8 +228,6 @@ final class OutfitDetailsController: UIViewController {
         view.layer.borderWidth = 1
         return view
     }()
-
-
     
     // Outfit items
     
@@ -242,6 +247,13 @@ final class OutfitDetailsController: UIViewController {
     }()
     
     // MARK: - Functions -
+    
+    // MARK: Objc Functions
+    
+    @objc
+    func favoriteToggled() {
+        item.isFavorite.toggle()
+    }
     
     func saveItemChanges() {
         // SAVE ITEM
@@ -268,6 +280,15 @@ final class OutfitDetailsController: UIViewController {
         return savedItem != item
     }
     
+    func toggleEditing() {
+        itemNameTextField.fieldInput.isUserInteractionEnabled.toggle()
+        itemSeasonsField.fieldInput.isUserInteractionEnabled.toggle()
+        itemSeasonsField.indicatorImageView.isHidden.toggle()
+        itemTagsField.fieldInput.isUserInteractionEnabled.toggle()
+        itemTagsField.indicatorImageView.isHidden.toggle()
+        itemFavoriteField.fieldInput.isUserInteractionEnabled.toggle()
+    }
+    
     
     private func configureViewComponents() {
         view.backgroundColor = .background
@@ -280,7 +301,7 @@ final class OutfitDetailsController: UIViewController {
         ])
         
         segmentController.addAction(UIAction { _ in
-            //self.segmentController.selectedSegmentIndex == 0 ? self.disableEditing() : self.enableEditing()
+            self.toggleEditing()
         }, for: .valueChanged)
         
         NSLayoutConstraint.activate([
@@ -314,7 +335,12 @@ final class OutfitDetailsController: UIViewController {
             itemSeasonsSelection.topAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.topAnchor),
             itemSeasonsSelection.leadingAnchor.constraint(equalTo: itemSeasonsField.leadingAnchor),
             itemSeasonsSelection.trailingAnchor.constraint(equalTo: itemSeasonsField.trailingAnchor),
-            itemSeasonsSelection.bottomAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.bottomAnchor)
+            itemSeasonsSelection.bottomAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.bottomAnchor),
+            
+            itemSeasonsPickerView.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 15),
+            itemSeasonsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
+            itemSeasonsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            itemSeasonsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
         ])
         
         let sv = UIStackView(arrangedSubviews: [itemTagsField, itemFavoriteField])
@@ -337,7 +363,12 @@ final class OutfitDetailsController: UIViewController {
             itemTagsSelection.topAnchor.constraint(equalTo: itemTagsField.fieldBackground.topAnchor),
             itemTagsSelection.leadingAnchor.constraint(equalTo: itemTagsField.leadingAnchor),
             itemTagsSelection.trailingAnchor.constraint(equalTo: itemTagsField.trailingAnchor),
-            itemTagsSelection.bottomAnchor.constraint(equalTo: itemTagsField.fieldBackground.bottomAnchor)
+            itemTagsSelection.bottomAnchor.constraint(equalTo: itemTagsField.fieldBackground.bottomAnchor),
+            
+            itemTagsPickerView.topAnchor.constraint(equalTo: itemTagsField.bottomAnchor, constant: 15),
+            itemTagsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
+            itemTagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            itemTagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
         ])
         
         NSLayoutConstraint.activate([
@@ -394,6 +425,7 @@ extension OutfitDetailsController: SeasonsPickerViewDelegate, TagsPickerViewDele
     }
     
     func tagsDoneButtonPressed() {
+        self.hideInteractionBlocker()
         self.itemTagsPickerView.hideTagsPickerView()
     }
     
@@ -408,6 +440,26 @@ extension OutfitDetailsController: SeasonsPickerViewDelegate, TagsPickerViewDele
     }
     
     func seasonsDoneButtonPressed() {
+        self.hideInteractionBlocker()
         self.itemSeasonsPickerView.hideSeasonsPickerView()
+    }
+}
+
+extension OutfitDetailsController: UITextFieldDelegate {
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+    
+    func textField(_ textField: UITextField, shouldChangeCharactersInRanges ranges: [NSValue], replacementString string: String) -> Bool {
+        if textField == self.itemNameTextField.fieldInput {
+            if string == "" { item.name = itemNameTextField.fieldInput.text!.dropLast().description; return true }
+            
+            guard itemNameTextField.fieldInput.text?.count ?? 0 < 50 else { return false }
+            
+            item.name = itemNameTextField.fieldInput.text! + string
+        }
+        
+        return true
     }
 }
