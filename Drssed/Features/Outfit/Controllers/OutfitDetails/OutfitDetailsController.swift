@@ -15,7 +15,12 @@ protocol OutfitDetailsDelegate: ModalPresentationDelegate {
 }
 
 final class OutfitDetailsController: UIViewController {
-    var savedItem: Outfit
+    var savedItem: Outfit {
+        didSet {
+            let hasChanges = self.checkForUnsavedChanges()
+            self.itemDoneButton.isEnabled = hasChanges
+        }
+    }
     var item: Outfit
     let clothingRepo = ClothingRepository()
     
@@ -92,6 +97,22 @@ final class OutfitDetailsController: UIViewController {
         sc.tintColor = .secondarySystemBackground
         sc.selectedSegmentTintColor = .accent
         return sc
+    }()
+    
+    // Done Button
+    
+    lazy var itemDoneButton: UIButton = {
+        let bt = UIButton(type: .system, primaryAction: UIAction {_ in
+            self.saveItemChanges()
+        })
+        let title = String(localized: "common.save")
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setTitle(title, for: .normal)
+        bt.titleLabel?.font = .preferredFont(forTextStyle: .headline)
+        bt.setTitleColor(.accent, for: .normal)
+        bt.setTitleColor(.lightGray, for: .disabled)
+        bt.isEnabled = false
+        return bt
     }()
     
     // Delete button
@@ -222,6 +243,10 @@ final class OutfitDetailsController: UIViewController {
     
     // MARK: - Functions -
     
+    func saveItemChanges() {
+        // SAVE ITEM
+    }
+    
     func deleteItem() async -> Void {
         let alert = UIAlertController(title: String(localized: "outfitdetails.delete.title"), message: String(localized: "outfitdetails.delete.question"), preferredStyle: .alert)
         
@@ -239,11 +264,15 @@ final class OutfitDetailsController: UIViewController {
         present(alert, animated: true)
     }
     
+    func checkForUnsavedChanges() -> Bool {
+        return savedItem != item
+    }
+    
     
     private func configureViewComponents() {
         view.backgroundColor = .background
         
-        [segmentController, itemDeleteButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
+        [segmentController, itemDeleteButton, itemDoneButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
         
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
@@ -256,7 +285,9 @@ final class OutfitDetailsController: UIViewController {
         
         NSLayoutConstraint.activate([
             itemDeleteButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
-            itemDeleteButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20)
+            itemDeleteButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            itemDoneButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
+            itemDoneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
         
         NSLayoutConstraint.activate([
