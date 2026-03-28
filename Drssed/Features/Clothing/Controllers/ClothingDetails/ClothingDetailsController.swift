@@ -299,22 +299,40 @@ final class ClothingDetailsController: UIViewController {
     }
     
     @objc
-    private func imagePickerPrompt() {
-        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+    func showImageSourceOptions() {
+        let actionSheet = UIAlertController(title: String(localized: "imagepicker.source.title"), message: String(localized: "imagepicker.source.message"), preferredStyle: .actionSheet)
         
-        actionSheet.addAction(UIAlertAction(title: String(localized: "common.camera"), style: .default, handler: { _ in
-            //self.present(UIImagePickerController().setViewControllers(), animated: true)
-        }))
-        
-        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
-            actionSheet.addAction(UIAlertAction(title: String(localized: "common.photoLibrary"), style: .default, handler: { _ in
-                self.present(self.itemImagePicker, animated: true)
-            }))
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.camera"), style: .default) { [weak self] _ in
+                self?.presentCamera()
+            })
         }
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.library"), style: .default) { [weak self] _ in
+            self?.presentPhotoPicker()
+        })
         
         actionSheet.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
         
         present(actionSheet, animated: true)
+    }
+    
+    private func presentPhotoPicker() {
+        var configuration = PHPickerConfiguration(photoLibrary: .shared())
+        configuration.selectionLimit = 1
+        configuration.filter = .images
+        
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+    
+    private func presentCamera() {
+        let camera = UIImagePickerController()
+        camera.sourceType = .camera
+        camera.allowsEditing = false
+        camera.delegate = self
+        present(camera, animated: true)
     }
     
     // MARK: - UI Elements
@@ -369,21 +387,11 @@ final class ClothingDetailsController: UIViewController {
         iv.clipsToBounds = true
         iv.isUserInteractionEnabled = false
         
-        let imageTap = UITapGestureRecognizer(target: self, action: #selector(imagePickerPrompt))
+        let imageTap = UITapGestureRecognizer(target: self, action: #selector(showImageSourceOptions))
         iv.addGestureRecognizer(imageTap)
         
         iv.sd_setImage(with: URL(string: item.imageID, relativeTo: APIClient.clothingImagesURL), placeholderImage: UIImage(named: "placeholder.upload"))
         return iv
-    }()
-    
-    lazy var itemImagePicker: PHPickerViewController = {
-        var config = PHPickerConfiguration()
-        config.filter = .images
-        config.selectionLimit = 1
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
-        picker.modalPresentationStyle = .fullScreen
-        return picker
     }()
     
     /// Name UI
@@ -769,6 +777,20 @@ extension ClothingDetailsController: UIAdaptivePresentationControllerDelegate {
             return
         }
         promptUnsavedChanges(dismissAfterSave: true)
+    }
+}
+
+extension ClothingDetailsController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        dismiss(animated: true)
+        
+        guard let image = info[.originalImage] as? UIImage else { return }
+        
+        presentCropView(with: image)
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true)
     }
 }
 
