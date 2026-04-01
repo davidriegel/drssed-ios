@@ -108,7 +108,9 @@ final class OutfitDetailsController: UIViewController {
     
     lazy var itemDoneButton: UIButton = {
         let bt = UIButton(type: .system, primaryAction: UIAction {_ in
-            self.saveItemChanges()
+            Task {
+                await self.saveItemChanges()
+            }
         })
         let title = String(localized: "common.save")
         bt.translatesAutoresizingMaskIntoConstraints = false
@@ -255,8 +257,10 @@ final class OutfitDetailsController: UIViewController {
         item.isFavorite.toggle()
     }
     
-    func saveItemChanges() {
-        // SAVE ITEM
+    func saveItemChanges() async {
+        if await AppRepository.shared.outfitRepository.addOrUpdateOutfit(from: item) {
+            savedItem = item
+        }
     }
     
     func deleteItem() async -> Void {
