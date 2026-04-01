@@ -53,13 +53,9 @@ public final class OutfitRepository {
 
             let apiModel: OutfitAPI
             if let old = existing {
-                apiModel = old.toAPI()
-                //apiModel = try await APIHandler.shared.outfitHandler.patchEditClothing(oldClothing: old, newClothing: domainModel)
-                //apiModel = try await APIHandler.shared.outfitHandler.getMyOutfits().items.first!
+                apiModel = try await APIClient.shared.outfitHandler.patchOutfit(old, domainModel)
             } else {
-                apiModel = try await APIClient.shared.outfitHandler.createNewOutfit(
-                    domainModel
-                )
+                apiModel = try await APIClient.shared.outfitHandler.createNewOutfit(domainModel)
             }
 
             let syncedDomainModel = apiModel.toDomain()

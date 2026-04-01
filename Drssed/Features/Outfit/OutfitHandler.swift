@@ -56,20 +56,36 @@ final class OutfitHandler {
 
     // MARK: -- PATCH UPDATE OUTFIT
     
-    public func patchOutfit(_ domainModel: Outfit) async throws -> OutfitAPI {
-        let endpoint = "/outfits/\(domainModel.id)"
+    public func patchOutfit(_ oldDomainModel: Outfit, _ newDomainModel: Outfit) async throws -> OutfitAPI {
+        var requestBody: [String: Any] = [:]
         
-        let requestBody: [String: Any] = [
-            "name": domainModel.name,
-            "is_favorite": domainModel.isFavorite,
-            "is_public": domainModel.isPublic,
-            "seasons": domainModel.seasons.map { $0.rawValue.lowercased() },
-            "tags": domainModel.tags.map { $0.rawValue.lowercased() }
-        ]
+        if oldDomainModel.name != newDomainModel.name {
+            requestBody["name"] = newDomainModel.name
+        }
+        
+        if oldDomainModel.isFavorite != newDomainModel.isFavorite {
+            requestBody["is_favorite"] = newDomainModel.isFavorite
+        }
+        
+        if oldDomainModel.isPublic != newDomainModel.isPublic {
+            requestBody["is_public"] = newDomainModel.isPublic
+        }
+        
+        if oldDomainModel.tags != newDomainModel.tags {
+            requestBody["tags"] = newDomainModel.tags.map(\.rawValue)
+        }
+        
+        if oldDomainModel.seasons != newDomainModel.seasons {
+            requestBody["seasons"] = newDomainModel.seasons.map(\.rawValue)
+        }
+        
+        guard !requestBody.isEmpty else {
+            return newDomainModel.toAPI()
+        }
         
         let data = try JSONSerialization.data(withJSONObject: requestBody)
         
-        let request = try await APIClient.shared.createRequest(endpoint: "/outfits/\(domainModel.id)", method: .PATCH, body: data)
+        let request = try await APIClient.shared.createRequest(endpoint: "/outfits/\(newDomainModel.id)", method: .PATCH, body: data)
         let outfitAPIWrapper: ItemWrapper<OutfitAPI> = try await APIClient.shared.executeRequestAndDecode(request: request)
 
         return outfitAPIWrapper.item
