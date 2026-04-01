@@ -55,69 +55,24 @@ final class OutfitHandler {
     }
 
     // MARK: -- PATCH UPDATE OUTFIT
-
-    public func updateOutfit(
-        _ domainModel: Outfit,
-        previewImageData: Data? = nil,
-        previewFilename: String = "preview.jpg",
-        previewMimeType: String = "image/jpeg"
-    ) async throws -> OutfitAPI {
-        var seasonsStrings: [String] = []
-        for season in domainModel.seasons {
-            seasonsStrings.append(season.rawValue)
-        }
-
-        var tagsStrings: [String] = []
-        for tag in domainModel.tags {
-            tagsStrings.append(tag.rawValue)
-        }
-
-        let sceneJSONData = try JSONEncoder().encode(domainModel.scene)
-        guard let sceneJSONString = String(data: sceneJSONData, encoding: .utf8) else {
-            throw NSError(domain: "OutfitHandler", code: 11, userInfo: [NSLocalizedDescriptionKey: "Failed to encode scene to UTF-8 string"])
-        }
-
-        let seasonsJSONData = try JSONEncoder().encode(seasonsStrings)
-        guard let seasonsJSONString = String(data: seasonsJSONData, encoding: .utf8) else {
-            throw NSError(domain: "OutfitHandler", code: 12, userInfo: [NSLocalizedDescriptionKey: "Failed to encode seasons to UTF-8 string"])
-        }
-
-        let tagsJSONData = try JSONEncoder().encode(tagsStrings)
-        guard let tagsJSONString = String(data: tagsJSONData, encoding: .utf8) else {
-            throw NSError(domain: "OutfitHandler", code: 13, userInfo: [NSLocalizedDescriptionKey: "Failed to encode tags to UTF-8 string"])
-        }
-
-        let fields: [String: String] = [
+    
+    public func patchOutfit(_ domainModel: Outfit) async throws -> OutfitAPI {
+        let endpoint = "/outfits/\(domainModel.id)"
+        
+        let requestBody: [String: Any] = [
             "name": domainModel.name,
-            "seasons": seasonsJSONString,
-            "tags": tagsJSONString,
-            "scene": sceneJSONString,
-            "description": domainModel.description,
-            "is_public": domainModel.isPublic ? "true" : "false",
-            "is_favorite": domainModel.isFavorite ? "true" : "false"
+            "is_favorite": domainModel.isFavorite,
+            "is_public": domainModel.isPublic,
+            "seasons": domainModel.seasons.map { $0.rawValue.lowercased() },
+            "tags": domainModel.tags.map { $0.rawValue.lowercased() }
         ]
+        
+        let data = try JSONSerialization.data(withJSONObject: requestBody)
+        
+        let request = try await APIClient.shared.createRequest(endpoint: "/outfits/\(domainModel.id)", method: .PATCH, body: data)
+        let outfitAPIWrapper: ItemWrapper<OutfitAPI> = try await APIClient.shared.executeRequestAndDecode(request: request)
 
-        var files: [APIClient.MultipartFile] = []
-        if let previewImageData {
-            files = [
-                .init(
-                    fieldName: "preview_image",
-                    filename: previewFilename,
-                    mimeType: previewMimeType,
-                    data: previewImageData
-                )
-            ]
-        }
-
-        let request = try await APIClient.shared.createMultipartRequest(
-            endpoint: "/users/me/outfits/\(domainModel.id)",
-            method: .PATCH,
-            fields: fields,
-            files: files
-        )
-
-        let outfitWrapper: OutfitWrapper = try await APIClient.shared.executeRequestAndDecode(request: request)
-        return outfitWrapper.outfit
+        return outfitAPIWrapper.item
     }
     
     // MARK: -- GET MY OUTFITS
