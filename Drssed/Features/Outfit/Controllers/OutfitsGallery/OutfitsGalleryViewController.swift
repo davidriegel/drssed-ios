@@ -113,6 +113,12 @@ class OutfitsGalleryViewController: UIViewController {
         }
     }
     
+    var isFavoriteFilterToggled: Bool = false {
+        didSet {
+            sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
+        }
+    }
+    
     enum sortOptions {
         case Name
         case Date
@@ -120,6 +126,23 @@ class OutfitsGalleryViewController: UIViewController {
     }
     
     // MARK: --
+    
+    lazy var navHeartButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: UIImage(systemName: "heart", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), primaryAction: UIAction {_ in
+            self.heartButtonTapped()
+        })
+        return button
+    }()
+    
+    lazy var navSortButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateSortMenu())
+        return button
+    }()
+    
+    lazy var navFilterButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: UIImage(systemName: "slider.horizontal.2.square", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateFilterMenu())
+        return button
+    }()
     
     lazy var searchBarController: UISearchController = {
         let sb = UISearchController()
@@ -217,7 +240,7 @@ class OutfitsGalleryViewController: UIViewController {
         }
         
         outfitSortSelected = sortOption
-        self.navigationItem.rightBarButtonItems?.last!.menu = generateSortMenu()
+        self.navigationItem.rightBarButtonItems?.last{ $0 == navSortButton }?.menu = generateSortMenu()
     }
     
     func sortClothes(source: [Outfit]? = nil) -> [Outfit] {
@@ -229,6 +252,19 @@ class OutfitsGalleryViewController: UIViewController {
         case .Edit:
             sortByEdit(source: source)
         }
+    }
+    
+    func heartButtonTapped() {
+        isFavoriteFilterToggled.toggle()
+        updateHeartButton()
+    }
+    
+    private func updateHeartButton() {
+        let imageName = isFavoriteFilterToggled ? "heart.fill" : "heart"
+        navHeartButton.image = UIImage(
+            systemName: imageName,
+            withConfiguration: UIImage.SymbolConfiguration(weight: .bold)
+        )?.withTintColor(.accent, renderingMode: .alwaysOriginal)
     }
     
     private func sortByName(source: [Outfit]? = nil) -> [Outfit] {
@@ -310,11 +346,24 @@ class OutfitsGalleryViewController: UIViewController {
         return menu
     }
     
+    func filterFavoriteOutfits(source: [Outfit]) -> [Outfit] {
+        let tempFilteredDataSource: [Outfit] = dataSource
+        
+        
+        return tempFilteredDataSource.filter { outfit in
+            if isFavoriteFilterToggled == false {
+                return true
+            }
+            
+            return outfit.isFavorite == true
+        }
+    }
+    
     func filterBySeason(_ seasonSelected: Seasons) {
         outfitSeasonsSelected.contains(seasonSelected) ? outfitSeasonsSelected.removeAll(where: { season in
             return season == seasonSelected
         }) : outfitSeasonsSelected.append(seasonSelected)
-        self.navigationItem.rightBarButtonItems?.first!.menu = generateFilterMenu()
+        self.navigationItem.rightBarButtonItems?.last{ $0 == navFilterButton }?.menu = generateFilterMenu()
     }
     
     func filterClothesSeason(source: [Outfit]? = nil) -> [Outfit] {
@@ -379,7 +428,8 @@ class OutfitsGalleryViewController: UIViewController {
     }
     
     func sortAndFilterDataSource(source: [Outfit]? = nil) -> [Outfit] {
-        let filterForTags: [Outfit] = filterClothesTags(source: source != nil ? source! : dataSource)
+        let filterForFavorites: [Outfit] = filterFavoriteOutfits(source: source != nil ? source! : dataSource)
+        let filterForTags: [Outfit] = filterClothesTags(source: filterForFavorites)
         let filterForSeasons: [Outfit] = filterClothesSeason(source: filterForTags)
         let sortClothesBy: [Outfit] = sortClothes(source: filterForSeasons)
         return sortClothesBy
@@ -409,7 +459,7 @@ class OutfitsGalleryViewController: UIViewController {
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateScaleMenu())
         
-        navigationItem.rightBarButtonItems = [UIBarButtonItem(image: UIImage(systemName: "slider.horizontal.2.square", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateFilterMenu()), UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateSortMenu())]
+        navigationItem.rightBarButtonItems = [navFilterButton, navSortButton, navHeartButton]
         
         view.addSubview(outfitCollectionView)
         outfitCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
