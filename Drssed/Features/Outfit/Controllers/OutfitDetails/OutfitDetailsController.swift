@@ -51,6 +51,13 @@ final class OutfitDetailsController: UIViewController {
         itemFavoriteField.fieldInput.isOn = item.isFavorite
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        self.navigationController?.isModalInPresentation = true
+        self.navigationController?.presentationController?.delegate = self
+    }
+    
     // MARK: - Variables -
     
     var selectedSeasonsArray: [Seasons] = [] {
@@ -263,6 +270,32 @@ final class OutfitDetailsController: UIViewController {
         }
     }
     
+    func promptUnsavedChanges(dismissAfterSave dismiss: Bool = false) -> Void {
+        let alert = UIAlertController(title: String(localized: "outfitdetails.unsaved.title"), message: String(localized: "outfitdetails.unsaved.message"), preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.save"), style: .default, handler: { _ in
+            Task {
+                await self.saveItemChanges()
+                
+                DispatchQueue.main.async {
+                    if !self.checkForUnsavedChanges() && dismiss {
+                        alert.dismiss(animated: true)
+                    }
+                }
+            }
+        }))
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.undo"), style: .destructive, handler: { _ in
+            self.item = self.savedItem
+        }))
+        
+        alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel, handler: { _ in
+            return
+        }))
+        
+        present(alert, animated: true)
+    }
+    
     func deleteItem() async -> Void {
         let alert = UIAlertController(title: String(localized: "outfitdetails.delete.title"), message: String(localized: "outfitdetails.delete.question"), preferredStyle: .alert)
         
@@ -381,6 +414,23 @@ final class OutfitDetailsController: UIViewController {
             outfitItemsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
             outfitItemsCollectionView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.2)
         ])
+    }
+}
+
+extension OutfitDetailsController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerShouldDismiss(_ presentationController: UIPresentationController) -> Bool {
+        if presentationController.presentedViewController !== self.navigationController { return true }
+        return !self.checkForUnsavedChanges()
+    }
+    
+    func presentationControllerDidAttemptToDismiss(_ presentationController: UIPresentationController) {
+        guard presentationController.presentedViewController === self.navigationController else { return }
+        guard self.checkForUnsavedChanges() else {
+            self.dismiss(animated: true)
+            return
+        }
+        
+        promptUnsavedChanges(dismissAfterSave: true)
     }
 }
 
