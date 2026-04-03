@@ -126,6 +126,16 @@ class ClothesGalleryController: UIViewController {
     
     // MARK: --
     
+    lazy var navSortButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateSortMenu())
+        return button
+    }()
+    
+    lazy var navFilterButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: UIImage(systemName: "slider.horizontal.2.square", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateFilterMenu())
+        return button
+    }()
+    
     lazy var searchBarController: UISearchController = {
         let sb = UISearchController()
         sb.searchBar.placeholder = placeholders.randomElement()
@@ -233,7 +243,7 @@ class ClothesGalleryController: UIViewController {
         }
         
         clothingSortSelected = sortOption
-        self.navigationItem.rightBarButtonItems?.last!.menu = generateSortMenu()
+        self.navigationItem.rightBarButtonItems?.last{ $0 == navSortButton }?.menu = generateSortMenu()
     }
     
     func sortClothes(source: [Clothing]? = nil) -> [Clothing] {
@@ -330,7 +340,7 @@ class ClothesGalleryController: UIViewController {
         selectedSeasons.contains(seasonSelected) ? selectedSeasons.removeAll(where: { season in
             return season == seasonSelected
         }) : selectedSeasons.append(seasonSelected)
-        self.navigationItem.rightBarButtonItems?.first!.menu = generateFilterMenu()
+        self.navigationItem.rightBarButtonItems?.first{ $0 == navFilterButton }?.menu = generateFilterMenu()
     }
     
     func filterClothesSeason(source: [Clothing]? = nil) -> [Clothing] {
@@ -438,7 +448,12 @@ class ClothesGalleryController: UIViewController {
         
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateScaleMenu())
         
-        navigationItem.rightBarButtonItems = [UIBarButtonItem(image: UIImage(systemName: "slider.horizontal.2.square", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateFilterMenu()), UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), menu: generateSortMenu())]
+        let spacerView1 = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 44))
+            
+        let emptyButton = UIBarButtonItem(customView: spacerView1)
+        emptyButton.hidesSharedBackground = true
+        
+        navigationItem.rightBarButtonItems = [navFilterButton, navSortButton, emptyButton]
         
         view.addSubview(categorySegmentControl)
         NSLayoutConstraint.activate([
