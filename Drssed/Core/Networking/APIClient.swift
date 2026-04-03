@@ -35,20 +35,6 @@ final public class APIClient {
         case PATCH
         case DELETE
     }
-
-    public struct MultipartFile {
-        public let fieldName: String
-        public let filename: String
-        public let mimeType: String
-        public let data: Data
-
-        public init(fieldName: String, filename: String, mimeType: String, data: Data) {
-            self.fieldName = fieldName
-            self.filename = filename
-            self.mimeType = mimeType
-            self.data = data
-        }
-    }
     
     private init() {
         let decoder = JSONDecoder()
@@ -124,35 +110,6 @@ final public class APIClient {
         
         return request
     }
-
-    public func createMultipartRequest(
-        endpoint: String,
-        method: requestMethods,
-        fields: [String: String],
-        files: [MultipartFile],
-        headers: [String: String]? = nil,
-        authentication: Bool = true,
-        timeoutIntervall: Double? = nil
-    ) async throws -> URLRequest {
-        let boundary = "Boundary-\(UUID().uuidString)"
-        let body = makeMultipartBody(fields: fields, files: files, boundary: boundary)
-
-        var mergedHeaders: [String: String] = headers ?? [:]
-        mergedHeaders["Content-Type"] = "multipart/form-data; boundary=\(boundary)"
-        mergedHeaders["Accept"] = "application/json"
-
-        var request = try await createRequest(
-            endpoint: endpoint,
-            method: method,
-            body: body,
-            headers: mergedHeaders,
-            authentication: authentication,
-            timeoutIntervall: timeoutIntervall
-        )
-
-        request.setValue(String(body.count), forHTTPHeaderField: "Content-Length")
-        return request
-    }
     
     public func createRequest(withImage image: UIImage, endpoint: String, method: requestMethods) async throws -> URLRequest {
         guard let imageData = image.compressedData(maxSizeMB: 4.8) else {
@@ -174,31 +131,6 @@ final public class APIClient {
         data.append("--\(boundary)--".data(using: .utf8)!)
         
         return try await createRequest(endpoint: endpoint, method: method, body: data, headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"], timeoutIntervall: 120)
-    }
-    
-    private func makeMultipartBody(fields: [String: String], files: [MultipartFile], boundary: String) -> Data {
-        var body = Data()
-        let crlf = "\r\n"
-
-        // Text fields
-        for (key, value) in fields {
-            body.append(Data("--\(boundary)\(crlf)".utf8))
-            body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\(crlf)\(crlf)".utf8))
-            body.append(Data("\(value)\(crlf)".utf8))
-        }
-
-        // File fields
-        for file in files {
-            body.append(Data("--\(boundary)\(crlf)".utf8))
-            body.append(Data("Content-Disposition: form-data; name=\"\(file.fieldName)\"; filename=\"\(file.filename)\"\(crlf)".utf8))
-            body.append(Data("Content-Type: \(file.mimeType)\(crlf)\(crlf)".utf8))
-            body.append(file.data)
-            body.append(Data(crlf.utf8))
-        }
-
-        // Closing boundary
-        body.append(Data("--\(boundary)--\(crlf)".utf8))
-        return body
     }
 
     private func prepareHeaders(customHeaders: [String: String]? = nil, authentication: Bool = true) async throws -> [String: String] {
