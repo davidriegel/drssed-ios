@@ -13,6 +13,10 @@ class GridView: UIView {
         didSet { setNeedsLayout() }
     }
 
+    var numberOfRows: Int = 6 {
+        didSet { setNeedsLayout() }
+    }
+
     var lineColor: UIColor = .darkGray {
         didSet { gridLayer.strokeColor = lineColor.cgColor }
     }
@@ -46,32 +50,28 @@ class GridView: UIView {
     }
 
     private func drawGrid() {
-        guard numberOfColumns > 0 else { return }
-
-        let path = UIBezierPath()
+        guard numberOfColumns > 0, numberOfRows > 0 else { return }
 
         let width = bounds.width
         let height = bounds.height
 
-        let spacing = width / CGFloat(numberOfColumns)
+        let spacingX = width / CGFloat(numberOfColumns)
+        let spacingY = height / CGFloat(numberOfRows)
 
+        let path = UIBezierPath()
+
+        // Vertikale Linien
         for i in 0...numberOfColumns {
-            let x = CGFloat(i) * spacing
+            let x = CGFloat(i) * spacingX
             path.move(to: CGPoint(x: x, y: 0))
             path.addLine(to: CGPoint(x: x, y: height))
         }
 
-        let numberOfRows = Int(floor(height / spacing))
-
+        // Horizontale Linien (JETZT exakt gleich hoch)
         for i in 0...numberOfRows {
-            let y = CGFloat(i) * spacing
+            let y = CGFloat(i) * spacingY
             path.move(to: CGPoint(x: 0, y: y))
             path.addLine(to: CGPoint(x: width, y: y))
-        }
-
-        if CGFloat(numberOfRows) * spacing < height {
-            path.move(to: CGPoint(x: 0, y: height))
-            path.addLine(to: CGPoint(x: width, y: height))
         }
 
         gridLayer.path = path.cgPath
