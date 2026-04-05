@@ -58,8 +58,17 @@ class OutfitComposerViewController: UIViewController {
     lazy var canvasView: UIView = {
         let view = UIView()
         view.backgroundColor = .secondarySystemBackground
+        view.layer.masksToBounds = true
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
+    }()
+    
+    lazy var gridView: GridView = {
+        let gv = GridView()
+        gv.numberOfColumns = 3
+        gv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        gv.frame = canvasView.bounds
+        return gv
     }()
     
     lazy var toolbarView: UIStackView = {
@@ -177,6 +186,8 @@ class OutfitComposerViewController: UIViewController {
             canvasView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, constant: -20),
             canvasView.heightAnchor.constraint(equalTo: canvasView.widthAnchor, multiplier: 1.25)
         ])
+        
+        canvasView.addSubview(gridView)
         
         NSLayoutConstraint.activate([
             toolbarView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
