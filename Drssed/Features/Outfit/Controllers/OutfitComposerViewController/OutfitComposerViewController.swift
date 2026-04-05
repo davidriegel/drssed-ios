@@ -30,7 +30,7 @@ class OutfitComposerViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
-        canvasView.layer.cornerRadius = CornerStyle.large.radius(for: canvasView)
+        canvasView.layer.cornerRadius = CornerStyle.small.radius(for: canvasView)
         submitButton.layer.cornerRadius = CornerStyle.medium.radius(for: submitButton)
     }
     
@@ -66,6 +66,7 @@ class OutfitComposerViewController: UIViewController {
     lazy var gridView: GridView = {
         let gv = GridView()
         gv.numberOfColumns = 3
+        gv.numberOfRows = 4
         gv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         gv.frame = canvasView.bounds
         return gv
@@ -184,7 +185,7 @@ class OutfitComposerViewController: UIViewController {
             canvasView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             canvasView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             canvasView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, constant: -20),
-            canvasView.heightAnchor.constraint(equalTo: canvasView.widthAnchor, multiplier: 1.25)
+            canvasView.heightAnchor.constraint(equalTo: canvasView.widthAnchor, multiplier: 1.5, constant: -20)
         ])
         
         canvasView.addSubview(gridView)
