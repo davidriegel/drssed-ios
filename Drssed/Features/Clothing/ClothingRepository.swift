@@ -5,8 +5,9 @@
 //  Created by David Riegel on 16.09.25.
 //
 
-
 import CoreData
+import UIKit
+import SDWebImage
 
 public final class ClothingRepository {
     private let context: NSManagedObjectContext
@@ -99,6 +100,53 @@ public final class ClothingRepository {
         } catch let error as NSError {
             ErrorHandler.handle(AppError.coreData(.fetchFailed(error.localizedDescription)))
             return nil
+        }
+    }
+    
+    public func getClothingImage(with id: String) async -> UIImage? {
+        do {
+            let clothing = try await localDataSource.get(id: id)
+            
+            guard let url = URL(string: clothing?.imageID ?? "", relativeTo: APIClient.clothingImagesURL) else {
+                    return nil
+            }
+            
+            return await withCheckedContinuation { continuation in
+                SDWebImageManager.shared.loadImage(
+                    with: url,
+                    options: [],
+                    progress: nil
+                ) { image, _, error, _, _, _ in
+                    if let error = error {
+                        ErrorHandler.handleSilently(error)
+                    }
+                    continuation.resume(returning: image)
+                }
+            }
+        } catch let error as NSError {
+            ErrorHandler.handle(AppError.coreData(.fetchFailed(error.localizedDescription)))
+            return nil
+        }
+    }
+    
+    public func getClothingImages(with ids: [String]) async -> [String: UIImage] {
+        await withTaskGroup(of: (String, UIImage?).self) { group in
+            var images: [String: UIImage] = [:]
+            
+            for id in ids {
+                group.addTask {
+                    let image = await self.getClothingImage(with: id)
+                    return (id, image)
+                }
+            }
+            
+            for await (id, image) in group {
+                if let image = image {
+                    images[id] = image
+                }
+            }
+            
+            return images
         }
     }
 
