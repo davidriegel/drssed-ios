@@ -17,7 +17,7 @@ class GridView: UIView {
         didSet { setNeedsLayout() }
     }
 
-    var lineColor: UIColor = .darkGray {
+    var lineColor: UIColor = .fineLines {
         didSet { gridLayer.strokeColor = lineColor.cgColor }
     }
 
