@@ -11,6 +11,13 @@ import SDWebImage
 protocol OutfitCanvasViewDelegate: AnyObject {
     func canvasView(_ canvasView: OutfitCanvasView, didAddClothing clothing: Clothing)
     func canvasView(_ canvasView: OutfitCanvasView, didRemoveClothing clothing: Clothing)
+    func canvasViewDidBeginDragging(_ canvasView: OutfitCanvasView)
+    func canvasViewDidEndDragging(_ canvasView: OutfitCanvasView)
+}
+
+extension OutfitCanvasViewDelegate {
+    func canvasViewDidBeginDragging(_ canvasView: OutfitCanvasView) {}
+    func canvasViewDidEndDragging(_ canvasView: OutfitCanvasView) {}
 }
 
 class OutfitCanvasView: UIView {
@@ -29,25 +36,6 @@ class OutfitCanvasView: UIView {
         gv.frame = self.bounds
         return gv
     }()
-    
-    public func toggleEditing() {
-        if subviews.contains(gridView) {
-            editingMode = false
-            gridView.removeFromSuperview()
-
-            for (_, iv) in clothingImageViews {
-                iv.isUserInteractionEnabled = false
-            }
-        } else {
-            editingMode = true
-            isUserInteractionEnabled = true
-            addSubview(gridView)
-
-            for (_, iv) in clothingImageViews {
-                iv.isUserInteractionEnabled = true
-            }
-        }
-    }
     
     // MARK: - Initialization
     
@@ -81,6 +69,25 @@ class OutfitCanvasView: UIView {
     }
     
     // MARK: - Public Methods
+    
+    func toggleEditing() {
+        if subviews.contains(gridView) {
+            editingMode = false
+            gridView.removeFromSuperview()
+
+            for (_, iv) in clothingImageViews {
+                iv.isUserInteractionEnabled = false
+            }
+        } else {
+            editingMode = true
+            isUserInteractionEnabled = true
+            insertSubview(gridView, at: 0)
+
+            for (_, iv) in clothingImageViews {
+                iv.isUserInteractionEnabled = true
+            }
+        }
+    }
 
     func addClothing(_ clothing: Clothing) {
         guard editingMode else { return }
@@ -223,6 +230,15 @@ class OutfitCanvasView: UIView {
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
         guard editingMode, let targetView = gesture.view else { return }
         bringSubviewToFront(targetView)
+        
+        switch gesture.state {
+        case .began:
+            delegate?.canvasViewDidBeginDragging(self)
+        case .ended, .cancelled, .failed:
+            delegate?.canvasViewDidEndDragging(self)
+        default:
+            break
+        }
 
         let translation = gesture.translation(in: self)
         targetView.center = CGPoint(x: targetView.center.x + translation.x, y: targetView.center.y + translation.y)
@@ -285,6 +301,7 @@ class OutfitCanvasView: UIView {
 
 extension OutfitCanvasView: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
+        guard let otherView = otherGestureRecognizer.view else { return false }
+        return otherView == self || otherView.isDescendant(of: self)
     }
 }
