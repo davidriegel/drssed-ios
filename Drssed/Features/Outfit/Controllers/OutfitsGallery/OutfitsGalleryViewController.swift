@@ -547,21 +547,21 @@ extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionVi
             let columns: CGFloat = 3
             let totalSpacing = spacing * (columns - 1)
             let itemWidth = (collectionWidth - totalSpacing) / columns
-            let itemHeight = itemWidth * 1.25 // 4:5
+            let itemHeight = itemWidth * (4.0/3.0) // 4:3
             return CGSize(width: itemWidth, height: itemHeight)
 
         case .MEDIUM:
             let columns: CGFloat = 2
             let totalSpacing = spacing * (columns - 1)
             let itemWidth = (collectionWidth - totalSpacing) / columns
-            let itemHeight = itemWidth * 1.25
+            let itemHeight = itemWidth * (4.0/3.0)
             return CGSize(width: itemWidth, height: itemHeight)
 
         case .LARGE:
             let columns: CGFloat = 1
             let totalSpacing = spacing * (columns - 1)
             let itemWidth = (collectionWidth - totalSpacing) / columns
-            let itemHeight = itemWidth * 1.25
+            let itemHeight = itemWidth * (4.0/3.0)
             return CGSize(width: itemWidth, height: itemHeight)
         }
     }
