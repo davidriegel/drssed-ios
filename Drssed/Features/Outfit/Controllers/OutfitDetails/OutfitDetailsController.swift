@@ -7,6 +7,7 @@
 
 import UIKit
 import CropViewController
+import SDWebImage
 import PhotosUI
 
 protocol OutfitDetailsDelegate: ModalPresentationDelegate {
@@ -27,6 +28,9 @@ final class OutfitDetailsController: UIViewController {
             self.itemDoneButton.isEnabled = hasChanges
         }
     }
+    
+    var didUpdate: Bool = false
+    
     let clothingRepo = ClothingRepository()
     
     weak var delegate: OutfitDetailsDelegate?
@@ -46,15 +50,6 @@ final class OutfitDetailsController: UIViewController {
         super.viewDidLoad()
         
         configureViewComponents()
-        selectedSeasonsArray = item.seasons
-        selectedTagsArray = item.tags
-        itemFavoriteField.fieldInput.isOn = item.isFavorite
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        self.navigationController?.isModalInPresentation = true
         self.navigationController?.presentationController?.delegate = self
     }
     
@@ -143,17 +138,12 @@ final class OutfitDetailsController: UIViewController {
         return bt
     }()
     
-    // Image UI
+    // Preview Canvas
     
-    lazy var itemImageView: UIImageView = {
-        let iv = UIImageView()
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.contentMode = .scaleAspectFit
-        iv.clipsToBounds = true
-        iv.isUserInteractionEnabled = false
-        
-        iv.sd_setImage(with: URL(string: item.imageID, relativeTo: APIClient.outfitImagesURL), placeholderImage: UIImage(named: "placeholder.upload"))
-        return iv
+    lazy var itemPreviewView: OutfitCanvasView = {
+        let cv = OutfitCanvasView(editingMode: false)
+        cv.delegate = self
+        return cv
     }()
     
     // Name
@@ -266,7 +256,15 @@ final class OutfitDetailsController: UIViewController {
     
     func saveItemChanges() async {
         if await AppRepository.shared.outfitRepository.addOrUpdateOutfit(from: item) {
+            if savedItem.scene != item.scene {
+                if let cacheKey = SDWebImageManager.shared.cacheKey(for: URL(string: item.id, relativeTo: APIClient.outfitImagesURL)) {
+                    SDImageCache.shared.removeImageFromDisk(forKey: cacheKey)
+                    SDImageCache.shared.removeImageFromMemory(forKey: cacheKey)
+                }
+            }
+            
             savedItem = item
+            didUpdate = true
         }
     }
     
@@ -287,6 +285,10 @@ final class OutfitDetailsController: UIViewController {
         
         alert.addAction(UIAlertAction(title: String(localized: "common.undo"), style: .destructive, handler: { _ in
             self.item = self.savedItem
+            
+            DispatchQueue.main.async {
+                self.updateUIFromItem()
+            }
         }))
         
         alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel, handler: { _ in
@@ -318,6 +320,7 @@ final class OutfitDetailsController: UIViewController {
     }
     
     func toggleEditing() {
+        itemPreviewView.toggleEditing()
         itemNameTextField.fieldInput.isUserInteractionEnabled.toggle()
         itemSeasonsField.fieldInput.isUserInteractionEnabled.toggle()
         itemSeasonsField.indicatorImageView.isHidden.toggle()
@@ -326,11 +329,19 @@ final class OutfitDetailsController: UIViewController {
         itemFavoriteField.fieldInput.isUserInteractionEnabled.toggle()
     }
     
+    private func updateUIFromItem() {
+        itemPreviewView.loadOutfit(placements: item.scene)
+        
+        itemNameTextField.fieldInput.text = item.name
+        selectedSeasonsArray = item.seasons
+        selectedTagsArray = item.tags
+        itemFavoriteField.fieldInput.isOn = item.isFavorite
+    }
     
     private func configureViewComponents() {
         view.backgroundColor = .background
         
-        [segmentController, itemDeleteButton, itemDoneButton, itemImageView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
+        [segmentController, itemDeleteButton, itemDoneButton, itemPreviewView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
         
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
@@ -349,15 +360,14 @@ final class OutfitDetailsController: UIViewController {
         ])
         
         NSLayoutConstraint.activate([
-            itemImageView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 20),
-            itemImageView.leadingAnchor.constraint(lessThanOrEqualTo: view.leadingAnchor, constant: 20),
-            itemImageView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
-            itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 0.6),
-            itemImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+            itemPreviewView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 20),
+            itemPreviewView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.5),
+            itemPreviewView.heightAnchor.constraint(equalTo: itemPreviewView.widthAnchor, multiplier: 4.0 / 3.0),
+            itemPreviewView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
         
         NSLayoutConstraint.activate([
-            itemNameTextField.topAnchor.constraint(equalTo: itemImageView.bottomAnchor, constant: 20),
+            itemNameTextField.topAnchor.constraint(equalTo: itemPreviewView.bottomAnchor, constant: 20),
             itemNameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             itemNameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             itemNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
@@ -414,6 +424,8 @@ final class OutfitDetailsController: UIViewController {
             outfitItemsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
             outfitItemsCollectionView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.2)
         ])
+        
+        updateUIFromItem()
     }
 }
 
@@ -431,6 +443,12 @@ extension OutfitDetailsController: UIAdaptivePresentationControllerDelegate {
         }
         
         promptUnsavedChanges(dismissAfterSave: true)
+    }
+    
+    func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
+        if self.didUpdate {
+            delegate?.didUpdateOutfit()
+        }
     }
 }
 
@@ -515,5 +533,25 @@ extension OutfitDetailsController: UITextFieldDelegate {
         }
         
         return true
+    }
+}
+
+extension OutfitDetailsController: OutfitCanvasViewDelegate {
+    func canvasView(_ canvasView: OutfitCanvasView, didAddClothing clothing: Clothing) {
+        return
+    }
+    
+    func canvasView(_ canvasView: OutfitCanvasView, didRemoveClothing clothing: Clothing) {
+        return
+    }
+    
+    func canvasViewDidBeginInteraction(_ canvasView: OutfitCanvasView) {
+        navigationController?.isModalInPresentation = true
+    }
+    
+    func canvasViewDidEndInteraction(_ canvasView: OutfitCanvasView) {
+        navigationController?.isModalInPresentation = false
+        
+        item.scene = canvasView.getItemCanvasPositions()
     }
 }

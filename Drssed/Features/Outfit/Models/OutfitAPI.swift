@@ -19,7 +19,6 @@ public struct OutfitAPI: Codable, Hashable {
     let seasons: [String]
     let user_id: String
     let outfit_id: String
-    let image_id: String
     
     func toDomain() -> Outfit {
         return Outfit.init(from: self)

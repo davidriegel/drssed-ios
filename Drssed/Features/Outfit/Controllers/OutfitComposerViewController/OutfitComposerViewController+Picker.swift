@@ -105,7 +105,7 @@ class OutfitComposerViewController_Picker: UIViewController {
                 withReuseIdentifier: ClothingCollectionViewCell.identifier,
                 for: indexPath
             ) as! ClothingCollectionViewCell
-            cell.configureViewComponents(with: item.imageID, and: item.name, isSelectable: true)
+            cell.configureViewComponents(with: item.id, and: item.name, isSelectable: true)
             return cell
         }
     )

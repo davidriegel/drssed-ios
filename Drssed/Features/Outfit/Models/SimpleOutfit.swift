@@ -10,7 +10,6 @@ import Foundation
 public struct SimpleOutfit: Identifiable, Hashable, Sendable {
     public let id: String
     let createdAt: Date
-    let imageID: String
     let isFavorite: Bool
     let isPublic: Bool
     let name: String
@@ -22,7 +21,6 @@ public struct SimpleOutfit: Identifiable, Hashable, Sendable {
     init(from api: SimpleOutfitAPI) {
         self.id = api.outfit_id
         self.name = api.name
-        self.imageID = api.image_id
         self.isFavorite = api.is_favorite
         self.tags = api.tags.compactMap { Tags(rawValue: $0.uppercased()) }
         self.seasons = api.seasons.compactMap { Seasons(rawValue: $0.uppercased()) }

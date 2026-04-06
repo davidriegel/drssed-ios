@@ -7,10 +7,6 @@
 import UIKit
 import SDWebImage
 
-protocol OutfitsGallery_ViewCellDelegate: AnyObject {
-    func didLoadImageSize(_ size: CGSize, for outfit: Outfit)
-}
-
 // MARK: - Custom Collection View Cell
 class OutfitsGallery_ViewCell: UICollectionViewCell {
     static let identifier = "OutfitsGallery_ViewCell"
@@ -27,8 +23,6 @@ class OutfitsGallery_ViewCell: UICollectionViewCell {
             }
         }
     }
-    
-    weak var delegate: OutfitsGallery_ViewCellDelegate?
 
     private let cardView: UIView = {
         let v = UIView()
@@ -144,10 +138,7 @@ required init?(coder: NSCoder) {
         itemCountLabel.text = "● " + String(outfit.scene.count)
         itemFavoriteImageView.isHidden = !outfit.isFavorite
 
-        imageView.sd_setImage(with: URL(string: outfit.imageID, relativeTo: APIClient.outfitImagesURL)) { [weak self] image, _, _, _ in
-            guard let self = self, let image = image else { return }
-            self.delegate?.didLoadImageSize(image.size, for: outfit)
-        }
+        imageView.sd_setImage(with: URL(string: outfit.id, relativeTo: APIClient.outfitImagesURL))
     }
 
     override func prepareForReuse() {

@@ -9,7 +9,6 @@ import Foundation
 
 public struct SimpleOutfitAPI: Codable, Hashable {
     let outfit_id: String
-    let image_id: String
     let is_public: Bool
     let is_favorite: Bool
     let created_at: Date

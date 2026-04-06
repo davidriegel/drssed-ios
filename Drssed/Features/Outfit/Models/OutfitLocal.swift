@@ -15,7 +15,6 @@ class OutfitLocal: NSManagedObject {
 
     @NSManaged var createdAt: Date
     @NSManaged var id: String
-    @NSManaged var imageID: String
     @NSManaged var isPublic: Bool
     @NSManaged var isFavorite: Bool
     @NSManaged var itemDescription: String
@@ -32,7 +31,6 @@ class OutfitLocal: NSManagedObject {
         context: NSManagedObjectContext,
         createdAt: Date = Date(),
         id: String,
-        imageID: String,
         isPublic: Bool = false,
         isFavorite: Bool = false,
         itemDescription: String = "",
@@ -47,7 +45,6 @@ class OutfitLocal: NSManagedObject {
         self.isFavorite = isFavorite
         self.createdAt = createdAt
         self.id = id
-        self.imageID = imageID
         self.isPublic = isPublic
         self.itemDescription = itemDescription
         self.name = name
@@ -71,7 +68,6 @@ extension OutfitLocal {
     func update(from domainModel: Outfit) {
         self.id = domainModel.id
         self.name = domainModel.name
-        self.imageID = domainModel.imageID
         self.itemDescription = domainModel.description
         self.createdAt = domainModel.createdAt
         self.updatedAt = Date()

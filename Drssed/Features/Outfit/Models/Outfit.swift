@@ -12,7 +12,6 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     public let id: String
     var updatedAt: Date
     let createdAt: Date
-    var imageID: String
     var description: String
     var isPublic: Bool
     var isFavorite: Bool
@@ -22,10 +21,9 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     var tags: [Tags]
     let userID: String
     
-    init(name: String, imageID: String, itemDescription: String, isPublic: Bool = true, isFavorite: Bool = false, seasons: [Seasons], tags: [Tags], scene: [CanvasPlacement]) {
+    init(name: String, itemDescription: String, isPublic: Bool = true, isFavorite: Bool = false, seasons: [Seasons], tags: [Tags], scene: [CanvasPlacement]) {
         self.id = UUID().uuidString
         self.name = name
-        self.imageID = imageID
         self.description = itemDescription
         self.createdAt = Date()
         self.updatedAt = Date()
@@ -41,7 +39,6 @@ public struct Outfit: Identifiable, Hashable, Sendable {
         self.id = local.id
         self.name = local.name
         self.description = local.itemDescription
-        self.imageID = local.imageID
         self.isPublic = local.isPublic
         self.tags = local.tags.compactMap { Tags(rawValue: $0) }
         self.seasons = local.seasons.compactMap { Seasons(rawValue: $0) }
@@ -56,7 +53,6 @@ public struct Outfit: Identifiable, Hashable, Sendable {
         self.id = api.outfit_id
         self.name = api.name
         self.description = api.description
-        self.imageID = api.image_id
         self.isPublic = api.is_public
         self.isFavorite = api.is_favorite
         self.tags = api.tags.compactMap { Tags(rawValue: $0.uppercased()) }
@@ -80,8 +76,7 @@ extension Outfit {
             tags: self.tags.map { $0.rawValue.lowercased() },
             seasons: self.seasons.map { $0.rawValue.lowercased() },
             user_id: self.userID,
-            outfit_id: self.id,
-            image_id: self.imageID
+            outfit_id: self.id
         )
     }
 }

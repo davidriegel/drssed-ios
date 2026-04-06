@@ -31,16 +31,6 @@ final class OutfitHandler {
     public func createNewOutfit(
         _ domainModel: Outfit
     ) async throws -> OutfitAPI {
-        var seasonsStrings: [String] = []
-        for season in domainModel.seasons {
-            seasonsStrings.append(season.rawValue)
-        }
-
-        var tagsStrings: [String] = []
-        for tag in domainModel.tags {
-            tagsStrings.append(tag.rawValue)
-        }
-        
         let apiModel = domainModel.toAPI()
 
         let encoder = JSONEncoder()
@@ -77,6 +67,11 @@ final class OutfitHandler {
         
         if oldDomainModel.seasons != newDomainModel.seasons {
             requestBody["seasons"] = newDomainModel.seasons.map(\.rawValue)
+        }
+        
+        if oldDomainModel.scene != newDomainModel.scene {
+            let sceneData = try JSONEncoder().encode(newDomainModel.scene)
+            requestBody["scene"] = try JSONSerialization.jsonObject(with: sceneData)
         }
         
         guard !requestBody.isEmpty else {
