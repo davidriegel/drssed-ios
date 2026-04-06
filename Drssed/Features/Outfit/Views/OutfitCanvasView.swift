@@ -80,7 +80,6 @@ class OutfitCanvasView: UIView {
             }
         } else {
             editingMode = true
-            isUserInteractionEnabled = true
             insertSubview(gridView, at: 0)
 
             for (_, iv) in clothingImageViews {
@@ -184,7 +183,7 @@ class OutfitCanvasView: UIView {
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
         imageView.accessibilityIdentifier = placement.clothing_id
-        if editingMode { attachEditingGestures(to: imageView) }
+        attachEditingGestures(to: imageView)
         
         let canvasWidth = bounds.width
         let canvasHeight = bounds.height
@@ -213,7 +212,7 @@ class OutfitCanvasView: UIView {
     }
 
     private func attachEditingGestures(to view: UIImageView) {
-        view.isUserInteractionEnabled = true
+        view.isUserInteractionEnabled = editingMode
 
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
