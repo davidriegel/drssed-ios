@@ -152,6 +152,12 @@ class OutfitCanvasView: UIView {
 
     func loadOutfit(placements: [CanvasPlacement]) {
         Task {
+            for imageView in clothingImageViews.values {
+                imageView.removeFromSuperview()
+            }
+            
+            clothingImageViews.removeAll()
+            
             let sortedPlacements = placements.sorted { $0.z < $1.z }
             
             let clothingIDs = placements.map { $0.clothing_id }
