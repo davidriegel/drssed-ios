@@ -118,7 +118,7 @@ public final class ClothingRepository {
                     progress: nil
                 ) { image, _, error, _, _, _ in
                     if let error = error {
-                        ErrorHandler.handleSilently(error)
+                        ErrorHandler.handle(error)
                     }
                     continuation.resume(returning: image)
                 }
