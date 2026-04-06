@@ -67,7 +67,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             Task {
                 await NetworkManager.shared.checkServerReachable()
                 if NetworkManager.shared.isReachable {
-                    await SyncManager.shared.syncWithServer()
+                    let migrationKey = "migrateToOutfitIDfromImageID"
+                    
+                    if !UserDefaults.standard.bool(forKey: migrationKey) {
+                        await SyncManager.shared.syncWithServer(forceFull: true)
+                        UserDefaults.standard.set(true, forKey: migrationKey)
+                    } else {
+                        await SyncManager.shared.syncWithServer()
+                    }
                 }
             }
         }
