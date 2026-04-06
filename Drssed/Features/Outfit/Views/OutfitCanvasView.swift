@@ -11,13 +11,13 @@ import SDWebImage
 protocol OutfitCanvasViewDelegate: AnyObject {
     func canvasView(_ canvasView: OutfitCanvasView, didAddClothing clothing: Clothing)
     func canvasView(_ canvasView: OutfitCanvasView, didRemoveClothing clothing: Clothing)
-    func canvasViewDidBeginDragging(_ canvasView: OutfitCanvasView)
-    func canvasViewDidEndDragging(_ canvasView: OutfitCanvasView)
+    func canvasViewDidBeginInteraction(_ canvasView: OutfitCanvasView)
+    func canvasViewDidEndInteraction(_ canvasView: OutfitCanvasView)
 }
 
 extension OutfitCanvasViewDelegate {
-    func canvasViewDidBeginDragging(_ canvasView: OutfitCanvasView) {}
-    func canvasViewDidEndDragging(_ canvasView: OutfitCanvasView) {}
+    func canvasViewDidBeginInteraction(_ canvasView: OutfitCanvasView) {}
+    func canvasViewDidEndInteraction(_ canvasView: OutfitCanvasView) {}
 }
 
 class OutfitCanvasView: UIView {
@@ -232,9 +232,9 @@ class OutfitCanvasView: UIView {
         
         switch gesture.state {
         case .began:
-            delegate?.canvasViewDidBeginDragging(self)
+            delegate?.canvasViewDidBeginInteraction(self)
         case .ended, .cancelled, .failed:
-            delegate?.canvasViewDidEndDragging(self)
+            delegate?.canvasViewDidEndInteraction(self)
         default:
             break
         }
@@ -266,6 +266,15 @@ class OutfitCanvasView: UIView {
     @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {
         guard editingMode, let targetView = gesture.view as? UIImageView, let image = targetView.image else { return }
         defer { gesture.scale = 1 }
+        
+        switch gesture.state {
+        case .began:
+            delegate?.canvasViewDidBeginInteraction(self)
+        case .ended, .cancelled, .failed:
+            delegate?.canvasViewDidEndInteraction(self)
+        default:
+            break
+        }
 
         let currentTransform = targetView.transform
         let currentScale = sqrt(currentTransform.a * currentTransform.a + currentTransform.b * currentTransform.b)
@@ -293,6 +302,16 @@ class OutfitCanvasView: UIView {
 
     @objc private func handleRotate(_ gesture: UIRotationGestureRecognizer) {
         guard editingMode, let targetView = gesture.view else { return }
+        
+        switch gesture.state {
+        case .began:
+            delegate?.canvasViewDidBeginInteraction(self)
+        case .ended, .cancelled, .failed:
+            delegate?.canvasViewDidEndInteraction(self)
+        default:
+            break
+        }
+        
         targetView.transform = targetView.transform.rotated(by: gesture.rotation)
         gesture.rotation = 0
     }
