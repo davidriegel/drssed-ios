@@ -9,10 +9,10 @@ import UIKit
 
 class OutfitComposerViewController_Submit: UIViewController {
     private let outfitRepo: OutfitRepository = AppRepository.shared.outfitRepository
-    
+
     private let outfitScene: [CanvasPlacement]
-    private let initialPreviewImage: UIImage
-    
+    private var hasLoadedOutfit = false
+
     var selectedSeasonsArray: [Seasons] = [] {
         didSet {
             var selected = [String]()
@@ -53,7 +53,6 @@ class OutfitComposerViewController_Submit: UIViewController {
     
     init(_ outfitScene: [CanvasPlacement], previewImage: UIImage) {
         self.outfitScene = outfitScene
-        self.initialPreviewImage = previewImage
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -63,26 +62,22 @@ class OutfitComposerViewController_Submit: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        previewImageView.image = initialPreviewImage
         
         configureViewComponents()
     }
     
     override func viewDidLayoutSubviews() {
-        finishButton.layer.cornerRadius = CornerStyle.medium.radius(for: finishButton)
+        super.viewDidLayoutSubviews()
+        
+        if !hasLoadedOutfit {
+            hasLoadedOutfit = true
+            previewCanvasView.loadOutfit(placements: outfitScene)
+        }
     }
     
     // MARK: -- Image
     
-    lazy var previewImageView: UIImageView = {
-        let iv = UIImageView()
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        iv.image = UIImage(named: "placeholder.upload")
-        iv.isUserInteractionEnabled = false
-        iv.contentMode = .scaleAspectFit
-        return iv
-    }()
+    let previewCanvasView: OutfitCanvasView = OutfitCanvasView(editingMode: false)
     
     // MARK: -- Name
     
@@ -180,7 +175,6 @@ class OutfitComposerViewController_Submit: UIViewController {
         button.configuration?.baseForegroundColor = .label
         button.setAttributedTitle(NSAttributedString(string: String(localized: "clothingupload.button.finish"), attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
         button.setTitleColor(.label, for: .normal)
-        button.backgroundColor = .accent
         return button
     }()
     
@@ -221,37 +215,40 @@ class OutfitComposerViewController_Submit: UIViewController {
     }
 
     // MARK: -- View configuration
-    
+
     func configureViewComponents() {
         view.backgroundColor = .background
         title = String(localized: "outfitcomposer.submit.title")
-        
+
         tabBarController?.tabBar.isHidden = true
-        
+
         navigationItem.largeTitleDisplayMode = .never
-        
+
         navigationItem.leftBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "chevron.backward", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), style: .plain, target: self, action: #selector(cancelTapped))
-        
+
         let tap = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing))
         tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
-        
-        view.addSubview(previewImageView)
+
+        // MARK: Canvas
+        view.addSubview(previewCanvasView)
         NSLayoutConstraint.activate([
-            previewImageView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            previewImageView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            previewImageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
-            previewImageView.heightAnchor.constraint(equalTo: previewImageView.widthAnchor)
+            previewCanvasView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
+            previewCanvasView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            previewCanvasView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.75),
+            previewCanvasView.heightAnchor.constraint(equalTo: previewCanvasView.widthAnchor, multiplier: 4.0 / 3.0),
         ])
-        
+
+        // MARK: Name field
         view.addSubview(outfitNameField)
         NSLayoutConstraint.activate([
-            outfitNameField.topAnchor.constraint(equalTo: previewImageView.bottomAnchor, constant: 10),
-            outfitNameField.leadingAnchor.constraint(equalTo: previewImageView.leadingAnchor),
-            outfitNameField.trailingAnchor.constraint(equalTo: previewImageView.trailingAnchor),
-            outfitNameField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
+            outfitNameField.topAnchor.constraint(equalTo: previewCanvasView.bottomAnchor, constant: 10),
+            outfitNameField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            outfitNameField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            outfitNameField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
         ])
-    
+
+        // MARK: Seasons field
         view.addSubview(outfitSeasonsField)
         outfitSeasonsField.addSubview(outfitSeasonsSelection)
         NSLayoutConstraint.activate([
@@ -259,21 +256,21 @@ class OutfitComposerViewController_Submit: UIViewController {
             outfitSeasonsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
             outfitSeasonsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
             outfitSeasonsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
+
             outfitSeasonsSelection.topAnchor.constraint(equalTo: outfitSeasonsField.fieldBackground.topAnchor),
             outfitSeasonsSelection.leadingAnchor.constraint(equalTo: outfitSeasonsField.leadingAnchor),
             outfitSeasonsSelection.trailingAnchor.constraint(equalTo: outfitSeasonsField.trailingAnchor),
-            outfitSeasonsSelection.bottomAnchor.constraint(equalTo: outfitSeasonsField.fieldBackground.bottomAnchor)
+            outfitSeasonsSelection.bottomAnchor.constraint(equalTo: outfitSeasonsField.fieldBackground.bottomAnchor),
         ])
-        
+
+        // MARK: Tags / Favorite / Public row
         let sv = UIStackView(arrangedSubviews: [outfitTagsField, outfitFavoriteField])
-        
+
         Task {
             let isAuthenticated = await AuthenticationManager.shared.authState == .authenticated
-            
             if isAuthenticated { sv.addArrangedSubview(self.outfitPublicField) }
         }
-        
+
         sv.axis = .horizontal
         sv.alignment = .center
         sv.spacing = 5
@@ -281,28 +278,29 @@ class OutfitComposerViewController_Submit: UIViewController {
         view.addSubview(sv)
         NSLayoutConstraint.activate([
             sv.topAnchor.constraint(equalTo: outfitSeasonsField.bottomAnchor, constant: 10),
-            sv.leadingAnchor.constraint(equalTo: previewImageView.leadingAnchor),
-            sv.trailingAnchor.constraint(equalTo: previewImageView.trailingAnchor),
+            sv.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            sv.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
         ])
-        
+
         outfitTagsField.addSubview(outfitTagsSelection)
         NSLayoutConstraint.activate([
             outfitTagsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
+
             outfitTagsSelection.topAnchor.constraint(equalTo: outfitTagsField.fieldBackground.topAnchor),
             outfitTagsSelection.leadingAnchor.constraint(equalTo: outfitTagsField.leadingAnchor, constant: 5),
             outfitTagsSelection.trailingAnchor.constraint(equalTo: outfitTagsField.indicatorImageView.leadingAnchor, constant: -5),
-            outfitTagsSelection.bottomAnchor.constraint(equalTo: outfitTagsField.fieldBackground.bottomAnchor)
+            outfitTagsSelection.bottomAnchor.constraint(equalTo: outfitTagsField.fieldBackground.bottomAnchor),
         ])
-        
+
+        // MARK: Finish button
         view.addSubview(finishButton)
         NSLayoutConstraint.activate([
             finishButton.topAnchor.constraint(equalTo: sv.bottomAnchor, constant: 20),
             finishButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             finishButton.heightAnchor.constraint(equalToConstant: 45),
-            finishButton.widthAnchor.constraint(equalToConstant: self.view.frame.width / 2)
+            finishButton.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.5)
         ])
-        
+
         finishButton.addAction(UIAction(handler: { _ in
             Task {
                 let outfit = Outfit(
@@ -315,30 +313,33 @@ class OutfitComposerViewController_Submit: UIViewController {
                     tags: self.selectedTagsArray,
                     scene: self.outfitScene,
                 )
-                
+
                 await self.outfitRepo.addOrUpdateOutfit(from: outfit)
-                
+
                 let alert = UIAlertController(title: nil, message: String(localized: "outfitcomposer.alert.success"), preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
                     self.returnToLookbook()
                 }))
-                
+
                 return self.present(alert, animated: true)
             }
         }), for: .primaryActionTriggered)
-        
-        
+
         view.addSubview(seasonsPickerView)
-        seasonsPickerView.topAnchor.constraint(equalTo: outfitSeasonsField.bottomAnchor, constant: 15).isActive = true
-        seasonsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4).isActive = true
-        seasonsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        seasonsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor).isActive = true
-        
+        NSLayoutConstraint.activate([
+            seasonsPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor, constant: -50),
+            seasonsPickerView.heightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.25),
+            seasonsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            seasonsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+        ])
+
         view.addSubview(tagsPickerView)
-        tagsPickerView.topAnchor.constraint(equalTo: outfitTagsField.bottomAnchor, constant: 15).isActive = true
-        tagsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4).isActive = true
-        tagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
-        tagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor).isActive = true
+        NSLayoutConstraint.activate([
+            tagsPickerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor, constant: -50),
+            tagsPickerView.heightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.25),
+            tagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            tagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+        ])
     }
 }
 

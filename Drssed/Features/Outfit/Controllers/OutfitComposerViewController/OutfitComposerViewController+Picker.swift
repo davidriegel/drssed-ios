@@ -61,20 +61,11 @@ class OutfitComposerViewController_Picker: UIViewController {
     var dataSource: [Clothing] = [] {
         didSet {
             sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
-//            uploadNowButton.isHidden = !dataSource.isEmpty
-//            uploadNowButton.isEnabled = dataSource.isEmpty
-            
-            //searchDataSource = dataSource
-            //sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
     }
     
     func sortAndFilterDataSource(source: [Clothing]? = nil) -> [Clothing] {
-        /*let filterForTags: [Clothing] = filterClothesTags(source: source != nil ? source! : dataSource)
-        let filterForSeasons: [Clothing] = filterClothesSeason(source: filterForTags)*/
         let filterForCategory: [Clothing] = filterClotheCategory(source: source)
-        /*
-        let sortClothesBy: [Clothing] = sortClothes(source: filterForType)*/
         return filterForCategory
     }
     
@@ -258,10 +249,8 @@ class OutfitComposerViewController_Picker: UIViewController {
             clothingCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 5),
             clothingCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -5)
         ])
+        
         clothingCollectionView.refreshControl = clothingRefreshControll
-
-        //clothingCollectionView.contentInset = UIEdgeInsets(top: 40, left: 0, bottom: 0, right: 0)
-        //clothingCollectionView.scrollIndicatorInsets = clothingCollectionView.contentInset
     }
     
     func levenshteinDistance(_ string1: String, _ string2: String) -> Int {
