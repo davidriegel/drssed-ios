@@ -155,7 +155,6 @@ class OutfitCanvasView: UIView {
             
             for placement in sortedPlacements {
                 guard let image = images[placement.clothing_id] else {
-                    print("⚠️ Image nicht gefunden für: \(placement.clothing_id)")
                     continue
                 }
                 
