@@ -11,6 +11,7 @@ public enum AuthenticationError: Error {
     // Sign In errors
     case userNotSignedIn
     case invalidCredentials
+    case missingCredentials
     
     // Sign Up errors
     case emailAlreadyInUse
@@ -35,6 +36,8 @@ extension AuthenticationError: LocalizedError {
             return String(localized: "error.auth.notSignedIn.description")
         case .invalidCredentials:
             return String(localized: "error.auth.invalidCredentials.description")
+        case .missingCredentials:
+            return String(localized: "error.auth.missingCredentials.description")
             
         // Sign Up errors
         case .emailAlreadyInUse:
@@ -70,6 +73,8 @@ extension AuthenticationError: LocalizedError {
             return String(localized: "error.auth.notSignedIn.suggestion")
         case .invalidCredentials:
             return String(localized: "error.auth.invalidCredentials.suggestion")
+        case .missingCredentials:
+            return String(localized: "error.auth.missingCredentials.suggestion")
         case .emailAlreadyInUse:
             return String(localized: "error.auth.emailInUse.suggestion")
         case .usernameAlreadyInUse:
