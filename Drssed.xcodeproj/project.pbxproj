@@ -680,7 +680,7 @@
 			repositoryURL = "https://github.com/TimOliver/TOCropViewController.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.7.4;
+				minimumVersion = 3.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
