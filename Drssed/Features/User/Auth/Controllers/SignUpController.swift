@@ -53,6 +53,7 @@ class SignUpController: UIViewController {
     lazy var usernameField: CustomTextFieldInput = {
         let view = CustomTextFieldInput(fieldTitle: String(localized: "common.username"), placeholder: String(localized: "auth.username.placeholder"), charCounterWithCharacters: 20)
         view.fieldInput.delegate = self
+        view.fieldInput.textContentType = .username
         view.fieldInput.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
         return view
     }()
@@ -64,6 +65,7 @@ class SignUpController: UIViewController {
         view.fieldInput.autocapitalizationType = .none
         view.fieldInput.isSecureTextEntry = true
         view.fieldInput.delegate = self
+        view.fieldInput.textContentType = .newPassword
         view.fieldInput.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
         return view
     }()
