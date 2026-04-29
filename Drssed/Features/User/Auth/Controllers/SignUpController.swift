@@ -6,85 +6,91 @@
 //
 
 import UIKit
+import PhotosUI
+import CropViewController
 
 class SignUpController: UIViewController {
     
-    var nextController: welcomeController? = nil
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        self.nextController = welcomeController()
+
         configureViewComponents()
     }
     
-    lazy var signUpLabel: UILabel = {
-        var lb = UILabel()
-        lb.translatesAutoresizingMaskIntoConstraints = false
-        lb.textColor = .label
-        lb.font = UIFont.systemFont(ofSize: 24, weight: .black)
-        lb.textAlignment = .center
-        lb.text = "welcome, sign up"
-        return lb
+    var changedPicture: Bool = false
+    var defaultAvatar: String = "default_" + ["hat", "scarf", "tshirt", "cap", "sweater"].randomElement()! + "_profilepicture" {
+        didSet {
+            changedPicture = false
+            profilePictureImageView.image = UIImage(named: defaultAvatar)
+        }
+    }
+    
+    // MARK: -- Profile picture
+    
+    lazy var profilePictureImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.contentMode = .scaleAspectFit
+        
+        iv.image = UIImage(named: defaultAvatar)
+        iv.layer.cornerRadius = 10
+        iv.clipsToBounds = true
+        iv.isUserInteractionEnabled = true
+        return iv
     }()
     
-    lazy var emailTextField: UITextField = {
-        var tf = UITextField()
-        tf.translatesAutoresizingMaskIntoConstraints = false
-        tf.textColor = .label
-        tf.attributedPlaceholder = NSAttributedString(string: "Email", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
-        tf.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
-        tf.backgroundColor = .secondarySystemBackground
-        tf.borderStyle = .bezel
-        tf.isSecureTextEntry = false
-        tf.autocorrectionType = .no
-        tf.autocapitalizationType = .none
-        tf.keyboardType = .emailAddress
-        tf.textContentType = .emailAddress
-        tf.returnKeyType = .next
-        tf.delegate = self
-        tf.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
-        return tf
+    lazy var galleryButton: UIButton = {
+        let button = UIButton(primaryAction: UIAction { _ in
+            self.showImageSourceOptions()
+        })
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setImage(UIImage(systemName: "photo.fill", withConfiguration: UIImage.SymbolConfiguration(hierarchicalColor: .label)), for: .normal)
+        return button
     }()
     
-    lazy var passwordTextField: UITextField = {
-        var tf = UITextField()
-        tf.translatesAutoresizingMaskIntoConstraints = false
-        tf.textColor = .label
-        tf.attributedPlaceholder = NSAttributedString(string: "Password", attributes: [NSAttributedString.Key.foregroundColor : UIColor.lightGray])
-        tf.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
-        tf.backgroundColor = .secondarySystemBackground
-        tf.borderStyle = .bezel
-        tf.isSecureTextEntry = true
-        tf.autocorrectionType = .no
-        tf.autocapitalizationType = .none
-        tf.textContentType = .newPassword
-        tf.returnKeyType = .continue
-        tf.delegate = self
-        tf.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
-        return tf
+    // MARK: -- Username
+    
+    lazy var usernameField: CustomTextFieldInput = {
+        let view = CustomTextFieldInput(fieldTitle: String(localized: "signup.username.title"), placeholder: String(localized: "signup.username.placeholder"), charCounterWithCharacters: 20)
+        view.fieldInput.delegate = self
+        view.fieldInput.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
+        return view
     }()
+    
+    // MARK: -- Password
+    
+    lazy var passwordField: CustomTextFieldInput = {
+        let view = CustomTextFieldInput(fieldTitle: String(localized: "signup.password.title"), placeholder: String(localized: "signup.password.placeholder"))
+        view.fieldInput.autocapitalizationType = .none
+        view.fieldInput.isSecureTextEntry = true
+        view.fieldInput.delegate = self
+        view.fieldInput.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
+        return view
+    }()
+    
+    // MARK: -- Sign Up Button
     
     lazy var signUpButton: UIButton = {
-        var bt = UIButton()
-        bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.alpha = 0.2
-        bt.isEnabled = false
-        bt.backgroundColor = .accent
-        bt.layer.cornerRadius = 5
-        bt.setTitle("Sign Up", for: .normal)
-        bt.setTitleColor(UIColor.label, for: .normal)
-        bt.titleLabel?.font = UIFont.systemFont(ofSize: 14, weight: .black)
-        bt.titleLabel?.textAlignment = .center
-        bt.addTarget(self, action: #selector(handleSignUp), for: .touchUpInside)
-        return bt
+        let button = UIButton(primaryAction: UIAction { _ in
+            self.handleSignUp()
+        })
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.configuration = .prominentGlass()
+        button.configuration?.baseBackgroundColor = .accent
+        button.configuration?.baseForegroundColor = .label
+        button.backgroundColor = .accent.withAlphaComponent(0.3)
+        button.isEnabled = false
+        button.setAttributedTitle(NSAttributedString(string: String(localized: "common.continue"), attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
+        return button
     }()
+    
+    // MARK: -- Sign In Button
     
     lazy var signInTextButton: UIButton = {
         var bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
-        var title = NSMutableAttributedString(string: "Already have an Account? ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
-        title.append(NSAttributedString(string: "Sign In", attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
+        var title = NSMutableAttributedString(string: String(localized: "signup.signin.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
+        title.append(NSAttributedString(string: String(localized: "signup.signin.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
         bt.setAttributedTitle(title, for: .normal)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(pushSignIn), for: .touchUpInside)
@@ -102,64 +108,127 @@ class SignUpController: UIViewController {
     
     @objc
     func handleSignUp() {
-        // nextController can't be nil here due to not being able to click the sign up button without nextController to be initiated first
-        
-        signUpButton.alpha = 0.2
+        signUpButton.backgroundColor = .accent.withAlphaComponent(0.3)
         signUpButton.isEnabled = false
-        
-        self.nextController!.email = emailTextField.text!
-        self.nextController!.password = passwordTextField.text!
-        self.navigationController?.pushViewController(self.nextController!, animated: true)
     }
     
+    // MARK: -- Functions
+    
     @objc
-    func checkTextFieldInputs(_ textField: UITextField) {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let validEmail = NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: emailTextField.text ?? "")
+    func checkTextFieldInputs() {
+        let containsIllegalCharacters = !(usernameField.fieldInput.text?.unicodeScalars.allSatisfy { CharacterSet.alphanumerics.contains($0) } ?? false)
         
-        if !(emailTextField.text?.count ?? 0 > 0) || !(passwordTextField.text?.count ?? 0 > 7) || !validEmail {
-            signUpButton.alpha = 0.2
+        guard (usernameField.fieldInput.text?.count ?? 0 >= 3) && (passwordField.fieldInput.text?.count ?? 0 >= 8) && !containsIllegalCharacters else {
+            signUpButton.backgroundColor = .accent.withAlphaComponent(0.3)
             signUpButton.isEnabled = false
             return
         }
         
-        signUpButton.alpha = 1
+        signUpButton.backgroundColor = .accent
         signUpButton.isEnabled = true
+    }
+    
+    @objc
+    func showImageSourceOptions() {
+        let actionSheet = UIAlertController(title: String(localized: "imagepicker.source.title"), message: String(localized: "imagepicker.source.message"), preferredStyle: .actionSheet)
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.library"), style: .default) { [weak self] _ in
+            self?.presentPhotoPicker()
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.default"), style: .default) { [weak self] _ in
+            self?.presentDefaultPicker()
+        })
+        
+        actionSheet.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+        
+        present(actionSheet, animated: true)
+    }
+    
+    private func presentPhotoPicker() {
+        var configuration = PHPickerConfiguration(photoLibrary: .shared())
+        configuration.selectionLimit = 1
+        configuration.filter = .images
+        
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+    
+    private func presentDefaultPicker() {
+        let defaultAvatarPicker = DefaultAvatarPickerController(delegate: self)
+        let navigationController = UINavigationController(rootViewController: defaultAvatarPicker)
+        self.present(navigationController, animated: true)
+    }
+    
+    private func presentCropView(with image: UIImage) {
+        let cropViewController = CropViewController(image: image)
+        cropViewController.delegate = self
+        cropViewController.aspectRatioLockEnabled = true
+        cropViewController.aspectRatioPreset = CGSize(width: 1, height: 1)
+        cropViewController.aspectRatioPickerButtonHidden = true
+        cropViewController.cancelButtonColor = .systemRed
+        cropViewController.rotateButtonsHidden = true
+        cropViewController.resetButtonHidden = true
+        cropViewController.doneButtonColor = .accent
+        self.present(cropViewController, animated: true, completion: nil)
     }
     
     func configureViewComponents() {
         view.backgroundColor = .background
-        title = ""
+        title = String(localized: "signup.title")
         
+        let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
+        navigationController?.navigationBar.titleTextAttributes = titleAttributes
         navigationItem.largeTitleDisplayMode = .never
         
-        view.addSubview(signUpLabel)
-        signUpLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 150).isActive = true
-        signUpLabel.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-        signUpLabel.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
+        view.addSubview(profilePictureImageView)
+        NSLayoutConstraint.activate([
+            profilePictureImageView.heightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.35),
+            profilePictureImageView.widthAnchor.constraint(equalTo: profilePictureImageView.heightAnchor),
+            profilePictureImageView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
+        ])
         
-        view.addSubview(emailTextField)
-        emailTextField.topAnchor.constraint(equalTo: signUpLabel.bottomAnchor, constant: 20).isActive = true
-        emailTextField.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-        emailTextField.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        emailTextField.heightAnchor.constraint(equalToConstant: 45).isActive = true
+        let profilePicture = UITapGestureRecognizer(target: self, action: #selector(showImageSourceOptions))
+        profilePictureImageView.addGestureRecognizer(profilePicture)
         
-        view.addSubview(passwordTextField)
-        passwordTextField.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 20).isActive = true
-        passwordTextField.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-        passwordTextField.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        passwordTextField.heightAnchor.constraint(equalToConstant: 45).isActive = true
+        view.addSubview(galleryButton)
+        NSLayoutConstraint.activate([
+            galleryButton.leadingAnchor.constraint(equalTo: profilePictureImageView.trailingAnchor, constant: 20),
+            galleryButton.centerYAnchor.constraint(equalTo: profilePictureImageView.centerYAnchor)
+        ])
+        
+        view.addSubview(usernameField)
+        NSLayoutConstraint.activate([
+            usernameField.topAnchor.constraint(equalTo: profilePictureImageView.bottomAnchor, constant: 20),
+            usernameField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            usernameField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            usernameField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
+        ])
+        
+        view.addSubview(passwordField)
+        NSLayoutConstraint.activate([
+            passwordField.topAnchor.constraint(equalTo: usernameField.bottomAnchor, constant: 20),
+            passwordField.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+            passwordField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            passwordField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            passwordField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
+        ])
         
         view.addSubview(signUpButton)
-        signUpButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 20).isActive = true
-        signUpButton.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-        signUpButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        signUpButton.heightAnchor.constraint(equalToConstant: 45).isActive = true
+        NSLayoutConstraint.activate([
+            signUpButton.topAnchor.constraint(equalTo: passwordField.bottomAnchor, constant: 20),
+            signUpButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            signUpButton.heightAnchor.constraint(equalToConstant: 45),
+            signUpButton.widthAnchor.constraint(equalToConstant: self.view.frame.width / 2)
+        ])
         
         view.addSubview(signInTextButton)
-        signInTextButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10).isActive = true
-        signInTextButton.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-        signInTextButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
+        NSLayoutConstraint.activate([
+            signInTextButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10),
+            signInTextButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            signInTextButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20)
+        ])
         
         let tap = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing))
         tap.cancelsTouchesInView = false
@@ -168,10 +237,22 @@ class SignUpController: UIViewController {
 }
 
 extension SignUpController: UITextFieldDelegate {
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        switch textField {
+        case usernameField.fieldInput:
+            if string == "" { return true }
+            
+            guard usernameField.fieldInput.text?.count ?? 0 < 20 else { return false }
+        default:
+            return true
+        }
+        
+        return true
+    }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if textField == emailTextField {
-            passwordTextField.becomeFirstResponder()
+        if textField == usernameField.fieldInput {
+            passwordField.fieldInput.becomeFirstResponder()
         }
         else {
             view.endEditing(true)
@@ -183,5 +264,51 @@ extension SignUpController: UITextFieldDelegate {
         }
         
         return true
+    }
+}
+
+extension SignUpController: UIDefaultAvatarPickerDelegate {
+    func defaultAvatarPicker(_ image: UIImage, _ named: String) {
+        self.defaultAvatar = named
+    }
+}
+
+extension SignUpController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        
+        guard let result = results.first else { return }
+        
+        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                DispatchQueue.main.async {
+                    ErrorHandler.handle(error)
+                }
+                return
+            }
+            
+            guard let image = object as? UIImage else { return }
+            
+            DispatchQueue.main.async {
+                self.presentCropView(with: image)
+            }
+        }
+    }
+}
+
+extension SignUpController: CropViewControllerDelegate {
+    func cropViewController(_ cropViewController: CropViewController, didCropToImage image: UIImage, withRect cropRect: CGRect, angle: Int) {
+        Task {
+            cropViewController.dismiss(animated: true)
+            
+            profilePictureImageView.image = image
+        }
+    }
+        
+    func cropViewController(_ cropViewController: CropViewController,
+                            didFinishCancelled cancelled: Bool) {
+        cropViewController.dismiss(animated: true, completion: nil)
     }
 }

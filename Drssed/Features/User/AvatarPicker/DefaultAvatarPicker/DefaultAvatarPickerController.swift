@@ -57,7 +57,7 @@ class DefaultAvatarPickerController: UIViewController {
 
     func configureViewComponents() {
         view.backgroundColor = .background
-        title = "default avatars"
+        title = ""
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
