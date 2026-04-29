@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "auth.password.placeholder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein neues Password mit mindestens 8 Zeichen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your new password for your account containing at least 8 characters."
+          }
+        }
+      }
+    },
+    "auth.username.placeholder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Benutzername für Drssed."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your username for Drssed."
+          }
+        }
+      }
+    },
     "category_bottom" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -462,6 +494,16 @@
         }
       }
     },
+    "common.password" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        }
+      }
+    },
     "common.placeholder.name" : {
       "localizations" : {
         "de" : {
@@ -857,6 +899,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Undo"
+          }
+        }
+      }
+    },
+    "common.username" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Username"
           }
         }
       }
@@ -2447,34 +2499,50 @@
         }
       }
     },
-    "signup.password.placeholder" : {
+    "signin.signup.cta1" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ein neues Passwort mit mindestens 8 Zeichen."
+            "value" : "Noch keinen Account?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your new password for your account containing at least 8 characters."
+            "value" : "Don't have an account yet?"
           }
         }
       }
     },
-    "signup.password.title" : {
+    "signin.signup.cta2" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passwort"
+            "value" : "Registrieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Password"
+            "value" : "Sign up"
+          }
+        }
+      }
+    },
+    "signin.title" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einloggen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign In"
           }
         }
       }
@@ -2525,38 +2593,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Upgrade account"
-          }
-        }
-      }
-    },
-    "signup.username.placeholder" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Nutzername bei Drssed."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your username for Drssed."
-          }
-        }
-      }
-    },
-    "signup.username.title" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nutzername"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Username"
           }
         }
       }
