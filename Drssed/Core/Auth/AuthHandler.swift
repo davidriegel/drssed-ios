@@ -37,12 +37,19 @@ final class AuthHandler {
     // MARK: -- sign into existing account
     
     @discardableResult
-    public func signInWith(signInName: String, andPassword: String) async throws -> TokenModel {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let validEmail = NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: signInName)
+    public func signInWith(username: String? = nil, email: String? = nil, password: String) async throws -> TokenModel {
+        guard !(username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) && !(email?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) else { throw AuthenticationError.missingCredentials }
         
-        let signInUse = validEmail ? "email" : "username"
-        let uploadData = try! JSONEncoder().encode([signInUse: signInName, "password": andPassword])
+        var dict: [String: String] = ["password": password]
+        
+        if let username = username {
+            dict["username"] = username
+        }
+        if let email = email {
+            dict["email"] = email
+        }
+
+        let uploadData = try JSONEncoder().encode(dict)
         let request = try await APIClient.shared.createRequest(endpoint: "/auth/login", method: .POST, body: uploadData, authentication: false)
         let (data, _) = try await APIClient.shared.executeRequest(request: request)
         

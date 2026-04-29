@@ -99,34 +99,16 @@ class SignInController: UIViewController {
     func handleSignIn() {
         Task {
             do {
-                let tokenResponse = try await APIClient.shared.authHandler.signInWith(signInName: signInNameTextField.text!, andPassword: passwordTextField.text!)
-                UserDefaults.standard.set(tokenResponse.access_token, forKey: "access_token")
-                UserDefaults.standard.set(Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), forKey: "expires_at")
-                UserDefaults.standard.set(tokenResponse.refresh_token, forKey: "refresh_token")
+                try await APIClient.shared.authHandler.signInWith(username: signInNameTextField.text, password: passwordTextField.text ?? "")
                 self.view.window?.rootViewController = TabBarController()
             } catch APIError.unauthorized {
-                signInButton.alpha = 0.2
-                signInButton.isEnabled = false
-                
-                let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-                let validEmail = NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: signInNameTextField.text ?? "")
-                let signInUse = validEmail ? "email" : "username"
-                
-                let alert = UIAlertController(title: "", message: "Either your \(signInUse) or your password is wrong.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default))
-                present(alert, animated: true)
-            } catch APIError.tooManyRequests {
-                signInButton.alpha = 0.2
-                signInButton.isEnabled = false
-                let alert = UIAlertController(title: "", message: "You're being rate limited... wait a minute and try again.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "Ok", style: .default))
-                present(alert, animated: true)
+                ErrorHandler.handle(AuthenticationError.invalidCredentials)
             } catch {
-                signInButton.alpha = 0.2
-                signInButton.isEnabled = false
-                
                 ErrorHandler.handle(error)
             }
+            
+            signInButton.alpha = 0.2
+            signInButton.isEnabled = false
         }
     }
     

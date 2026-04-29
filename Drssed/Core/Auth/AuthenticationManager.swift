@@ -80,6 +80,16 @@ actor AuthenticationManager {
         }
     }
     
+    func signInWith(username: String? = nil, email: String? = nil, password: String) async throws {
+        do {
+            try await APIClient.shared.authHandler.signInWith(username: username, email: email, password: password)
+            authState = .authenticated
+        } catch {
+            authState = .unauthenticated
+            throw error
+        }
+    }
+    
     // TODO: Add upgrade account logic
     
     func signOut() async {
