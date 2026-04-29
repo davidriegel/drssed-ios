@@ -1443,13 +1443,13 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ungültige E-Mail-Adresse oder falsches Passwort."
+            "value" : "Die eingegebenen Anmeldedaten sind ungültig."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid email or password."
+            "value" : "The login credentials you entered are incorrect."
           }
         }
       }
