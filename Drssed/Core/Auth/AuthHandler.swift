@@ -34,6 +34,27 @@ final class AuthHandler {
         return tokenResponse
     }
     
+    // MARK: -- sign into existing account
+    
+    public func signInWith(signInName: String, andPassword: String) async throws -> TokenModel {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let validEmail = NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: signInName)
+        
+        let signInUse = validEmail ? "email" : "username"
+        let uploadData = try! JSONEncoder().encode([signInUse: signInName, "password": andPassword])
+        let request = try await APIClient.shared.createRequest(endpoint: "/auth/login", method: .POST, body: uploadData, authentication: false)
+        let (data, _) = try await APIClient.shared.executeRequest(request: request)
+        
+        let tokenResponse = try JSONDecoder().decode(TokenModel.self, from: data)
+        let jwt = try decode(jwt: tokenResponse.access_token)
+        
+        UserDefaults.standard.set(jwt.subject, forKey: "user_id")
+        let keychainModel = TokenKeychainModel(accessToken: tokenResponse.access_token, refreshToken: tokenResponse.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenResponse.expires_in)), isGuest: false)
+        await TokenManager.shared.setTokens(keychainModel)
+        
+        return tokenResponse
+    }
+    
     // MARK: -- GET ACCESS TOKEN
     
     public func getAndRenewAccessToken() async throws -> String {
@@ -60,21 +81,6 @@ final class AuthHandler {
     }
     
     // MARK: -- Upgrade account request logic
-    
-    // MARK: -- SIGN IN
-    
-    public func signInWith(signInName: String, andPassword: String) async throws -> TokenModel {
-        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
-        let validEmail = NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: signInName)
-        
-        let signInUse = validEmail ? "email" : "username"
-        let uploadData = try! JSONEncoder().encode([signInUse: signInName, "password": andPassword])
-        let request = try await APIClient.shared.createRequest(endpoint: "/auth/login", method: .POST, body: uploadData, authentication: false)
-        let (data, _) = try await APIClient.shared.executeRequest(request: request)
-        
-        let fetchedData = try JSONDecoder().decode(TokenModel.self, from: data)
-        return fetchedData
-    }
     
     // MARK: -- Handler specific functions
     
