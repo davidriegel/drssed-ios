@@ -24,6 +24,7 @@
               "value" : true
             }
           ],
+          "hidden" : false,
           "image-name" : "Hanger.svg",
           "name" : "Hanger",
           "position" : {
