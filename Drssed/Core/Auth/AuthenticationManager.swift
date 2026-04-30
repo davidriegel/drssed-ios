@@ -90,7 +90,16 @@ actor AuthenticationManager {
         }
     }
     
-    // TODO: Add upgrade account logic
+    func upgradeAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws -> User {
+        do {
+            let user = try await APIClient.shared.authHandler.upgradeAccount(username: username, email: email, password: password, profilePicture: profilePicture)
+            authState = .authenticated
+            return user
+        } catch {
+            authState = .unauthenticated
+            throw error
+        }
+    }
     
     func signOut() async {
         await TokenManager.shared.clearTokens()

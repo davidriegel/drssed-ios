@@ -63,6 +63,27 @@ final class AuthHandler {
         return tokenResponse
     }
     
+    // MARK: -- upgrade account
+    
+    public func upgradeAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws -> User {
+        guard !(username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) || !(email?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) else { throw AuthenticationError.missingCredentials }
+        
+        var dict: [String: String] = ["password": password, "profile_picture": profilePicture]
+        
+        if let username = username {
+            dict["username"] = username
+        }
+        if let email = email {
+            dict["email"] = email
+        }
+
+        let uploadData = try JSONEncoder().encode(dict)
+        let request = try await APIClient.shared.createRequest(endpoint: "/auth/upgrade", method: .POST, body: uploadData, authentication: true)
+        let user: User = try await APIClient.shared.executeRequestAndDecode(request: request)
+        
+        return user
+    }
+    
     // MARK: -- GET ACCESS TOKEN
     
     public func getAndRenewAccessToken() async throws -> String {
