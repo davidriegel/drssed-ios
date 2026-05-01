@@ -140,7 +140,9 @@ final public class APIClient {
         ]
         
         if authentication {
-            defaultHeaders["Authorization"] = try await self.authHandler.getAndRenewAccessToken()
+            let accessToken = try await self.authHandler.getAndRenewAccessToken()
+            
+            defaultHeaders["Authorization"] = "Bearer " + accessToken
         }
         
         guard (customHeaders != nil) else {
