@@ -11,6 +11,7 @@ import UIKit
 public struct Clothing: Identifiable, Hashable, Sendable {
     public let id: String
     var category: ClothingCategories
+    var subCategory: ClothingSubCategories
     var updatedAt: Date
     let createdAt: Date
     var imageID: String
@@ -22,11 +23,12 @@ public struct Clothing: Identifiable, Hashable, Sendable {
     var tags: [Tags]
     let userID: String
     
-    init(name: String, imageID: String, category: ClothingCategories, itemDescription: String, color: UIColor, isPublic: Bool = true, seasons: [Seasons], tags: [Tags]) {
+    init(name: String, imageID: String, category: ClothingCategories, subCategory: ClothingSubCategories, itemDescription: String, color: UIColor, isPublic: Bool = true, seasons: [Seasons], tags: [Tags]) {
         self.id = UUID().uuidString
         self.name = name
         self.imageID = imageID
         self.category = category
+        self.subCategory = subCategory
         self.description = itemDescription
         self.color = color
         self.createdAt = Date()
@@ -41,6 +43,7 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.id = local.id
         self.name = local.name
         self.category = ClothingCategories(rawValue: local.category)!
+        self.subCategory = ClothingSubCategories(rawValue: local.subCategory)!
         self.color = UIColor(hex: local.color) ?? .white
         self.description = local.itemDescription
         self.imageID = local.imageID
@@ -56,6 +59,7 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.id = api.clothing_id
         self.name = api.name
         self.category = api.category
+        self.subCategory = api.sub_category
         self.color = UIColor(hex: api.color) ?? .white
         self.description = api.description
         self.imageID = api.image_id

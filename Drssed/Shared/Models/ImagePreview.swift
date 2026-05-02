@@ -11,4 +11,5 @@ public struct ImagePreview: Codable {
     let image_id: String
     let image_color: String
     let image_category: ClothingCategories
+    let image_sub_category: ClothingSubCategories
 }

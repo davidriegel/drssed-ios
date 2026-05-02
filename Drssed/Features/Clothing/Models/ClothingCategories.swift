@@ -9,7 +9,7 @@ public enum ClothingCategories: String, Codable, CaseIterable, Hashable, Sendabl
     case JACKET
     case TOP
     case BOTTOM
-    case FOOTWEAR
+    case ONE_PIECE
     
     var localizedName: String {
         let key = String.LocalizationValue("category_" + self.rawValue.lowercased())

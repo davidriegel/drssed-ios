@@ -212,6 +212,23 @@
         }
       }
     },
+    "category_one_piece" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einteiler"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One-Piece"
+          }
+        }
+      }
+    },
     "category_top" : {
       "extractionState" : "manual",
       "localizations" : {

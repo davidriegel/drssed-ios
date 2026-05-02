@@ -15,6 +15,7 @@ class ClothingLocal: NSManagedObject {
     // MARK: - Core Data Attribute
 
     @NSManaged var category: String
+    @NSManaged var subCategory: String
     @NSManaged var color: String
     @NSManaged var createdAt: Date
     @NSManaged var id: String
@@ -32,6 +33,7 @@ class ClothingLocal: NSManagedObject {
     convenience init(
         context: NSManagedObjectContext,
         category: String,
+        subCategory: String,
         color: String,
         createdAt: Date = Date(),
         id: String,
@@ -46,6 +48,7 @@ class ClothingLocal: NSManagedObject {
     ) {
         self.init(context: context)
         self.category = category
+        self.subCategory = subCategory
         self.color = color
         self.createdAt = createdAt
         self.id = id
@@ -74,6 +77,7 @@ extension ClothingLocal {
         self.name = domainModel.name
         self.imageID = domainModel.imageID
         self.category = domainModel.category.rawValue
+        self.subCategory = domainModel.subCategory.rawValue
         self.itemDescription = domainModel.description
         self.color = domainModel.color.hexString
         self.createdAt = domainModel.createdAt

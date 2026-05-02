@@ -35,7 +35,7 @@ class OutfitComposerViewController_Picker: UIViewController {
     }
     
     private let categoryLimits: [ClothingCategories: Int] = [
-        .FOOTWEAR: 1,
+        .ONE_PIECE: 1,
         .BOTTOM: 1,
         .TOP: 2,
         .JACKET: 1
@@ -123,7 +123,7 @@ class OutfitComposerViewController_Picker: UIViewController {
     var isSearching: Bool = false
     
     lazy var categorySegmentControl: UISegmentedControl = {
-        let sc = UISegmentedControl(items: [String(localized: "common.all"), ClothingCategories.JACKET.localizedName, ClothingCategories.TOP.localizedName, ClothingCategories.BOTTOM.localizedName, ClothingCategories.FOOTWEAR.localizedName])
+        let sc = UISegmentedControl(items: [String(localized: "common.all"), ClothingCategories.JACKET.localizedName, ClothingCategories.TOP.localizedName, ClothingCategories.BOTTOM.localizedName, ClothingCategories.ONE_PIECE.localizedName])
         sc.translatesAutoresizingMaskIntoConstraints = false
         sc.selectedSegmentIndex = 0
         sc.tintColor = .secondarySystemBackground
@@ -236,7 +236,7 @@ class OutfitComposerViewController_Picker: UIViewController {
             case 3:
                 self.filterClothingCategory = .BOTTOM
             case 4:
-                self.filterClothingCategory = .FOOTWEAR
+                self.filterClothingCategory = .ONE_PIECE
             default:
                 self.filterClothingCategory = nil
             }

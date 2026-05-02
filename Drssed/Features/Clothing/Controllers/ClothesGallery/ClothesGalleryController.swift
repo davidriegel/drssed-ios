@@ -178,7 +178,7 @@ class ClothesGalleryController: UIViewController {
     }()
     
     lazy var categorySegmentControl: UISegmentedControl = {
-        let sc = UISegmentedControl(items: [String(localized: "common.all"), ClothingCategories.JACKET.localizedName, ClothingCategories.TOP.localizedName, ClothingCategories.BOTTOM.localizedName, ClothingCategories.FOOTWEAR.localizedName])
+        let sc = UISegmentedControl(items: [String(localized: "common.all"), ClothingCategories.JACKET.localizedName, ClothingCategories.TOP.localizedName, ClothingCategories.BOTTOM.localizedName, ClothingCategories.ONE_PIECE.localizedName])
         sc.translatesAutoresizingMaskIntoConstraints = false
         sc.selectedSegmentIndex = 0
         sc.tintColor = .secondarySystemBackground
@@ -471,7 +471,7 @@ class ClothesGalleryController: UIViewController {
             case 3:
                 self.selectedCategory = .BOTTOM
             case 4:
-                self.selectedCategory = .FOOTWEAR
+                self.selectedCategory = .ONE_PIECE
             default:
                 self.selectedCategory = nil
             }

@@ -9,6 +9,7 @@ import Foundation
 
 public struct ClothingAPI: Codable, Hashable {
     let category: ClothingCategories
+    let sub_category: ClothingSubCategories
     let clothing_id, color: String
     let created_at: Date
     let description, image_id: String

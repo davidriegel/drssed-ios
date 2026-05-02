@@ -830,7 +830,7 @@ extension ClothingDetailsController: PHPickerViewControllerDelegate, CropViewCon
 
         Task {
             do {
-                let (imageID, clothingURL, clothingColor, _) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
+                let (imageID, clothingURL, clothingColor, _, _) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
                 
                 item.imageID = imageID
                 item.color = clothingColor

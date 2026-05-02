@@ -10,6 +10,7 @@
         <attribute name="itemDescription" attributeType="String" defaultValueString=""/>
         <attribute name="name" attributeType="String" defaultValueString=""/>
         <attribute name="seasons" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="subCategory" attributeType="String"/>
         <attribute name="tags" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
         <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="userID" attributeType="String" defaultValueString=""/>

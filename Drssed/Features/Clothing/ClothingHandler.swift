@@ -29,14 +29,14 @@ final class ClothingHandler {
     
     // MARK: -- POST REMOVE CLOTHING BACKGROUND
     
-    public func removeClothingBackground(from image: UIImage) async throws -> (String, URL, UIColor, ClothingCategories) {
+    public func removeClothingBackground(from image: UIImage) async throws -> (String, URL, UIColor, ClothingCategories, ClothingSubCategories) {
         let request = try await APIClient.shared.createRequest(withImage: image, endpoint: "/images/preview", method: .POST)
         
         let imageResponse: ImagePreview = try await APIClient.shared.executeRequestAndDecode(request: request)
         
         guard let url = URL(string: imageResponse.image_url, relativeTo: APIClient.baseURL) else { throw URLError(.badURL) }
         
-        return (imageResponse.image_id, url, UIColor(hex: imageResponse.image_color) ?? UIColor.white, imageResponse.image_category)
+        return (imageResponse.image_id, url, UIColor(hex: imageResponse.image_color) ?? UIColor.white, imageResponse.image_category, imageResponse.image_sub_category)
     }
     
     // MARK: -- POST UPLOAD CLOATHING
@@ -52,7 +52,7 @@ final class ClothingHandler {
             tagsStrings.append(tag.rawValue)
         }
         
-        let uploadDict = ["name": domainModel.name, "description": domainModel.description, "category": domainModel.category.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": domainModel.imageID, "color": domainModel.color.hexString] as [String : Any]
+        let uploadDict = ["name": domainModel.name, "description": domainModel.description, "category": domainModel.category.rawValue, "sub_category": domainModel.subCategory.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": domainModel.imageID, "color": domainModel.color.hexString] as [String : Any]
         
         let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
         let request = try await APIClient.shared.createRequest(endpoint: "/users/me/clothing", method: .POST, body: uploadData)
@@ -137,6 +137,10 @@ final class ClothingHandler {
         
         if oldClothing.category != newClothing.category {
             uploadDict["category"] = newClothing.category.rawValue
+        }
+        
+        if oldClothing.subCategory != newClothing.subCategory {
+            uploadDict["sub_category"] = newClothing.subCategory.rawValue
         }
         
         if oldClothing.tags != newClothing.tags {

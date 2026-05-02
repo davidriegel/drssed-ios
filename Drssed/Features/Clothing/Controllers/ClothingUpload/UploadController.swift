@@ -31,6 +31,7 @@ class UploadController: UIViewController {
     var fileExtension: String = ""
     
     var selectedCategory: ClothingCategories?
+    var selectedSubCategory: ClothingSubCategories = .T_SHIRT
     var selectedSeasonsArray: [Seasons] = [] {
         didSet {
             var selected = [String]()
@@ -395,7 +396,7 @@ class UploadController: UIViewController {
             return
         }
         
-        let domainModel = Clothing(name: name, imageID: imageID, category: category, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray)
+        let domainModel = Clothing(name: name, imageID: imageID, category: category, subCategory: selectedSubCategory, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray)
         
         Task {
             await clothingRepo.addOrUpdateClothing(from: domainModel)
@@ -750,11 +751,12 @@ extension UploadController: TOCropViewControllerDelegate {
             cropViewController.dismiss(animated: true)
             
             do {
-                let (imageID, clothingURL, clothingColor, clothingCategory) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
+                let (imageID, clothingURL, clothingColor, clothingCategory, clothingSubCategory) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
                 
                 self.imageID = imageID
                 colorPickerView.selectedColor = clothingColor
                 clothingColorPickerButton.backgroundColor = clothingColor
+                selectedSubCategory = clothingSubCategory
                 
                 if let index = clothingCategoriesDataSource.firstIndex(of: clothingCategory.localizedName) {
                     categoryPicker.selectRow(index, inComponent: 0, animated: true)
