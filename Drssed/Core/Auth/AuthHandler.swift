@@ -78,7 +78,7 @@ final class AuthHandler {
         }
 
         let uploadData = try JSONEncoder().encode(dict)
-        let request = try await APIClient.shared.createRequest(endpoint: "/auth/upgrade", method: .POST, body: uploadData, authentication: true)
+        let request = try await APIClient.shared.createRequest(endpoint: "/users/me/upgrade", method: .POST, body: uploadData, authentication: true)
         let user: User = try await APIClient.shared.executeRequestAndDecode(request: request)
         
         return user

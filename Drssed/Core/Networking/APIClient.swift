@@ -16,9 +16,9 @@ final public class APIClient {
     #else
     public static let baseURL = URL(string: "https://api.drssed.app") // Production mode
     #endif
-    public static let clothingImagesURL = URL(string: "/uploads/clothing_images/", relativeTo: baseURL)
-    public static let profileImagesURL = URL(string: "/uploads/profile_pictures/", relativeTo: baseURL)
-    public static let outfitImagesURL = URL(string: "/uploads/outfit_images/", relativeTo: baseURL)
+    public static let clothingImagesURL = URL(string: "/static/clothing_images/", relativeTo: baseURL)
+    public static let profileImagesURL = URL(string: "/static/profile_pictures/", relativeTo: baseURL)
+    public static let outfitImagesURL = URL(string: "/static/outfit_images/", relativeTo: baseURL)
     
     public let decoder: JSONDecoder
     private let session: URLSession

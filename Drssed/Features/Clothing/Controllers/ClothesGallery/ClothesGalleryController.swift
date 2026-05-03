@@ -437,7 +437,6 @@ class ClothesGalleryController: UIViewController {
     func configureViewComponents() {
         view.backgroundColor = .background
         navigationController?.navigationBar.prefersLargeTitles = false
-        title = String(localized: "wardrobe.title")
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
