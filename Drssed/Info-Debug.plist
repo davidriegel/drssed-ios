@@ -6,13 +6,6 @@
 	<string>We need to access the camera, for you to take a picture of your clothing piece.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>localhost</key>
-			<dict/>
-			<key>NSExceptionAllowsInsecureHTTPLoads</key>
-			<true/>
-		</dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
