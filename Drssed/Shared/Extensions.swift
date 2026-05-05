@@ -198,3 +198,18 @@ extension UIView {
 extension NSManagedObjectContext {
     func saveIfNeeded() throws { if hasChanges { try save() } }
 }
+
+#if DEBUG
+extension Data {
+    func prettyPrintedJSON() {
+        guard let json = try? JSONSerialization.jsonObject(with: self),
+              let jsonData = try? JSONSerialization.data(withJSONObject: json, options: .prettyPrinted),
+              let string = String(data: jsonData, encoding: .utf8) else {
+            print("⚠️ JSON data malformed or not decodable")
+            return
+        }
+        
+        print(string)
+    }
+}
+#endif
