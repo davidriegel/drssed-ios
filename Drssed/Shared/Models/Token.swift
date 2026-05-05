@@ -14,8 +14,14 @@ public struct TokenModel: Codable {
 }
 
 public struct TokenKeychainModel: Codable {
+    private static let expiryBuffer: TimeInterval = 60 * 5  // 5 minutes
+    
     let accessToken: String
     let refreshToken: String
     let expiryDate: Date
     let isGuest: Bool
+    
+    var willExpireSoon: Bool {
+        expiryDate <= Date().addingTimeInterval(Self.expiryBuffer)
+    }
 }

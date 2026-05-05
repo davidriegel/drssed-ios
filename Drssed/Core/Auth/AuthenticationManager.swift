@@ -23,35 +23,22 @@ actor AuthenticationManager {
     func determineCurrentAuthState() async -> AuthState {
         guard let tokens = await TokenManager.shared.currentTokens() else { return .unauthenticated }
         
-        if Date().addingTimeInterval(TimeInterval(60 * 10)) >= tokens.expiryDate {
-            do {
-                _ = try await APIClient.shared.authHandler.getAndRenewAccessToken()
-                let state = await getUserType()
-                authState = state
-                
-                return state
-            } catch let error as APIError {
-                if error.isNetworkRelated() || error.isServerRelated() {
-                    // TODO: Implement offline mode
-                    let state = await getUserType()
-                    authState = state
-                    return authState
-                }
-                
-                await TokenManager.shared.clearTokens()
-                authState = .unauthenticated
-                return authState
-            } catch {
-                ErrorHandler.handleSilently(error)
-                authState = .unauthenticated
-                return authState
-            }
+        do {
+            _ = try await APIClient.shared.authHandler.getAndRenewAccessToken()
+            let state = await getUserType()
+            authState = state
+        } catch let error as APIError where error.isNetworkRelated() || error.isServerRelated() {
+            // TODO: Implement offline mode, proceed with cached state, only viewing mode.
+            let state = await getUserType()
+            authState = state
+            return authState
+        } catch {
+            ErrorHandler.handleSilently(error)
+            authState = .unauthenticated
+            return authState
         }
         
-        let state = await getUserType()
-        authState = state
-        
-        return state
+        return authState
     }
     
     private func getUserType() async -> AuthState {

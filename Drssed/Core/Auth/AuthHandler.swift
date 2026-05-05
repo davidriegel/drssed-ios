@@ -88,25 +88,33 @@ final class AuthHandler {
     
     public func getAndRenewAccessToken() async throws -> String {
         guard var tokens = await TokenManager.shared.currentTokens() else { throw AuthenticationError.userNotSignedIn }
+        var accessToken = tokens.accessToken
         
-        if Date().addingTimeInterval(TimeInterval(60 * 10)) >= tokens.expiryDate {
-            let uploadData = try JSONEncoder().encode(["refresh_token": tokens.refreshToken, "access_token": tokens.accessToken])
-            let request = try await APIClient.shared.createRequest(endpoint: "/auth/refresh", method: .POST, body: uploadData, authentication: false)
+        if tokens.willExpireSoon {
+            let tokenModel = try await performTokenRefresh(refreshToken: tokens.refreshToken)
             
-            let tokenModel: TokenModel = try await APIClient.shared.executeRequestAndDecode(request: request)
-            
-            let jwt = try decode(jwt: tokenModel.access_token)
-
-            guard let is_guest = jwt.claim(name: "is_guest").integer else {
-                throw AuthenticationError.tokenInvalid
-            }
-                
-            let keychainModel = TokenKeychainModel(accessToken: tokenModel.access_token, refreshToken: tokenModel.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)), isGuest: is_guest != 0)
-            await TokenManager.shared.setTokens(keychainModel)
-            tokens = keychainModel
+            accessToken = tokenModel.access_token
         }
         
-        return tokens.accessToken
+        return accessToken
+    }
+    
+    private func performTokenRefresh(refreshToken: String) async throws -> TokenModel {
+        let uploadData = try JSONEncoder().encode(["refresh_token": refreshToken])
+        let request = try await APIClient.shared.createRequest(endpoint: "/auth/refresh", method: .POST, body: uploadData, authentication: false)
+        
+        let tokenModel: TokenModel = try await APIClient.shared.executeRequestAndDecode(request: request)
+        
+        let jwt = try decode(jwt: tokenModel.access_token)
+
+        guard let is_guest = jwt.claim(name: "is_guest").boolean else {
+            throw AuthenticationError.tokenInvalid
+        }
+            
+        let keychainModel = TokenKeychainModel(accessToken: tokenModel.access_token, refreshToken: tokenModel.refresh_token, expiryDate: Date().addingTimeInterval(TimeInterval(tokenModel.expires_in)), isGuest: is_guest)
+        await TokenManager.shared.setTokens(keychainModel)
+        
+        return tokenModel
     }
     
     // MARK: -- Upgrade account request logic
