@@ -12,7 +12,7 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     public let id: String
     var updatedAt: Date
     let createdAt: Date
-    var description: String
+    var description: String?
     var isPublic: Bool
     var isFavorite: Bool
     var name: String

@@ -7,7 +7,7 @@
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="imageID" attributeType="String" defaultValueString=""/>
         <attribute name="isPublic" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
-        <attribute name="itemDescription" attributeType="String" defaultValueString=""/>
+        <attribute name="itemDescription" optional="YES" attributeType="String" defaultValueString=""/>
         <attribute name="name" attributeType="String" defaultValueString=""/>
         <attribute name="seasons" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
         <attribute name="subCategory" attributeType="String"/>
@@ -20,7 +20,7 @@
         <attribute name="id" attributeType="String"/>
         <attribute name="isFavorite" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="isPublic" attributeType="Boolean" usesScalarValueType="YES"/>
-        <attribute name="itemDescription" attributeType="String"/>
+        <attribute name="itemDescription" optional="YES" attributeType="String"/>
         <attribute name="name" attributeType="String"/>
         <attribute name="sceneData" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="seasons" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>

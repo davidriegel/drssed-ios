@@ -14,7 +14,7 @@ public struct OutfitAPI: Codable, Hashable {
     let created_at: Date
     let updated_at: Date
     let scene: [CanvasPlacement]
-    let description: String
+    let description: String?
     let tags: [String]
     let seasons: [String]
     let user_id: String

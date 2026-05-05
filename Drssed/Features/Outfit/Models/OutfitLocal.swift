@@ -17,7 +17,7 @@ class OutfitLocal: NSManagedObject {
     @NSManaged var id: String
     @NSManaged var isPublic: Bool
     @NSManaged var isFavorite: Bool
-    @NSManaged var itemDescription: String
+    @NSManaged var itemDescription: String?
     @NSManaged var name: String
     @NSManaged var seasons: [String]
     @NSManaged var tags: [String]
