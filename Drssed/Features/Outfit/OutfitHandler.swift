@@ -110,5 +110,28 @@ final class OutfitHandler {
         let request = try await APIClient.shared.createRequest(endpoint: "/outfits/\(outfitID)", method: .DELETE)
         _ = try await APIClient.shared.executeRequest(request: request)
     }
+    
+    // MARK: -- GENERATE OUTFITS
+    func generateOutfits(amount: Int, seasons: [Seasons]? = nil, tags: [Tags]? = nil, anchorIDs: [String]? = nil) async throws -> [OutfitAPI] {
+        var apiModel: [String: Any] = ["amount": amount]
+
+        if let anchorIDs = anchorIDs {
+            apiModel["anchor"] = anchorIDs
+        }
+
+        if let seasons = seasons {
+            apiModel["seasons"] = seasons.map { $0.rawValue }
+        }
+
+        if let tags = tags {
+            apiModel["tags"] = tags.map { $0.rawValue }
+        }
+        
+        let uploadData = try JSONSerialization.data(withJSONObject: apiModel)
+        let request = try await APIClient.shared.createRequest(endpoint: "/outfits/generate", method: .POST, body: uploadData)
+        let generatedOutfits: GenerateOutfitsResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
+        
+        return generatedOutfits.outfits
+    }
 }
 
