@@ -116,10 +116,6 @@ final public class APIClient {
             throw APIError.payloadTooLarge(message: "Image compression failed", suggestion: "Please try a different image")
         }
         
-        #if DEBUG
-        print("Image size: \(imageData.count / 1024) kbytes")
-        #endif
-        
         let boundary = UUID().uuidString
         var data = Data()
         
