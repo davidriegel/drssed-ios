@@ -21,7 +21,7 @@ class ClothesGalleryController: UIViewController {
             clothingCollectionView.performBatchUpdates({
                 clothingCollectionView.collectionViewLayout.invalidateLayout()
             }, completion: nil)
-
+            
         }
     }
     
@@ -42,7 +42,7 @@ class ClothesGalleryController: UIViewController {
         
         self.clothingCollectionView.flashScrollIndicators()
     }
-
+    
     // MARK: --
     
     var dataSource: [Clothing] = [] {
@@ -55,26 +55,39 @@ class ClothesGalleryController: UIViewController {
         }
     }
     
+    var dataSourceByID: [String: Clothing] = [:]
+    
     private enum Section {
         case main
     }
     
-    private lazy var diffableDataSource: UICollectionViewDiffableDataSource<Section, Clothing> = UICollectionViewDiffableDataSource<Section, Clothing>(
+    private lazy var diffableDataSource: UICollectionViewDiffableDataSource<Section, String> = UICollectionViewDiffableDataSource<Section, String>(
         collectionView: self.clothingCollectionView,
-        cellProvider: { (collectionView: UICollectionView, indexPath: IndexPath, item: Clothing) -> UICollectionViewCell? in
+        cellProvider: { (collectionView: UICollectionView, indexPath: IndexPath, item: String) -> UICollectionViewCell? in
             let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: ClothingCollectionViewCell.identifier,
                 for: indexPath
             ) as! ClothingCollectionViewCell
-            cell.configureViewComponents(with: item.imageID, and: item.name)
+            guard let clothing = self.dataSourceByID[item] else { return cell }
+            cell.configureViewComponents(with: clothing.imageID, and: clothing.name)
             return cell
         }
     )
     
     func applySnapshot(items: [Clothing], animatingDifferences: Bool = true) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Clothing>()
+        self.dataSourceByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+        
+        var snapshot = NSDiffableDataSourceSnapshot<Section, String>()
         snapshot.appendSections([.main])
-        snapshot.appendItems(items, toSection: .main)
+        snapshot.appendItems(items.map(\.id), toSection: .main)
+        diffableDataSource.apply(snapshot, animatingDifferences: animatingDifferences)
+    }
+
+    func reconfigure(clothingIDs: [String], animatingDifferences: Bool = false) {
+        var snapshot = diffableDataSource.snapshot()
+        let validIDs = clothingIDs.filter { snapshot.itemIdentifiers.contains($0) }
+        guard !validIDs.isEmpty else { return }
+        snapshot.reconfigureItems(validIDs)
         diffableDataSource.apply(snapshot, animatingDifferences: animatingDifferences)
     }
     
@@ -575,6 +588,6 @@ extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDe
     }
     
     func didUploadClothing(_ clothing: Clothing) {
-        reloadDataFromCoreData()
+        reconfigure(clothingIDs: [clothing.id])
     }
 }
