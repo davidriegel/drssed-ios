@@ -8,6 +8,7 @@
 import Foundation
 import CoreData
 import UIKit
+import os
 
 extension UIColor {
     static let skeletonColor = UIColor(named: "skeletonColor")!
@@ -197,6 +198,11 @@ extension UIView {
 
 extension NSManagedObjectContext {
     func saveIfNeeded() throws { if hasChanges { try save() } }
+}
+
+extension Logger {
+    private static let subsystem = Bundle.main.bundleIdentifier!
+    static let persistence = Logger(subsystem: subsystem, category: "persistence")
 }
 
 #if DEBUG
