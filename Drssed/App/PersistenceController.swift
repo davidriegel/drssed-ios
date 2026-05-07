@@ -62,11 +62,13 @@ struct PersistenceController {
     }
     
     private func destroyStore(for description: NSPersistentStoreDescription, in container: NSPersistentContainer) {
+        SyncCursors.resetAll()
+        
         guard let url = description.url, url.path != "/dev/null" else { return }
         do {
             try container.persistentStoreCoordinator.destroyPersistentStore(at: url, ofType: description.type, options: description.options)
             
-            Logger.persistence.info("Successfully deleted a corrupted store at \(url.lastPathComponent), will re-sync.")
+            Logger.persistence.info("Successfully deleted a corrupted store at \(url.lastPathComponent), will re-sync")
         } catch {
             Logger.persistence.error("Failed to delete a corrupted store: \(error, privacy: .public)")
         }
