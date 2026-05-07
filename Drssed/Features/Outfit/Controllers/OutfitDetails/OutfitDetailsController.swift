@@ -11,7 +11,7 @@ import SDWebImage
 import PhotosUI
 
 protocol OutfitDetailsDelegate: ModalPresentationDelegate {
-    func didUpdateOutfit()
+    func didUpdateOutfit(outfit: Outfit)
     func didDeleteOutfit()
 }
 
@@ -447,7 +447,7 @@ extension OutfitDetailsController: UIAdaptivePresentationControllerDelegate {
     
     func presentationControllerWillDismiss(_ presentationController: UIPresentationController) {
         if self.didUpdate {
-            delegate?.didUpdateOutfit()
+            delegate?.didUpdateOutfit(outfit: savedItem)
         }
     }
 }

@@ -56,26 +56,39 @@ class OutfitsGalleryViewController: UIViewController {
         }
     }
     
+    var dataSourceByID: [String: Outfit] = [:]
+    
     private enum Section {
         case main
     }
     
-    private lazy var diffableDataSource: UICollectionViewDiffableDataSource<Section, Outfit> = UICollectionViewDiffableDataSource<Section, Outfit>(
+    private lazy var diffableDataSource: UICollectionViewDiffableDataSource<Section, String> = UICollectionViewDiffableDataSource<Section, String>(
         collectionView: self.outfitCollectionView,
-        cellProvider: { (collectionView: UICollectionView, indexPath: IndexPath, item: Outfit) -> UICollectionViewCell? in
+        cellProvider: { (collectionView: UICollectionView, indexPath: IndexPath, item: String) -> UICollectionViewCell? in
             let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: OutfitsGallery_ViewCell.identifier,
                 for: indexPath
             ) as! OutfitsGallery_ViewCell
-            cell.configure(with: item, title: item.name)
+            guard let outfit = self.dataSourceByID[item] else { return cell }
+            cell.configure(with: outfit, title: outfit.name)
             return cell
         }
     )
     
     func applySnapshot(items: [Outfit], animatingDifferences: Bool = true) {
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Outfit>()
+        self.dataSourceByID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+        
+        var snapshot = NSDiffableDataSourceSnapshot<Section, String>()
         snapshot.appendSections([.main])
-        snapshot.appendItems(items, toSection: .main)
+        snapshot.appendItems(items.map(\.id), toSection: .main)
+        diffableDataSource.apply(snapshot, animatingDifferences: animatingDifferences)
+    }
+
+    func reconfigure(outfitIDs: [String], animatingDifferences: Bool = false) {
+        var snapshot = diffableDataSource.snapshot()
+        let validIDs = outfitIDs.filter { snapshot.itemIdentifiers.contains($0) }
+        guard !validIDs.isEmpty else { return }
+        snapshot.reconfigureItems(validIDs)
         diffableDataSource.apply(snapshot, animatingDifferences: animatingDifferences)
     }
     
@@ -482,8 +495,8 @@ class OutfitsGalleryViewController: UIViewController {
 }
 
 extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, OutfitDetailsDelegate {
-    func didUpdateOutfit() {
-        reloadDataFromCoreData()
+    func didUpdateOutfit(outfit: Outfit) {
+        reconfigure(outfitIDs: [outfit.id])
     }
     
     func didDeleteOutfit() {
