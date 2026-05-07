@@ -81,9 +81,9 @@ final class OutfitHandler {
         let data = try JSONSerialization.data(withJSONObject: requestBody)
         
         let request = try await APIClient.shared.createRequest(endpoint: "/outfits/\(newDomainModel.id)", method: .PATCH, body: data)
-        let outfitAPIWrapper: ItemWrapper<OutfitAPI> = try await APIClient.shared.executeRequestAndDecode(request: request)
+        let outfitAPIWrapper: OutfitWrapper = try await APIClient.shared.executeRequestAndDecode(request: request)
 
-        return outfitAPIWrapper.item
+        return outfitAPIWrapper.outfit
     }
     
     // MARK: -- GET MY OUTFITS
