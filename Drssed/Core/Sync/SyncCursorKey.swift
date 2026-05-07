@@ -18,7 +18,7 @@ enum SyncCursors {
         UserDefaults.standard.object(forKey: key.rawValue) as? Date
     }
     
-    static func set(_ key: SyncCursorKey, to date: Date) {
+    static func set(_ key: gSyncCursorKey, to date: Date) {
         UserDefaults.standard.set(date, forKey: key.rawValue)
     }
     
