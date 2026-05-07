@@ -203,6 +203,7 @@ extension NSManagedObjectContext {
 extension Logger {
     private static let subsystem = Bundle.main.bundleIdentifier!
     static let persistence = Logger(subsystem: subsystem, category: "persistence")
+    static let sync = Logger(subsystem: subsystem, category: "sync")
 }
 
 #if DEBUG
