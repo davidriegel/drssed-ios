@@ -567,6 +567,7 @@ class ProfileViewController: UIViewController {
             configureGuestLayout()
         case .authenticated:
             configureAuthenticatedLayout()
+            handleUserChange(AuthenticationManager.shared.currentUser)
         }
         
         Task { await loadGenericData() }
