@@ -40,9 +40,9 @@ class ProfileViewController: UIViewController {
         return view
     }()
     
-    // MARK: -- Guest header card
+    // MARK: - Guest
     
-    lazy var headerCard: UIView = {
+    lazy var guestHeaderCard: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .secondarySystemGroupedBackground
@@ -79,6 +79,46 @@ class ProfileViewController: UIViewController {
         label.textColor = .tertiaryLabel
         label.numberOfLines = 0
         label.textAlignment = .center
+        return label
+    }()
+    
+    // MARK: - Authenticated
+
+    lazy var userHeaderCard: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemGroupedBackground
+        view.layer.cornerRadius = 16
+        view.layer.cornerCurve = .continuous
+        return view
+    }()
+
+    lazy var profilePictureImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.translatesAutoresizingMaskIntoConstraints = false
+        iv.contentMode = .scaleAspectFit
+        iv.layer.cornerRadius = 36
+        iv.clipsToBounds = true
+        iv.backgroundColor = .tertiarySystemGroupedBackground
+        return iv
+    }()
+
+    lazy var emailLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 17, weight: .black)
+        label.textColor = .label
+        label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingMiddle
+        return label
+    }()
+
+    lazy var memberSinceLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 13, weight: .regular)
+        label.textColor = .secondaryLabel
+        label.numberOfLines = 1
         return label
     }()
     
@@ -138,6 +178,63 @@ class ProfileViewController: UIViewController {
         return label
     }()
     
+    // MARK: - Account Section
+
+    lazy var accountSectionContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemGroupedBackground
+        view.layer.cornerRadius = 16
+        view.layer.cornerCurve = .continuous
+        view.clipsToBounds = true
+        return view
+    }()
+
+    lazy var changeEmailRow: SettingsRow = {
+        let row = SettingsRow(
+            title: String(localized: "profile.account.email"),
+            symbolName: "envelope",
+            action: { [weak self] in self?.wipMessage() }
+        )
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return row
+    }()
+
+    lazy var emailSeparator: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .separator
+        return view
+    }()
+
+    lazy var changePasswordRow: SettingsRow = {
+        let row = SettingsRow(
+            title: String(localized: "profile.account.password"),
+            symbolName: "lock",
+            action: { [weak self] in self?.wipMessage() }
+        )
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return row
+    }()
+
+    lazy var passwordSeparator: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .separator
+        return view
+    }()
+
+    lazy var deleteAccountRow: SettingsRow = {
+        let row = SettingsRow(
+            title: String(localized: "profile.account.delete"),
+            symbolName: "trash",
+            action: { [weak self] in self?.didTapDeleteAccount() },
+            tintColor: .systemRed
+        )
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return row
+    }()
+    
     // MARK: -- Sign Up Button
     
     lazy var signUpButton: UIButton = {
@@ -162,6 +259,7 @@ class ProfileViewController: UIViewController {
         let bt = UIButton(primaryAction: UIAction { [weak self] _ in
             self?.pushSignIn()
         })
+        bt.configuration = .plain()
         bt.translatesAutoresizingMaskIntoConstraints = false
         let title = NSMutableAttributedString(
             string: String(localized: "profile.guest.signin.cta1") + " ",
@@ -192,7 +290,7 @@ class ProfileViewController: UIViewController {
         let row = SettingsRow(
             title: String(localized: "profile.about"),
             symbolName: "info.circle",
-            action: { [weak self] in self?.didTapAbout() }
+            action: { [weak self] in self?.wipMessage() }
         )
         row.translatesAutoresizingMaskIntoConstraints = false
         return row
@@ -234,8 +332,29 @@ class ProfileViewController: UIViewController {
         row.translatesAutoresizingMaskIntoConstraints = false
         return row
     }()
+
+    // MARK: - Sign Out Button
+
+    lazy var signOutButton: UIButton = {
+        let button = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.didTapSignOut()
+        })
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.configuration = .prominentGlass()
+        button.configuration?.baseBackgroundColor = .secondarySystemGroupedBackground
+        button.configuration?.baseForegroundColor = .systemRed
+        button.backgroundColor = .secondarySystemGroupedBackground
+        button.setAttributedTitle(NSAttributedString(
+            string: String(localized: "profile.signout"),
+            attributes: [
+                .font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black),
+                .foregroundColor: UIColor.systemRed
+            ]
+        ), for: .normal)
+        return button
+    }()
     
-    // MARK: -- Actions
+    // MARK: - Actions
     
     func pushSignUp() {
         DispatchQueue.main.async {
@@ -248,6 +367,74 @@ class ProfileViewController: UIViewController {
         DispatchQueue.main.async {
             let signInController = UINavigationController(rootViewController: SignInController())
             self.present(signInController, animated: true)
+        }
+    }
+    
+    func didTapDeleteAccount() {
+        let alert = UIAlertController(
+            title: String(localized: "profile.account.delete.confirm.title"),
+            message: String(localized: "profile.account.delete.confirm.message"),
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(
+            title: String(localized: "common.cancel"),
+            style: .cancel
+        ))
+        
+        let deleteAction = UIAlertAction(
+            title: String(localized: "profile.account.delete.confirm.action"),
+            style: .destructive,
+            handler: { [weak self] _ in
+                self?.performAccountDeletion()
+            }
+        )
+        
+        alert.addAction(deleteAction)
+        present(alert, animated: true)
+    }
+    
+    private func performAccountDeletion() {
+        deleteAccountRow.isUserInteractionEnabled = false
+        
+        Task {
+            do {
+                try await AuthenticationManager.shared.deleteAccount()
+            } catch {
+                ErrorHandler.handle(error)
+                deleteAccountRow.isUserInteractionEnabled = true
+            }
+        }
+    }
+
+    func didTapSignOut() {
+        let alert = UIAlertController(
+            title: String(localized: "profile.signout.confirm.title"),
+            message: String(localized: "profile.signout.confirm.message"),
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(
+            title: String(localized: "common.cancel"),
+            style: .cancel
+        ))
+        
+        alert.addAction(UIAlertAction(
+            title: String(localized: "profile.signout"),
+            style: .destructive,
+            handler: { [weak self] _ in
+                self?.performSignOut()
+            }
+        ))
+        
+        present(alert, animated: true)
+    }
+
+    private func performSignOut() {
+        signOutButton.isEnabled = false
+        
+        Task {
+            await AuthenticationManager.shared.signOut()
         }
     }
     
@@ -302,22 +489,28 @@ class ProfileViewController: UIViewController {
     }
     
     private func handleUserChange(_ user: User?) {
-        // Nur relevant wenn .authenticated Layout aktiv ist
         guard currentAuthState == .authenticated, let user = user else { return }
         
-        print(user)
+        emailLabel.text = user.email ?? "—"
         
-        //emailLabel.text = user.email ?? "—"
-        /*
-        if let picture = user.profilePicture {
-            profilePictureImageView.image = UIImage(named: "default_\(picture)_profilepicture")
+        switch user.profilePictureKind {
+        case .default(let name):
+            profilePictureImageView.sd_cancelCurrentImageLoad()
+            profilePictureImageView.image = UIImage(named: "default_\(name)_profilepicture")
+        case .custom(let url):
+            profilePictureImageView.sd_setImage(
+                with: url,
+                placeholderImage: UIImage(named: "default_hat_profilepicture")
+            )
+        case .none:
+            profilePictureImageView.sd_cancelCurrentImageLoad()
+            profilePictureImageView.image = nil
         }
         
-        if let createdAt = user.createdAt as Date? {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMMM yyyy"
-            memberSinceLabel.text = String(localized: "profile.member_since") + " " + formatter.string(from: createdAt)
-        }*/
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        formatter.locale = Locale.current
+        memberSinceLabel.text = String(localized: "profile.member_since") + " " + formatter.string(from: user.createdAt)
     }
     
     private func rebuildContent(for state: AuthState) {
@@ -331,6 +524,12 @@ class ProfileViewController: UIViewController {
         }
         
         Task { await loadGenericData() }
+    }
+    
+    private func wipMessage() {
+        let infoAlert = UIAlertController(title: "🤫", message: String(localized: "workinprogress.message"), preferredStyle: .alert)
+        infoAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
+        UIApplication.shared.topMostViewController()!.present(infoAlert, animated: true)
     }
     
     // MARK: -- Layout
@@ -361,65 +560,155 @@ class ProfileViewController: UIViewController {
     }
     
     func configureGuestLayout() {
-        contentView.addSubview(headerCard)
+        contentView.addSubview(guestHeaderCard)
         NSLayoutConstraint.activate([
-            headerCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            headerCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            headerCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
+            guestHeaderCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            guestHeaderCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            guestHeaderCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
         ])
         
-        headerCard.addSubview(headerTitleLabel)
+        guestHeaderCard.addSubview(headerTitleLabel)
         NSLayoutConstraint.activate([
-            headerTitleLabel.topAnchor.constraint(equalTo: headerCard.topAnchor, constant: 24),
-            headerTitleLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
-            headerTitleLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20)
+            headerTitleLabel.topAnchor.constraint(equalTo: guestHeaderCard.topAnchor, constant: 24),
+            headerTitleLabel.leadingAnchor.constraint(equalTo: guestHeaderCard.leadingAnchor, constant: 20),
+            headerTitleLabel.trailingAnchor.constraint(equalTo: guestHeaderCard.trailingAnchor, constant: -20)
         ])
         
-        headerCard.addSubview(headerSubtitleLabel)
+        guestHeaderCard.addSubview(headerSubtitleLabel)
         NSLayoutConstraint.activate([
             headerSubtitleLabel.topAnchor.constraint(equalTo: headerTitleLabel.bottomAnchor, constant: 6),
-            headerSubtitleLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
-            headerSubtitleLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20)
+            headerSubtitleLabel.leadingAnchor.constraint(equalTo: guestHeaderCard.leadingAnchor, constant: 20),
+            headerSubtitleLabel.trailingAnchor.constraint(equalTo: guestHeaderCard.trailingAnchor, constant: -20)
         ])
         
-        headerCard.addSubview(signUpButton)
+        guestHeaderCard.addSubview(signUpButton)
         NSLayoutConstraint.activate([
             signUpButton.topAnchor.constraint(equalTo: headerSubtitleLabel.bottomAnchor, constant: 24),
-            signUpButton.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
-            signUpButton.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20),
+            signUpButton.leadingAnchor.constraint(equalTo: guestHeaderCard.leadingAnchor, constant: 20),
+            signUpButton.trailingAnchor.constraint(equalTo: guestHeaderCard.trailingAnchor, constant: -20),
             signUpButton.heightAnchor.constraint(equalToConstant: 45)
         ])
         
-        headerCard.addSubview(signInTextButton)
+        guestHeaderCard.addSubview(signInTextButton)
         NSLayoutConstraint.activate([
             signInTextButton.topAnchor.constraint(equalTo: signUpButton.bottomAnchor, constant: 8),
-            signInTextButton.centerXAnchor.constraint(equalTo: headerCard.centerXAnchor),
-            signInTextButton.bottomAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: -16),
+            signInTextButton.centerXAnchor.constraint(equalTo: guestHeaderCard.centerXAnchor),
+            signInTextButton.bottomAnchor.constraint(equalTo: guestHeaderCard.bottomAnchor, constant: -16),
             signInTextButton.heightAnchor.constraint(equalToConstant: 32)
         ])
         
         contentView.addSubview(guestInfoLabel)
         NSLayoutConstraint.activate([
-            guestInfoLabel.topAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: 5),
-            guestInfoLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor),
-            guestInfoLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor),
+            guestInfoLabel.topAnchor.constraint(equalTo: guestHeaderCard.bottomAnchor, constant: 5),
+            guestInfoLabel.leadingAnchor.constraint(equalTo: guestHeaderCard.leadingAnchor),
+            guestInfoLabel.trailingAnchor.constraint(equalTo: guestHeaderCard.trailingAnchor),
         ])
         
-        configureSharedComponents(topAnchor: guestInfoLabel.bottomAnchor)
+        let statsCard = configureStatsCard(topAnchor: guestInfoLabel.bottomAnchor)
+        let appSection = configureAppSection(topAnchor: statsCard.bottomAnchor)
+        appSection.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32).isActive = true
     }
     
     func configureAuthenticatedLayout() {
-        configureSharedComponents(topAnchor: contentView.topAnchor)
+        // User Header Card
+        contentView.addSubview(userHeaderCard)
+        NSLayoutConstraint.activate([
+            userHeaderCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            userHeaderCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            userHeaderCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
+        ])
+        
+        userHeaderCard.addSubview(profilePictureImageView)
+        NSLayoutConstraint.activate([
+            profilePictureImageView.topAnchor.constraint(equalTo: userHeaderCard.topAnchor, constant: 20),
+            profilePictureImageView.leadingAnchor.constraint(equalTo: userHeaderCard.leadingAnchor, constant: 20),
+            profilePictureImageView.bottomAnchor.constraint(equalTo: userHeaderCard.bottomAnchor, constant: -20),
+            profilePictureImageView.widthAnchor.constraint(equalToConstant: 72),
+            profilePictureImageView.heightAnchor.constraint(equalToConstant: 72)
+        ])
+        
+        userHeaderCard.addSubview(emailLabel)
+        NSLayoutConstraint.activate([
+            emailLabel.leadingAnchor.constraint(equalTo: profilePictureImageView.trailingAnchor, constant: 16),
+            emailLabel.trailingAnchor.constraint(equalTo: userHeaderCard.trailingAnchor, constant: -20),
+            emailLabel.topAnchor.constraint(equalTo: profilePictureImageView.topAnchor, constant: 14)
+        ])
+        
+        userHeaderCard.addSubview(memberSinceLabel)
+        NSLayoutConstraint.activate([
+            memberSinceLabel.leadingAnchor.constraint(equalTo: emailLabel.leadingAnchor),
+            memberSinceLabel.trailingAnchor.constraint(equalTo: emailLabel.trailingAnchor),
+            memberSinceLabel.topAnchor.constraint(equalTo: emailLabel.bottomAnchor, constant: 4)
+        ])
+        
+        // Stats Card
+        let statsCard = configureStatsCard(topAnchor: userHeaderCard.bottomAnchor)
+        
+        // Account Section
+        contentView.addSubview(accountSectionContainer)
+        NSLayoutConstraint.activate([
+            accountSectionContainer.topAnchor.constraint(equalTo: statsCard.bottomAnchor, constant: 20),
+            accountSectionContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            accountSectionContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
+        ])
+        
+        accountSectionContainer.addSubview(changeEmailRow)
+        NSLayoutConstraint.activate([
+            changeEmailRow.topAnchor.constraint(equalTo: accountSectionContainer.topAnchor),
+            changeEmailRow.leadingAnchor.constraint(equalTo: accountSectionContainer.leadingAnchor),
+            changeEmailRow.trailingAnchor.constraint(equalTo: accountSectionContainer.trailingAnchor)
+        ])
+        
+        accountSectionContainer.addSubview(emailSeparator)
+        NSLayoutConstraint.activate([
+            emailSeparator.topAnchor.constraint(equalTo: changeEmailRow.bottomAnchor),
+            emailSeparator.leadingAnchor.constraint(equalTo: accountSectionContainer.leadingAnchor, constant: 52),
+            emailSeparator.trailingAnchor.constraint(equalTo: accountSectionContainer.trailingAnchor),
+            emailSeparator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+        ])
+        
+        accountSectionContainer.addSubview(changePasswordRow)
+        NSLayoutConstraint.activate([
+            changePasswordRow.topAnchor.constraint(equalTo: emailSeparator.bottomAnchor),
+            changePasswordRow.leadingAnchor.constraint(equalTo: accountSectionContainer.leadingAnchor),
+            changePasswordRow.trailingAnchor.constraint(equalTo: accountSectionContainer.trailingAnchor)
+        ])
+        
+        accountSectionContainer.addSubview(passwordSeparator)
+        NSLayoutConstraint.activate([
+            passwordSeparator.topAnchor.constraint(equalTo: changePasswordRow.bottomAnchor),
+            passwordSeparator.leadingAnchor.constraint(equalTo: accountSectionContainer.leadingAnchor, constant: 52),
+            passwordSeparator.trailingAnchor.constraint(equalTo: accountSectionContainer.trailingAnchor),
+            passwordSeparator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+        ])
+        
+        accountSectionContainer.addSubview(deleteAccountRow)
+        NSLayoutConstraint.activate([
+            deleteAccountRow.topAnchor.constraint(equalTo: passwordSeparator.bottomAnchor),
+            deleteAccountRow.leadingAnchor.constraint(equalTo: accountSectionContainer.leadingAnchor),
+            deleteAccountRow.trailingAnchor.constraint(equalTo: accountSectionContainer.trailingAnchor),
+            deleteAccountRow.bottomAnchor.constraint(equalTo: accountSectionContainer.bottomAnchor)
+        ])
+        
+        let appSection = configureAppSection(topAnchor: accountSectionContainer.bottomAnchor)
+
+        contentView.addSubview(signOutButton)
+        NSLayoutConstraint.activate([
+            signOutButton.topAnchor.constraint(equalTo: appSection.bottomAnchor, constant: 24),
+            signOutButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            signOutButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            signOutButton.heightAnchor.constraint(equalToConstant: 50),
+            signOutButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32)
+        ])
     }
     
-    func configureSharedComponents(topAnchor: NSLayoutYAxisAnchor) {
-        // Stats Card
+    func configureStatsCard(topAnchor: NSLayoutYAxisAnchor) -> UIView {
         contentView.addSubview(statsCard)
         NSLayoutConstraint.activate([
             statsCard.topAnchor.constraint(equalTo: topAnchor, constant: 20),
             statsCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             statsCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            statsCard.heightAnchor.constraint(equalTo: contentView.heightAnchor, multiplier: 0.3)
+            statsCard.heightAnchor.constraint(equalToConstant: 88)
         ])
         
         statsCard.addSubview(statsDivider)
@@ -458,13 +747,15 @@ class ProfileViewController: UIViewController {
             outfitTitleLabel.topAnchor.constraint(equalTo: outfitCountLabel.bottomAnchor, constant: 2)
         ])
         
-        // App Section
+        return statsCard
+    }
+    
+    func configureAppSection(topAnchor: NSLayoutYAxisAnchor) -> UIView {
         contentView.addSubview(appSectionContainer)
         NSLayoutConstraint.activate([
-            appSectionContainer.topAnchor.constraint(equalTo: statsCard.bottomAnchor, constant: 20),
+            appSectionContainer.topAnchor.constraint(equalTo: topAnchor, constant: 24),
             appSectionContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            appSectionContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            appSectionContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+            appSectionContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
         ])
         
         appSectionContainer.addSubview(aboutRow)
@@ -504,5 +795,7 @@ class ProfileViewController: UIViewController {
             versionRow.trailingAnchor.constraint(equalTo: appSectionContainer.trailingAnchor),
             versionRow.bottomAnchor.constraint(equalTo: appSectionContainer.bottomAnchor)
         ])
+        
+        return appSectionContainer
     }
 }
