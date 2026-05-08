@@ -266,10 +266,10 @@ class OutfitComposerViewController_Submit: UIViewController {
         // MARK: Tags / Favorite / Public row
         let sv = UIStackView(arrangedSubviews: [outfitTagsField, outfitFavoriteField])
 
-        Task {
-            let isAuthenticated = await AuthenticationManager.shared.authState == .authenticated
-            if isAuthenticated { sv.addArrangedSubview(self.outfitPublicField) }
-        }
+        //Task {
+            //let isAuthenticated = AuthenticationManager.shared.authState == .authenticated
+            //if isAuthenticated { sv.addArrangedSubview(self.outfitPublicField) }
+        //}
 
         sv.axis = .horizontal
         sv.alignment = .center

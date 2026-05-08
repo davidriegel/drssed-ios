@@ -7,34 +7,48 @@
 
 import Foundation
 import JWTDecode
+import Combine
 
-actor AuthenticationManager {
+public enum AuthState {
+    case unknown
+    case guest
+    case authenticated
+    case unauthenticated
+}
+
+@MainActor
+class AuthenticationManager {
     static let shared = AuthenticationManager()
     
-    enum AuthState {
-        case unknown
-        case guest
-        case authenticated
-        case unauthenticated
+    private let authStateSubject = CurrentValueSubject<AuthState, Never>(.unknown)
+    
+    var authState: AuthState {
+        authStateSubject.value
     }
     
-    private(set) var authState: AuthState = .unknown
+    var authStatePublisher: AnyPublisher<AuthState, Never> {
+        authStateSubject.eraseToAnyPublisher()
+    }
+    
+    private func setAuthState(_ newState: AuthState) {
+        authStateSubject.send(newState)
+    }
     
     func determineCurrentAuthState() async -> AuthState {
-        guard let tokens = await TokenManager.shared.currentTokens() else { return .unauthenticated }
+        guard await TokenManager.shared.currentTokens() != nil else { setAuthState(.unauthenticated); return .unauthenticated }
         
         do {
             _ = try await APIClient.shared.authHandler.getAndRenewAccessToken()
             let state = await getUserType()
-            authState = state
+            setAuthState(state)
         } catch let error as APIError where error.isNetworkRelated() || error.isServerRelated() {
             // TODO: Implement offline mode, proceed with cached state, only viewing mode.
             let state = await getUserType()
-            authState = state
+            setAuthState(state)
             return authState
         } catch {
             ErrorHandler.handleSilently(error)
-            authState = .unauthenticated
+            setAuthState(.unauthenticated)
             return authState
         }
         
@@ -64,9 +78,9 @@ actor AuthenticationManager {
             let keychainModel = try TokenKeychainModel(from: tokenResponse)
             await TokenManager.shared.setTokens(keychainModel)
             
-            authState = .guest
+            setAuthState(.guest)
         } catch {
-            authState = .unauthenticated
+            setAuthState(.unauthenticated)
             throw error
         }
     }
@@ -81,9 +95,9 @@ actor AuthenticationManager {
             SyncCursors.resetAll()
             await SyncManager.shared.syncWithServer(forceFull: true)
             
-            authState = .authenticated
+            setAuthState(.authenticated)
         } catch {
-            authState = .unauthenticated
+            setAuthState(.unauthenticated)
             throw error
         }
     }
@@ -99,10 +113,10 @@ actor AuthenticationManager {
             let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
             await TokenManager.shared.setTokens(keychainModel)
             
-            authState = .authenticated
+            setAuthState(.authenticated)
             return upgradeAccountResponse.user
         } catch {
-            authState = .unauthenticated
+            setAuthState(.unauthenticated)
             throw error
         }
     }
@@ -113,6 +127,6 @@ actor AuthenticationManager {
     
     func signOut() async {
         await TokenManager.shared.clearTokens()
-        authState = .unauthenticated
+        setAuthState(.unauthenticated)
     }
 }

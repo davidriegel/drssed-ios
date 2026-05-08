@@ -16,7 +16,6 @@
 		C918BC552F61E3F100663AF4 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = C918BC542F61E3EB00663AF4 /* .gitignore */; };
 		C918BC572F61EA7C00663AF4 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = C918BC562F61EA7C00663AF4 /* README.md */; };
 		C918BC592F61EA8600663AF4 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C918BC582F61EA8600663AF4 /* LICENSE */; };
-		C93487FA2FA68DA800C6BADF /* Info-Debug.plist in Resources */ = {isa = PBXBuildFile; fileRef = C93487F92FA68DA800C6BADF /* Info-Debug.plist */; };
 		C95C4B302E7727A900844DC8 /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B2F2E7727A900844DC8 /* CropViewController */; };
 		C95C4B322E7727A900844DC8 /* TOCropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B312E7727A900844DC8 /* TOCropViewController */; };
 		C9D57F7F2F75B50E00757EBC /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D57F7E2F75B50E00757EBC /* InfoPlist.strings */; };
@@ -226,7 +225,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 2600;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					637D85E72BE94CC90010BDBF = {
 						CreatedOnToolsVersion = 15.0;
@@ -274,7 +273,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				C918BC592F61EA8600663AF4 /* LICENSE in Resources */,
-				C93487FA2FA68DA800C6BADF /* Info-Debug.plist in Resources */,
 				C9D57F7F2F75B50E00757EBC /* InfoPlist.strings in Resources */,
 				C918BC572F61EA7C00663AF4 /* README.md in Resources */,
 				C918BC552F61E3F100663AF4 /* .gitignore in Resources */,
