@@ -101,7 +101,7 @@ class SignInController: UIViewController {
         Task {
             do {
                 try await AuthenticationManager.shared.signInWith(email: emailField.fieldInput.text, password: passwordField.fieldInput.text ?? "")
-                self.view.window?.rootViewController = TabBarController()
+                self.dismissModal()
             } catch APIError.unauthorized {
                 ErrorHandler.handle(AuthenticationError.invalidCredentials)
             } catch {

@@ -124,8 +124,7 @@ class SignUpController: UIViewController {
         Task {
             do {
                 _ = try await AuthenticationManager.shared.upgradeAccount(email: emailField.fieldInput.text, password: passwordField.fieldInput.text ?? "", profilePicture: String(defaultAvatar.split(separator: "_")[1]))
-                
-                
+                self.dismissModal()
             } catch {
                 ErrorHandler.handle(error)
             }
