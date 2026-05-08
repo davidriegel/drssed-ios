@@ -145,6 +145,14 @@ class AuthenticationManager {
         try? await registerAsGuest()
     }
     
+    func deleteAccount() async throws {
+        try await APIClient.shared.authHandler.deleteAccount()
+        await SyncManager.shared.clearSyncState()
+        await TokenManager.shared.clearTokens()
+        
+        try? await registerAsGuest()
+    }
+    
     func refreshCurrentUser() async {
         do {
             let user = try await APIClient.shared.userHandler.fetchCurrentUser()

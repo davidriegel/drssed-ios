@@ -113,6 +113,14 @@ final class AuthHandler {
         let (_, _) = try await APIClient.shared.executeRequest(request: request)
     }
     
+    // MARK: - Delete account
+    
+    public func deleteAccount() async throws {
+        let request = try await APIClient.shared.createRequest(endpoint: "/users/me", method: .DELETE, authentication: true)
+        
+        let (_, _) = try await APIClient.shared.executeRequest(request: request)
+    }
+    
     // MARK: -- Handler specific functions
     
     private func mapConflictsError(data: Data) throws -> AuthenticationError {
