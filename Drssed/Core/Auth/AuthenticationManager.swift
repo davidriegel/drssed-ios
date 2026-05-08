@@ -47,7 +47,7 @@ actor AuthenticationManager {
         do {
             let jwt = try decode(jwt: tokens.accessToken)
             
-            if let userType = jwt.claim(name: "is_guest").integer, userType != 0 {
+            if let isGuest = jwt.claim(name: "is_guest").boolean, isGuest {
                 return .guest
             }
         } catch {
