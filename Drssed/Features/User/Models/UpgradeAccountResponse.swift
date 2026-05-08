@@ -6,6 +6,6 @@
 //
 
 struct UpgradeAccountResponse: Codable {
-    let user: User
+    let user: UserAPI
     let token: TokenAPIResponse
 }
