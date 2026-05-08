@@ -199,6 +199,7 @@ class SignUpController: UIViewController {
     
     func configureViewComponents() {
         view.backgroundColor = .background
+        title = String(localized: "auth.signup.title")
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
