@@ -104,6 +104,15 @@ final class AuthHandler {
         return tokenResponse
     }
     
+    // MARK: - Invalidate refresh token
+    
+    public func invalidateRefreshToken(refreshToken: String) async throws {
+        let uploadData = try JSONEncoder().encode(["refresh_token": refreshToken])
+        let request = try await APIClient.shared.createRequest(endpoint: "/auth/logout", method: .POST, body: uploadData, authentication: false)
+        
+        let (_, _) = try await APIClient.shared.executeRequest(request: request)
+    }
+    
     // MARK: -- Handler specific functions
     
     private func mapConflictsError(data: Data) throws -> AuthenticationError {

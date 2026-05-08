@@ -97,7 +97,7 @@ class AuthenticationManager {
             let keychainModel = try TokenKeychainModel(from: tokenResponse)
             await TokenManager.shared.setTokens(keychainModel)
             
-            SyncCursors.resetAll()
+            await SyncManager.shared.clearSyncState()
             await SyncManager.shared.syncWithServer(forceFull: true)
             
             setAuthState(.authenticated)
@@ -119,9 +119,9 @@ class AuthenticationManager {
             let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
             await TokenManager.shared.setTokens(keychainModel)
             
-            setCurrentUser(upgradeAccountResponse.user)
+            setCurrentUser(upgradeAccountResponse.user.toDomain())
             setAuthState(.authenticated)
-            return upgradeAccountResponse.user
+            return upgradeAccountResponse.user.toDomain()
         } catch {
             setAuthState(.unauthenticated)
             throw error
@@ -133,8 +133,16 @@ class AuthenticationManager {
     }
     
     func signOut() async {
+        guard let token = await TokenManager.shared.currentTokens() else { return }
+        
+        Task.detached {
+            try? await APIClient.shared.authHandler.invalidateRefreshToken(refreshToken: token.refreshToken)
+        }
+        
+        await SyncManager.shared.clearSyncState()
         await TokenManager.shared.clearTokens()
-        setAuthState(.unauthenticated)
+        
+        try? await registerAsGuest()
     }
     
     func refreshCurrentUser() async {
