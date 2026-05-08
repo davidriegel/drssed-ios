@@ -84,6 +84,15 @@ final class AuthHandler {
         return user
     }
     
+    // MARK: -- POST SEND VERIFICATION EMAIL
+    
+    public func sendVerificationEmail() async throws {
+        let request = try await APIClient.shared.createRequest(endpoint: "/auth/email/send-verification", method: .POST)
+        let (_, _) = try await APIClient.shared.executeRequest(request: request)
+        
+        return
+    }
+    
     // MARK: -- GET ACCESS TOKEN
     
     public func getAndRenewAccessToken() async throws -> String {
@@ -116,8 +125,6 @@ final class AuthHandler {
         
         return tokenModel
     }
-    
-    // MARK: -- Upgrade account request logic
     
     // MARK: -- Handler specific functions
     

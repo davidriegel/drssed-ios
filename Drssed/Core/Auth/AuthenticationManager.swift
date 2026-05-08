@@ -80,12 +80,21 @@ actor AuthenticationManager {
     func upgradeAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws -> User {
         do {
             let user = try await APIClient.shared.authHandler.upgradeAccount(username: username, email: email, password: password, profilePicture: profilePicture)
+        
+            if email != nil {
+                try await sendVerificationEmail()
+            }
+            
             authState = .authenticated
             return user
         } catch {
             authState = .unauthenticated
             throw error
         }
+    }
+    
+    func sendVerificationEmail() async throws {
+        try await APIClient.shared.authHandler.sendVerificationEmail()
     }
     
     func signOut() async {
