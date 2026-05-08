@@ -354,6 +354,29 @@ class ProfileViewController: UIViewController {
         return button
     }()
     
+    // MARK: - Delete guest data
+    
+    lazy var dangerSectionContainer: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .secondarySystemGroupedBackground
+        view.layer.cornerRadius = 16
+        view.layer.cornerCurve = .continuous
+        view.clipsToBounds = true
+        return view
+    }()
+
+    lazy var deleteGuestAccountRow: SettingsRow = {
+        let row = SettingsRow(
+            title: String(localized: "profile.guest.delete"),
+            symbolName: "trash",
+            action: { [weak self] in self?.didTapDeleteGuestAccount() },
+            tintColor: .systemRed,
+        )
+        row.translatesAutoresizingMaskIntoConstraints = false
+        return row
+    }()
+    
     // MARK: - Actions
     
     func pushSignUp() {
@@ -368,6 +391,29 @@ class ProfileViewController: UIViewController {
             let signInController = UINavigationController(rootViewController: SignInController())
             self.present(signInController, animated: true)
         }
+    }
+    
+    func didTapDeleteGuestAccount() {
+        let alert = UIAlertController(
+            title: String(localized: "profile.guest.delete.confirm.title"),
+            message: String(localized: "profile.guest.delete.confirm.message"),
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(
+            title: String(localized: "common.cancel"),
+            style: .cancel
+        ))
+        
+        alert.addAction(UIAlertAction(
+            title: String(localized: "common.delete"),
+            style: .destructive,
+            handler: { [weak self] _ in
+                self?.performAccountDeletion()
+            }
+        ))
+        
+        present(alert, animated: true)
     }
     
     func didTapDeleteAccount() {
@@ -606,7 +652,22 @@ class ProfileViewController: UIViewController {
         
         let statsCard = configureStatsCard(topAnchor: guestInfoLabel.bottomAnchor)
         let appSection = configureAppSection(topAnchor: statsCard.bottomAnchor)
-        appSection.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32).isActive = true
+        
+        contentView.addSubview(dangerSectionContainer)
+        NSLayoutConstraint.activate([
+            dangerSectionContainer.topAnchor.constraint(equalTo: appSection.bottomAnchor, constant: 20),
+            dangerSectionContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            dangerSectionContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            dangerSectionContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32)
+        ])
+        
+        dangerSectionContainer.addSubview(deleteGuestAccountRow)
+        NSLayoutConstraint.activate([
+            deleteGuestAccountRow.topAnchor.constraint(equalTo: dangerSectionContainer.topAnchor),
+            deleteGuestAccountRow.leadingAnchor.constraint(equalTo: dangerSectionContainer.leadingAnchor),
+            deleteGuestAccountRow.trailingAnchor.constraint(equalTo: dangerSectionContainer.trailingAnchor),
+            deleteGuestAccountRow.bottomAnchor.constraint(equalTo: dangerSectionContainer.bottomAnchor)
+        ])
     }
     
     func configureAuthenticatedLayout() {
