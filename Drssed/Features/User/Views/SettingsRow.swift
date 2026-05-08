@@ -14,7 +14,6 @@ final class SettingsRow: UIControl {
     private lazy var iconView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.tintColor = .tintColor
         imageView.contentMode = .scaleAspectFit
         imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 17, weight: .regular)
         return imageView
@@ -57,12 +56,13 @@ final class SettingsRow: UIControl {
         return stack
     }()
     
-    init(title: String, symbolName: String, detail: String? = nil, isInteractive: Bool = true, action: (() -> Void)? = nil) {
+    init(title: String, symbolName: String, detail: String? = nil, isInteractive: Bool = true, action: (() -> Void)? = nil, tintColor: UIColor = .accent) {
         self.action = action
         super.init(frame: .zero)
         
         titleLabel.text = title
         iconView.image = UIImage(systemName: symbolName)
+        iconView.tintColor = tintColor
         detailLabel.text = detail
         detailLabel.isHidden = (detail == nil)
         chevronView.isHidden = !isInteractive
