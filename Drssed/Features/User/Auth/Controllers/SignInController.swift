@@ -80,11 +80,20 @@ class SignInController: UIViewController {
         return bt
     }()
     
+    // MARK: -- Functions
+    
     @objc
     func pushSignUp() {
-        DispatchQueue.main.async {
-            self.navigationController?.popViewController(animated: true)
-        }
+        guard let nav = navigationController else { return }
+        let signUpController = SignUpController()
+        var stack = nav.viewControllers
+        stack[stack.count - 1] = signUpController
+        nav.setViewControllers(stack, animated: true)
+    }
+    
+    @objc
+    func dismissModal() {
+        self.dismiss(animated: true, completion: nil)
     }
     
     @objc
@@ -135,6 +144,7 @@ class SignInController: UIViewController {
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
         navigationItem.largeTitleDisplayMode = .never
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(dismissModal))
         
         view.addSubview(logoImageView)
         NSLayoutConstraint.activate([

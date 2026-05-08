@@ -100,13 +100,20 @@ class SignUpController: UIViewController {
         return bt
     }()
     
+    // MARK: - Functions
+    
     @objc
     func pushSignIn() {
-        DispatchQueue.main.async {
-            let signInController = SignInController()
-            signInController.navigationItem.hidesBackButton = true
-            self.navigationController?.pushViewController(signInController, animated: true)
-        }
+        guard let nav = navigationController else { return }
+        let signInController = SignInController()
+        var stack = nav.viewControllers
+        stack[stack.count - 1] = signInController
+        nav.setViewControllers(stack, animated: true)
+    }
+    
+    @objc
+    func dismissModal() {
+        self.dismiss(animated: true, completion: nil)
     }
     
     @objc
@@ -124,8 +131,6 @@ class SignUpController: UIViewController {
             }
         }
     }
-    
-    // MARK: -- Functions
     
     @objc
     func checkTextFieldInputs() {
@@ -197,6 +202,8 @@ class SignUpController: UIViewController {
         self.present(cropViewController, animated: true, completion: nil)
     }
     
+    // MARK: - Configure View
+    
     func configureViewComponents() {
         view.backgroundColor = .background
         title = String(localized: "auth.signup.title")
@@ -204,6 +211,7 @@ class SignUpController: UIViewController {
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
         navigationItem.largeTitleDisplayMode = .never
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(dismissModal))
         
         view.addSubview(profilePictureImageView)
         NSLayoutConstraint.activate([
