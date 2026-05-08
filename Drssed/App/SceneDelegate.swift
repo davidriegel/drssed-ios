@@ -28,6 +28,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     private func initializeApp() async {
         let authState = await AuthenticationManager.shared.determineCurrentAuthState()
+        await AuthenticationManager.shared.refreshCurrentUser()
         
         switch authState {
         case .unknown, .unauthenticated:

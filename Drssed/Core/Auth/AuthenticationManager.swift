@@ -21,17 +21,21 @@ class AuthenticationManager {
     static let shared = AuthenticationManager()
     
     private let authStateSubject = CurrentValueSubject<AuthState, Never>(.unknown)
+    private let currentUserSubject = CurrentValueSubject<User?, Never>(nil)
     
-    var authState: AuthState {
-        authStateSubject.value
-    }
+    var authState: AuthState { authStateSubject.value }
     
-    var authStatePublisher: AnyPublisher<AuthState, Never> {
-        authStateSubject.eraseToAnyPublisher()
-    }
+    var authStatePublisher: AnyPublisher<AuthState, Never> { authStateSubject.eraseToAnyPublisher() }
+    
+    var currentUser: User? { currentUserSubject.value }
+    var currentUserPublisher: AnyPublisher<User?, Never> { currentUserSubject.eraseToAnyPublisher() }
     
     private func setAuthState(_ newState: AuthState) {
         authStateSubject.send(newState)
+    }
+    
+    private func setCurrentUser(_ user: User?) {
+        currentUserSubject.send(user)
     }
     
     func determineCurrentAuthState() async -> AuthState {
@@ -128,5 +132,14 @@ class AuthenticationManager {
     func signOut() async {
         await TokenManager.shared.clearTokens()
         setAuthState(.unauthenticated)
+    }
+    
+    func refreshCurrentUser() async {
+        do {
+            let user = try await APIClient.shared.userHandler.fetchCurrentUser()
+            setCurrentUser(user.toDomain())
+        } catch {
+            ErrorHandler.handleSilently(error)
+        }
     }
 }

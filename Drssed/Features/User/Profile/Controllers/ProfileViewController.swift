@@ -23,96 +23,6 @@ class ProfileViewController: UIViewController {
         bindAuthState()
     }
     
-    func loadGenericData() async {
-        async let clothingCount = clothingRepository.fetchClothes().count
-        async let outfitCount = outfitRepository.fetchOutfits().count
-        
-        let (clothes, outfits) = await (clothingCount, outfitCount)
-        
-        clothingCountLabel.text = String(clothes)
-        outfitCountLabel.text = String(outfits)
-    }
-    
-    private func bindAuthState() {
-        AuthenticationManager.shared.authStatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                self?.handleAuthStateChange(state)
-            }
-            .store(in: &cancellables)
-    }
-    
-    private func handleAuthStateChange(_ newState: AuthState) {
-        guard newState != currentAuthState else { return }
-        currentAuthState = newState
-        rebuildContent(for: newState)
-    }
-    
-    private func rebuildContent(for state: AuthState) {
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        
-        switch state {
-        case .guest, .unauthenticated, .unknown:
-            configureGuestLayout()
-        case .authenticated:
-            configureAuthenticatedLayout()
-        }
-        
-        Task { await loadGenericData() }
-    }
-    
-    func configureGuestLayout() {
-        contentView.addSubview(headerCard)
-        NSLayoutConstraint.activate([
-            headerCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
-            headerCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            headerCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
-        ])
-        
-        headerCard.addSubview(headerTitleLabel)
-        NSLayoutConstraint.activate([
-            headerTitleLabel.topAnchor.constraint(equalTo: headerCard.topAnchor, constant: 24),
-            headerTitleLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
-            headerTitleLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20)
-        ])
-        
-        headerCard.addSubview(headerSubtitleLabel)
-        NSLayoutConstraint.activate([
-            headerSubtitleLabel.topAnchor.constraint(equalTo: headerTitleLabel.bottomAnchor, constant: 6),
-            headerSubtitleLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
-            headerSubtitleLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20)
-        ])
-        
-        headerCard.addSubview(signUpButton)
-        NSLayoutConstraint.activate([
-            signUpButton.topAnchor.constraint(equalTo: headerSubtitleLabel.bottomAnchor, constant: 24),
-            signUpButton.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
-            signUpButton.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20),
-            signUpButton.heightAnchor.constraint(equalToConstant: 45)
-        ])
-        
-        headerCard.addSubview(signInTextButton)
-        NSLayoutConstraint.activate([
-            signInTextButton.topAnchor.constraint(equalTo: signUpButton.bottomAnchor, constant: 8),
-            signInTextButton.centerXAnchor.constraint(equalTo: headerCard.centerXAnchor),
-            signInTextButton.bottomAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: -16),
-            signInTextButton.heightAnchor.constraint(equalToConstant: 32)
-        ])
-        
-        contentView.addSubview(guestInfoLabel)
-        NSLayoutConstraint.activate([
-            guestInfoLabel.topAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: 5),
-            guestInfoLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor),
-            guestInfoLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor),
-        ])
-        
-        configureSharedComponents(topAnchor: guestInfoLabel.bottomAnchor)
-    }
-    
-    func configureAuthenticatedLayout() {
-        configureSharedComponents(topAnchor: contentView.topAnchor)
-    }
-    
     // MARK: -- Scroll Container
     
     lazy var scrollView: UIScrollView = {
@@ -357,6 +267,72 @@ class ProfileViewController: UIViewController {
         UIApplication.shared.open(url)
     }
     
+    // MARK: - Functions
+    
+    func loadGenericData() async {
+        async let clothingCount = clothingRepository.fetchClothes().count
+        async let outfitCount = outfitRepository.fetchOutfits().count
+        
+        let (clothes, outfits) = await (clothingCount, outfitCount)
+        
+        clothingCountLabel.text = String(clothes)
+        outfitCountLabel.text = String(outfits)
+    }
+    
+    private func bindAuthState() {
+        AuthenticationManager.shared.authStatePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.handleAuthStateChange(state)
+            }
+            .store(in: &cancellables)
+        
+        AuthenticationManager.shared.currentUserPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] user in
+                self?.handleUserChange(user)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handleAuthStateChange(_ newState: AuthState) {
+        guard newState != currentAuthState else { return }
+        currentAuthState = newState
+        rebuildContent(for: newState)
+    }
+    
+    private func handleUserChange(_ user: User?) {
+        // Nur relevant wenn .authenticated Layout aktiv ist
+        guard currentAuthState == .authenticated, let user = user else { return }
+        
+        print(user)
+        
+        //emailLabel.text = user.email ?? "—"
+        /*
+        if let picture = user.profilePicture {
+            profilePictureImageView.image = UIImage(named: "default_\(picture)_profilepicture")
+        }
+        
+        if let createdAt = user.createdAt as Date? {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM yyyy"
+            memberSinceLabel.text = String(localized: "profile.member_since") + " " + formatter.string(from: createdAt)
+        }*/
+    }
+    
+    private func rebuildContent(for state: AuthState) {
+        contentView.subviews.forEach { $0.removeFromSuperview() }
+        
+        switch state {
+        case .guest, .unauthenticated, .unknown:
+            configureGuestLayout()
+        case .authenticated:
+            configureAuthenticatedLayout()
+        }
+        
+        Task { await loadGenericData() }
+    }
+    
     // MARK: -- Layout
     
     func configureViewComponents() {
@@ -382,6 +358,58 @@ class ProfileViewController: UIViewController {
             contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
         ])
+    }
+    
+    func configureGuestLayout() {
+        contentView.addSubview(headerCard)
+        NSLayoutConstraint.activate([
+            headerCard.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
+            headerCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            headerCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20)
+        ])
+        
+        headerCard.addSubview(headerTitleLabel)
+        NSLayoutConstraint.activate([
+            headerTitleLabel.topAnchor.constraint(equalTo: headerCard.topAnchor, constant: 24),
+            headerTitleLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
+            headerTitleLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20)
+        ])
+        
+        headerCard.addSubview(headerSubtitleLabel)
+        NSLayoutConstraint.activate([
+            headerSubtitleLabel.topAnchor.constraint(equalTo: headerTitleLabel.bottomAnchor, constant: 6),
+            headerSubtitleLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
+            headerSubtitleLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20)
+        ])
+        
+        headerCard.addSubview(signUpButton)
+        NSLayoutConstraint.activate([
+            signUpButton.topAnchor.constraint(equalTo: headerSubtitleLabel.bottomAnchor, constant: 24),
+            signUpButton.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor, constant: 20),
+            signUpButton.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor, constant: -20),
+            signUpButton.heightAnchor.constraint(equalToConstant: 45)
+        ])
+        
+        headerCard.addSubview(signInTextButton)
+        NSLayoutConstraint.activate([
+            signInTextButton.topAnchor.constraint(equalTo: signUpButton.bottomAnchor, constant: 8),
+            signInTextButton.centerXAnchor.constraint(equalTo: headerCard.centerXAnchor),
+            signInTextButton.bottomAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: -16),
+            signInTextButton.heightAnchor.constraint(equalToConstant: 32)
+        ])
+        
+        contentView.addSubview(guestInfoLabel)
+        NSLayoutConstraint.activate([
+            guestInfoLabel.topAnchor.constraint(equalTo: headerCard.bottomAnchor, constant: 5),
+            guestInfoLabel.leadingAnchor.constraint(equalTo: headerCard.leadingAnchor),
+            guestInfoLabel.trailingAnchor.constraint(equalTo: headerCard.trailingAnchor),
+        ])
+        
+        configureSharedComponents(topAnchor: guestInfoLabel.bottomAnchor)
+    }
+    
+    func configureAuthenticatedLayout() {
+        configureSharedComponents(topAnchor: contentView.topAnchor)
     }
     
     func configureSharedComponents(topAnchor: NSLayoutYAxisAnchor) {

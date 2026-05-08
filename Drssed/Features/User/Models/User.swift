@@ -8,11 +8,23 @@
 import Foundation
 
 public struct User: Codable {
-    let user_id: String
-    let is_guest: Bool
-    let created_at: Date
-    let updated_at: Date?
+    let userID: String
+    let isGuest: Bool
+    let createdAt: Date
+    let updatedAt: Date?
     let username: String?
     let email: String?
-    let profile_picture: String
+    let emailVerifiedAt: Date?
+    let profilePicture: String?
+    
+    init(from api: UserAPI) {
+        self.userID = api.user_id
+        self.createdAt = api.created_at
+        self.updatedAt = api.updated_at
+        self.email = api.email
+        self.emailVerifiedAt = api.email_verified_at
+        self.isGuest = api.is_guest
+        self.profilePicture = api.profile_picture
+        self.username = api.username
+    }
 }
