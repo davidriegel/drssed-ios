@@ -78,6 +78,9 @@ actor AuthenticationManager {
             let keychainModel = try TokenKeychainModel(from: tokenResponse)
             await TokenManager.shared.setTokens(keychainModel)
             
+            SyncCursors.resetAll()
+            await SyncManager.shared.syncWithServer(forceFull: true)
+            
             authState = .authenticated
         } catch {
             authState = .unauthenticated

@@ -27,7 +27,7 @@ final class AuthHandler {
     // MARK: -- sign into existing account
     
     public func signInWith(username: String? = nil, email: String? = nil, password: String) async throws -> TokenAPIResponse {
-        guard !(username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) && !(email?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) else { throw AuthenticationError.missingCredentials }
+        guard !(username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) || !(email?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) else { throw AuthenticationError.missingCredentials }
         
         var dict: [String: String] = ["password": password]
         

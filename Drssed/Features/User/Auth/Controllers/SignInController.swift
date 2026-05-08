@@ -30,10 +30,11 @@ class SignInController: UIViewController {
     
     // MARK: -- Username
     
-    lazy var usernameField: CustomTextFieldInput = {
-        let view = CustomTextFieldInput(fieldTitle: String(localized: "common.username"), placeholder: String(localized: "auth.signin.username.placeholder"))
+    lazy var emailField: CustomTextFieldInput = {
+        let view = CustomTextFieldInput(fieldTitle: String(localized: "common.email"), placeholder: String(localized: "auth.signin.email.placeholder"))
         view.fieldInput.delegate = self
-        view.fieldInput.textContentType = .username
+        view.fieldInput.textContentType = .emailAddress
+        view.fieldInput.autocapitalizationType = .none
         view.fieldInput.addTarget(self, action: #selector(checkTextFieldInputs), for: .editingChanged)
         return view
     }()
@@ -90,7 +91,7 @@ class SignInController: UIViewController {
     func handleSignIn() {
         Task {
             do {
-                try await APIClient.shared.authHandler.signInWith(username: usernameField.fieldInput.text, password: passwordField.fieldInput.text ?? "")
+                try await AuthenticationManager.shared.signInWith(email: emailField.fieldInput.text, password: passwordField.fieldInput.text ?? "")
                 self.view.window?.rootViewController = TabBarController()
             } catch APIError.unauthorized {
                 ErrorHandler.handle(AuthenticationError.invalidCredentials)
@@ -105,9 +106,19 @@ class SignInController: UIViewController {
     
     @objc
     func checkTextFieldInputs() {
-        let containsIllegalCharacters = !(usernameField.fieldInput.text?.unicodeScalars.allSatisfy { CharacterSet.alphanumerics.contains($0) } ?? false)
+        guard let email = emailField.fieldInput.text, let password = passwordField.fieldInput.text else {
+            signInButton.backgroundColor = .accent.withAlphaComponent(0.3)
+            signInButton.isEnabled = false
+            return
+        }
         
-        guard (usernameField.fieldInput.text?.count ?? 0 >= 3) && (passwordField.fieldInput.text?.count ?? 0 >= 8) && !containsIllegalCharacters else {
+        let containsIllegalCharacters = !(email.unicodeScalars.allSatisfy { CharacterSet.alphanumerics.contains($0) || $0 == "_" || $0 == "." || $0 == "-" || $0 == "+" || $0 == "@" })
+        
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        let isValidEmail = emailPredicate.evaluate(with: email)
+        
+        guard (email.count >= 3) && (password.count >= 8) && !containsIllegalCharacters && isValidEmail else {
             signInButton.backgroundColor = .accent.withAlphaComponent(0.3)
             signInButton.isEnabled = false
             return
@@ -132,17 +143,17 @@ class SignInController: UIViewController {
             logoImageView.widthAnchor.constraint(equalTo: logoImageView.heightAnchor)
         ])
         
-        view.addSubview(usernameField)
+        view.addSubview(emailField)
         NSLayoutConstraint.activate([
-            usernameField.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 20),
-            usernameField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            usernameField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            usernameField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
+            emailField.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 20),
+            emailField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            emailField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            emailField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
         ])
         
         view.addSubview(passwordField)
         NSLayoutConstraint.activate([
-            passwordField.topAnchor.constraint(equalTo: usernameField.bottomAnchor, constant: 20),
+            passwordField.topAnchor.constraint(equalTo: emailField.bottomAnchor, constant: 20),
             passwordField.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             passwordField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
             passwordField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
@@ -171,7 +182,7 @@ class SignInController: UIViewController {
 extension SignInController: UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        if textField == usernameField.fieldInput {
+        if textField == emailField.fieldInput {
             passwordField.fieldInput.becomeFirstResponder()
         }
         else {
