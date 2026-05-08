@@ -27,4 +27,26 @@ public struct User: Codable {
         self.profilePicture = api.profile_picture
         self.username = api.username
     }
+    
+    var profilePictureKind: ProfilePicture? {
+        guard let raw = profilePicture else { return nil }
+        return ProfilePicture(rawValue: raw)
+    }
+}
+
+enum ProfilePicture {
+    case `default`(name: String)
+    case custom(url: URL)
+    
+    init?(rawValue: String) {
+        if rawValue.hasPrefix("default/") {
+            let name = String(rawValue.dropFirst("default/".count))
+            self = .default(name: name)
+        } else if !rawValue.isEmpty,
+                  let url = URL(string: "\(rawValue)", relativeTo: APIClient.profileImagesURL) {
+            self = .custom(url: url)
+        } else {
+            return nil
+        }
+    }
 }

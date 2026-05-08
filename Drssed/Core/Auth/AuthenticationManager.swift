@@ -83,6 +83,7 @@ class AuthenticationManager {
             await TokenManager.shared.setTokens(keychainModel)
             
             setAuthState(.guest)
+            await refreshCurrentUser()
         } catch {
             setAuthState(.unauthenticated)
             throw error
@@ -100,6 +101,7 @@ class AuthenticationManager {
             await SyncManager.shared.syncWithServer(forceFull: true)
             
             setAuthState(.authenticated)
+            await refreshCurrentUser()
         } catch {
             setAuthState(.unauthenticated)
             throw error
@@ -117,6 +119,7 @@ class AuthenticationManager {
             let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
             await TokenManager.shared.setTokens(keychainModel)
             
+            setCurrentUser(upgradeAccountResponse.user)
             setAuthState(.authenticated)
             return upgradeAccountResponse.user
         } catch {
