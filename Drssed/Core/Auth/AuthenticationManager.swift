@@ -139,6 +139,9 @@ class AuthenticationManager {
             try? await APIClient.shared.authHandler.invalidateRefreshToken(refreshToken: token.refreshToken)
         }
         
+        setCurrentUser(nil)
+        setAuthState(.unauthenticated)
+        
         await SyncManager.shared.clearSyncState()
         await TokenManager.shared.clearTokens()
         
