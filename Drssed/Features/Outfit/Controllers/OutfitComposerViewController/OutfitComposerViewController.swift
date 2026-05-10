@@ -262,11 +262,13 @@ extension OutfitComposerViewController: OutfitComposerViewController_PickerDeleg
     func didSelectClothing(_ clothing: Clothing) {
         lockedClothes.insert(clothing.id)
         canvasView.addClothing(clothing)
+        canvasView.setLocked(true, for: clothing.id)
     }
 
     func didDeselectClothing(_ clothing: Clothing) {
         lockedClothes.remove(clothing.id)
         canvasView.removeClothing(clothing)
+        canvasView.setLocked(false, for: clothing.id)
     }
 }
 
