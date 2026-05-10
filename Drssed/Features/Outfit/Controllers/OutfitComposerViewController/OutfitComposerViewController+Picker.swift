@@ -34,13 +34,6 @@ class OutfitComposerViewController_Picker: UIViewController {
         }
     }
     
-    private let categoryLimits: [ClothingCategories: Int] = [
-        .ONE_PIECE: 1,
-        .BOTTOM: 1,
-        .TOP: 2,
-        .JACKET: 1
-    ]
-    
     init(delegate: OutfitComposerViewController_PickerDelegate) {
         self.delegate = delegate
         
@@ -193,19 +186,6 @@ class OutfitComposerViewController_Picker: UIViewController {
                 clothingCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
             }
         }
-    }
-    
-    func canSelect(_ item: Clothing) -> Bool {
-        guard let max = categoryLimits[item.category] else {
-            return true
-        }
-
-        let count = selectedClothingIDs
-            .compactMap { id in dataSource.first(where: { $0.id == id }) }
-            .filter { $0.category == item.category }
-            .count
-
-        return count < max
     }
     
     private func configureViewComponents() {
@@ -371,11 +351,6 @@ extension OutfitComposerViewController_Picker: UICollectionViewDelegate, UIColle
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let clothing = isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item]
         
-        if !canSelect(clothing) {
-            collectionView.deselectItem(at: indexPath, animated: true)
-            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-            return
-        }
         selectedClothingIDs.insert(clothing.id)
         delegate.didSelectClothing(clothing)
         
