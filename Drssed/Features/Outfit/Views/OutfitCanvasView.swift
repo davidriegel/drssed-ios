@@ -103,6 +103,46 @@ class OutfitCanvasView: UIView {
         clothingImageViews[clothing.id] = itemView
         delegate?.canvasView(self, didAddClothing: clothing)
     }
+    
+    func addClothing(_ clothing: Clothing, at placement: CanvasPlacement) {
+        guard editingMode else { return }
+
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .label
+        imageView.accessibilityIdentifier = clothing.id
+        attachEditingGestures(to: imageView)
+
+        let url = URL(string: clothing.imageID, relativeTo: APIClient.clothingImagesURL)
+        imageView.sd_setImage(with: url) { [weak self, weak imageView] image, _, _, _ in
+            guard let self, let imageView, let image else { return }
+            self.applyPlacement(placement, to: imageView, intrinsicSize: image.size)
+        }
+
+        addSubview(imageView)
+        clothingImageViews[clothing.id] = imageView
+        delegate?.canvasView(self, didAddClothing: clothing)
+    }
+
+    private func applyPlacement(_ placement: CanvasPlacement, to imageView: UIImageView, intrinsicSize: CGSize) {
+        let canvasWidth = bounds.width
+        let canvasHeight = bounds.height
+
+        let targetWidth = placement.scale * canvasWidth
+        let aspectRatio = intrinsicSize.height / max(intrinsicSize.width, 1)
+        let targetHeight = targetWidth * aspectRatio
+
+        imageView.frame = CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+
+        if placement.rotation != 0 {
+            imageView.transform = CGAffineTransform(rotationAngle: placement.rotation)
+        }
+
+        imageView.center = CGPoint(
+            x: placement.x * canvasWidth,
+            y: placement.y * canvasHeight
+        )
+    }
 
     func removeClothing(_ clothing: Clothing) {
         guard editingMode, let itemView = clothingImageViews[clothing.id] else { return }
