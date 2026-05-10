@@ -74,6 +74,7 @@ public final class ClothingRepository {
 
     // MARK: - Queries
     public func fetchClothes(
+        ids: [String]? = nil,
         filterSeasons: [Seasons]? = nil,
         filterTags: [Tags]? = nil,
         filterCategories: [ClothingCategories]? = nil,
@@ -82,6 +83,7 @@ public final class ClothingRepository {
     ) async -> [Clothing] {
         do {
             return try await localDataSource.fetch(
+                ids: ids,
                 filterSeasons: filterSeasons,
                 filterTags: filterTags,
                 filterCategories: filterCategories,

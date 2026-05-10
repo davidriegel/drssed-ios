@@ -6,9 +6,14 @@
 //
 
 import UIKit
+import Toast
 
 class OutfitComposerViewController: UIViewController {
     private let clothingRepo: ClothingRepository = ClothingRepository()
+    
+    private lazy var suggestionSession = OutfitSuggestionSession()
+    
+    private(set) var lockedClothes: Set<Clothing.ID> = []
 
     private var pickedClothing: [Clothing] = [] {
         didSet {
@@ -29,7 +34,7 @@ class OutfitComposerViewController: UIViewController {
 
     // MARK: - Canvas
 
-    lazy var clothingPickerController: UINavigationController = {
+    lazy var clothingPickerNavController: UINavigationController = {
         let clothesPickerSheet = UINavigationController(rootViewController: OutfitComposerViewController_Picker(delegate: self))
         clothesPickerSheet.modalPresentationStyle = .pageSheet
         clothesPickerSheet.isModalInPresentation = false
@@ -76,7 +81,7 @@ class OutfitComposerViewController: UIViewController {
         config.imagePadding = 2
         config.attributedTitle = AttributedString(String(localized: "outfitcomposer.clear"), attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: UIFont.systemFontSize - 2, weight: .semibold)]))
         let bt = UIButton(configuration: config, primaryAction: UIAction { _ in
-            let picker = self.clothingPickerController.viewControllers.first as! OutfitComposerViewController_Picker
+            let picker = self.clothingPickerNavController.viewControllers.first as! OutfitComposerViewController_Picker
 
             for (index, _) in self.pickedClothing.enumerated() {
                 picker.clothingCollectionView.delegate?.collectionView?(picker.clothingCollectionView, didDeselectItemAt: IndexPath(row: index, section: 0))
@@ -99,10 +104,8 @@ class OutfitComposerViewController: UIViewController {
         config.imagePlacement = .top
         config.imagePadding = 2
         config.attributedTitle = AttributedString(String(localized: "common.suggest"), attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: UIFont.systemFontSize - 2, weight: .semibold)]))
-        let bt = UIButton(configuration: config, primaryAction: UIAction { _ in
-            let infoAlert = UIAlertController(title: "🤫", message: String(localized: "workinprogress.message"), preferredStyle: .alert)
-            infoAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
-            UIApplication.shared.topMostViewController()!.present(infoAlert, animated: true)
+        let bt = UIButton(configuration: config, primaryAction: UIAction { [weak self] _ in
+            self?.didTapSuggest()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.titleLabel?.adjustsFontSizeToFitWidth = true
@@ -110,6 +113,53 @@ class OutfitComposerViewController: UIViewController {
         bt.titleLabel?.numberOfLines = 1
         return bt
     }()
+    
+    private func didTapSuggest() {
+        randomButton.isEnabled = false
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        Task { @MainActor in
+            defer { self.randomButton.isEnabled = true }
+            
+            let anchor = self.lockedClothes
+            
+            do {
+                let outfit = try await self.suggestionSession.next(currentAnchor: anchor)
+                
+                self.applySuggestedOutfit(outfit, preservingAnchor: anchor)
+            } catch APIError.unprocessableContent {
+                ToastPresenter.error(String(localized: "outfitcomposer.error.suggest"))
+            } catch {
+                ErrorHandler.handle(error)
+            }
+        }
+    }
+
+    
+    private func applySuggestedOutfit(_ outfit: Outfit, preservingAnchor anchor: Set<String>) {
+        let anchoredIDs = anchor
+        let toRemove = pickedClothing.filter { !anchoredIDs.contains($0.id) }
+
+        for clothing in toRemove {
+            canvasView.removeClothing(clothing)
+            let picker = clothingPickerNavController.viewControllers.first as! OutfitComposerViewController_Picker
+            picker.programmaticallyDeselect(clothingID: clothing.id)
+        }
+
+        let suggestedPlacements = outfit.scene
+            .sorted { $0.z < $1.z }
+            .filter { !anchor.contains($0.clothing_id) }
+
+        Task { @MainActor in
+            for placement in suggestedPlacements {
+                guard let clothing = await AppRepository.shared.clothingRepository.getClothing(with: placement.clothing_id) else { continue }
+                canvasView.addClothing(clothing, at: placement)
+                
+                let picker = clothingPickerNavController.viewControllers.first as! OutfitComposerViewController_Picker
+                picker.programmaticallySelect(clothingID: clothing.id)
+            }
+        }
+    }
 
     lazy var addButton: UIButton = {
         var config = UIButton.Configuration.glass()
@@ -120,7 +170,7 @@ class OutfitComposerViewController: UIViewController {
         config.imagePadding = 2
         config.attributedTitle = AttributedString(String(localized: "common.add"), attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: UIFont.systemFontSize - 2, weight: .semibold)]))
         let bt = UIButton(configuration: config, primaryAction: UIAction { _ in
-            self.navigationController?.present(self.clothingPickerController, animated: true)
+            self.navigationController?.present(self.clothingPickerNavController, animated: true)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.titleLabel?.adjustsFontSizeToFitWidth = true
@@ -160,7 +210,7 @@ class OutfitComposerViewController: UIViewController {
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "chevron.backward", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal),
             primaryAction: UIAction { _ in
-                self.clothingPickerController.dismiss(animated: true)
+                self.clothingPickerNavController.dismiss(animated: true)
                 self.navigationController?.popViewController(animated: true)
                 self.tabBarController?.tabBar.isHidden = false
             }
@@ -190,12 +240,12 @@ class OutfitComposerViewController: UIViewController {
         toolbarView.addArrangedSubview(addButton)
 
         submitButton.addAction(UIAction { _ in
-            self.clothingPickerController.dismiss(animated: true)
+            self.clothingPickerNavController.dismiss(animated: true)
 
             guard self.pickedClothing.count > 1 else {
                 let alert = UIAlertController(title: "", message: String(localized: "outfitcomposer.error.selectmultipleitems"), preferredStyle: .alert)
                 alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
-                    self.navigationController?.present(self.clothingPickerController, animated: true)
+                    self.navigationController?.present(self.clothingPickerNavController, animated: true)
                 }))
                 self.navigationController?.present(alert, animated: true)
                 return
@@ -210,11 +260,15 @@ class OutfitComposerViewController: UIViewController {
 
 extension OutfitComposerViewController: OutfitComposerViewController_PickerDelegate {
     func didSelectClothing(_ clothing: Clothing) {
+        lockedClothes.insert(clothing.id)
         canvasView.addClothing(clothing)
+        canvasView.setLocked(true, for: clothing.id)
     }
 
     func didDeselectClothing(_ clothing: Clothing) {
+        lockedClothes.remove(clothing.id)
         canvasView.removeClothing(clothing)
+        canvasView.setLocked(false, for: clothing.id)
     }
 }
 
@@ -225,5 +279,16 @@ extension OutfitComposerViewController: OutfitCanvasViewDelegate {
 
     func canvasView(_ canvasView: OutfitCanvasView, didRemoveClothing clothing: Clothing) {
         pickedClothing.removeAll { $0 == clothing }
+    }
+    
+    func canvasView(_ canvasView: OutfitCanvasView, didLongPressClothing clothing: Clothing) {
+        if lockedClothes.contains(clothing.id) {
+            canvasView.setLocked(false, for: clothing.id)
+            lockedClothes.remove(clothing.id)
+            return
+        }
+        
+        canvasView.setLocked(true, for: clothing.id)
+        lockedClothes.insert(clothing.id)
     }
 }
