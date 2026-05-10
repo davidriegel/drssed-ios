@@ -97,16 +97,11 @@ class OutfitCanvasView: UIView {
     func addClothing(_ clothing: Clothing, at placement: CanvasPlacement) {
         guard editingMode else { return }
 
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = .label
-        imageView.accessibilityIdentifier = clothing.id
-        attachEditingGestures(to: imageView)
-
+        let imageView = createClothingImageView(placement: placement)
         let url = URL(string: clothing.imageID, relativeTo: APIClient.clothingImagesURL)
         imageView.sd_setImage(with: url) { [weak self, weak imageView] image, _, _, _ in
             guard let self, let imageView, let image else { return }
-            self.applyPlacement(placement, to: imageView, intrinsicSize: image.size)
+            self.applyFrameAndTransform(to: imageView, image: image, placement: placement)
         }
 
         addSubview(imageView)
@@ -183,9 +178,10 @@ class OutfitCanvasView: UIView {
                 }
                 
                 let imageView = createClothingImageView(
-                    image: image,
                     placement: placement
                 )
+                imageView.image = image
+                applyFrameAndTransform(to: imageView, image: image, placement: placement)
                 
                 addSubview(imageView)
                 clothingItems[placement.clothing_id] = (clothing, imageView)
@@ -245,38 +241,39 @@ class OutfitCanvasView: UIView {
     }
     
     private func createClothingImageView(
-        image: UIImage,
         placement: CanvasPlacement
     ) -> UIImageView {
-        let imageView = UIImageView(image: image)
+        let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .label
         imageView.accessibilityIdentifier = placement.clothing_id
         attachEditingGestures(to: imageView)
-        
+
+        return imageView
+    }
+
+    private func applyFrameAndTransform(
+        to imageView: UIImageView,
+        image: UIImage,
+        placement: CanvasPlacement
+    ) {
         let canvasWidth = bounds.width
         let canvasHeight = bounds.height
-        
+
         let targetWidth = placement.scale * canvasWidth
-        let aspectRatio = image.size.height / image.size.width
+        let aspectRatio = image.size.height / max(image.size.width, 1)
         let targetHeight = targetWidth * aspectRatio
-        
-        imageView.frame = CGRect(
-            x: 0,
-            y: 0,
-            width: targetWidth,
-            height: targetHeight
-        )
-        
+
+        imageView.frame = CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+
         if placement.rotation != 0 {
             imageView.transform = CGAffineTransform(rotationAngle: placement.rotation)
         }
-        
-        let centerX = placement.x * canvasWidth
-        let centerY = placement.y * canvasHeight
-        
-        imageView.center = CGPoint(x: centerX, y: centerY)
 
-        return imageView
+        imageView.center = CGPoint(
+            x: placement.x * canvasWidth,
+            y: placement.y * canvasHeight
+        )
     }
 
     private func attachEditingGestures(to view: UIImageView) {
@@ -292,26 +289,6 @@ class OutfitCanvasView: UIView {
             $0.delegate = self
             view.addGestureRecognizer($0)
         }
-    }
-    
-    private func applyPlacement(_ placement: CanvasPlacement, to imageView: UIImageView, intrinsicSize: CGSize) {
-        let canvasWidth = bounds.width
-        let canvasHeight = bounds.height
-
-        let targetWidth = placement.scale * canvasWidth
-        let aspectRatio = intrinsicSize.height / max(intrinsicSize.width, 1)
-        let targetHeight = targetWidth * aspectRatio
-
-        imageView.frame = CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
-
-        if placement.rotation != 0 {
-            imageView.transform = CGAffineTransform(rotationAngle: placement.rotation)
-        }
-
-        imageView.center = CGPoint(
-            x: placement.x * canvasWidth,
-            y: placement.y * canvasHeight
-        )
     }
     
     private func applyCounterRotation(to badge: UIView, from itemView: UIView) {
