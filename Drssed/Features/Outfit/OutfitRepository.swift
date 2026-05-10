@@ -125,19 +125,12 @@ public final class OutfitRepository {
     
     // MARK: - Generate new Outfits
     
-    public func generateOutfits(amount: Int, seasons: [Seasons]? = nil, tags: [Tags]? = nil, anchorIDs: [String]? = nil) async -> [Outfit] {
-        do {
-            let apiModels = try await APIClient.shared.outfitHandler.generateOutfits(amount: amount, seasons: seasons, tags: tags, anchorIDs: anchorIDs)
-            
-            let domainModels = apiModels.map { Outfit.init(from: $0)}
-            
-            return domainModels
-        } catch let error as APIError {
-            ErrorHandler.handle(error)
-            return []
-        } catch let error {
-            return []
-        }
+    public func generateOutfits(amount: Int, seasons: [Seasons]? = nil, tags: [Tags]? = nil, anchorIDs: [String]? = nil) async throws -> [Outfit] {
+        let apiModels = try await APIClient.shared.outfitHandler.generateOutfits(amount: amount, seasons: seasons, tags: tags, anchorIDs: anchorIDs)
+        
+        let domainModels = apiModels.map { Outfit.init(from: $0)}
+        
+        return domainModels
     }
 
     // MARK: - Private
