@@ -77,31 +77,16 @@ class OutfitCanvasView: UIView {
             }
         }
     }
-
-    func addClothing(_ clothing: Clothing) {
-        guard editingMode else { return }
-
-        let itemView = UIImageView()
-        itemView.sd_setImage(with: URL(string: clothing.imageID, relativeTo: APIClient.clothingImagesURL))
-        itemView.tintColor = .label
-        itemView.contentMode = .scaleAspectFit
-        itemView.frame = CGRect(x: bounds.midX - 75, y: bounds.midY - 75, width: 150, height: 150)
-        itemView.accessibilityIdentifier = clothing.id
-        attachEditingGestures(to: itemView)
-
-        addSubview(itemView)
-        clothingItems[clothing.id] = (clothing, itemView)
-        delegate?.canvasView(self, didAddClothing: clothing)
-    }
     
-    func addClothing(_ clothing: Clothing, at placement: CanvasPlacement) {
+    func addClothing(_ clothing: Clothing, at placement: CanvasPlacement? = nil) {
         guard editingMode else { return }
 
-        let imageView = createClothingImageView(placement: placement)
+        let imageView = createClothingImageView(clothingID: clothing.id)
+        attachEditingGestures(to: imageView)
         let url = URL(string: clothing.imageID, relativeTo: APIClient.clothingImagesURL)
         imageView.sd_setImage(with: url) { [weak self, weak imageView] image, _, _, _ in
             guard let self, let imageView, let image else { return }
-            self.applyFrameAndTransform(to: imageView, image: image, placement: placement)
+            self.applyFrameAndTransform(to: imageView, image: image, placement: placement ?? CanvasPlacement(clothing_id: clothing.id, x: 0.5, y: 0.5, z: 0, scale: 0.3, rotation: 0))
         }
 
         addSubview(imageView)
@@ -177,11 +162,10 @@ class OutfitCanvasView: UIView {
                     continue
                 }
                 
-                let imageView = createClothingImageView(
-                    placement: placement
-                )
+                let imageView = createClothingImageView(clothingID: placement.clothing_id)
                 imageView.image = image
                 applyFrameAndTransform(to: imageView, image: image, placement: placement)
+                attachEditingGestures(to: imageView)
                 
                 addSubview(imageView)
                 clothingItems[placement.clothing_id] = (clothing, imageView)
@@ -241,13 +225,12 @@ class OutfitCanvasView: UIView {
     }
     
     private func createClothingImageView(
-        placement: CanvasPlacement
+        clothingID: String
     ) -> UIImageView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .label
-        imageView.accessibilityIdentifier = placement.clothing_id
-        attachEditingGestures(to: imageView)
+        imageView.accessibilityIdentifier = clothingID
 
         return imageView
     }
