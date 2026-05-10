@@ -282,6 +282,22 @@ class OutfitComposerViewController_Picker: UIViewController {
         
         return current[s2.count]
     }
+    
+    public func programmaticallySelect(clothingID: Clothing.ID) {
+        selectedClothingIDs.insert(clothingID)
+        if let clothing = dataSource.first(where: { $0.id == clothingID }),
+           let indexPath = diffableDataSource.indexPath(for: clothing) {
+            clothingCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+        }
+    }
+
+    public func programmaticallyDeselect(clothingID: Clothing.ID) {
+        selectedClothingIDs.remove(clothingID)
+        if let clothing = dataSource.first(where: { $0.id == clothingID }),
+           let indexPath = diffableDataSource.indexPath(for: clothing) {
+            clothingCollectionView.deselectItem(at: indexPath, animated: false)
+        }
+    }
 }
 
 
