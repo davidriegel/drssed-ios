@@ -290,7 +290,7 @@ class ProfileViewController: UIViewController {
         let row = SettingsRow(
             title: String(localized: "profile.about"),
             symbolName: "info.circle",
-            action: { [weak self] in self?.wipMessage() }
+            action: { [weak self] in self?.didTapAbout() }
         )
         row.translatesAutoresizingMaskIntoConstraints = false
         return row
@@ -485,7 +485,7 @@ class ProfileViewController: UIViewController {
     }
     
     func didTapAbout() {
-        guard let url = URL(string: "about", relativeTo: URL(string: "https://drssed.app")) else {
+        guard let url = URL(string: "https://drssed.app") else {
             return
         }
         
@@ -493,7 +493,7 @@ class ProfileViewController: UIViewController {
     }
     
     func didTapPrivacy() {
-        guard let url = URL(string: "privacy", relativeTo: URL(string: "https://drssed.app")) else {
+        guard let url = URL(string: "/en/privacy", relativeTo: URL(string: "https://drssed.app")) else {
             return
         }
         
