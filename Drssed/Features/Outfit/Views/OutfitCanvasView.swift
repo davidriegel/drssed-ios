@@ -11,11 +11,13 @@ import SDWebImage
 protocol OutfitCanvasViewDelegate: AnyObject {
     func canvasView(_ canvasView: OutfitCanvasView, didAddClothing clothing: Clothing)
     func canvasView(_ canvasView: OutfitCanvasView, didRemoveClothing clothing: Clothing)
+    func canvasView(_ canvasView: OutfitCanvasView, didLongPressClothing clothing: Clothing)
     func canvasViewDidBeginInteraction(_ canvasView: OutfitCanvasView)
     func canvasViewDidEndInteraction(_ canvasView: OutfitCanvasView)
 }
 
 extension OutfitCanvasViewDelegate {
+    func canvasView(_ canvasView: OutfitCanvasView, didLongPressClothing clothing: Clothing) {}
     func canvasViewDidBeginInteraction(_ canvasView: OutfitCanvasView) {}
     func canvasViewDidEndInteraction(_ canvasView: OutfitCanvasView) {}
 }
@@ -24,7 +26,7 @@ class OutfitCanvasView: UIView {
 
     weak var delegate: OutfitCanvasViewDelegate?
 
-    var clothingImageViews: [String: UIImageView] = [:]
+    var clothingItems: [String: (clothing: Clothing, view: UIImageView)] = [:]
 
     private var editingMode: Bool = false
     
@@ -75,15 +77,15 @@ class OutfitCanvasView: UIView {
             editingMode = false
             gridView.removeFromSuperview()
 
-            for (_, iv) in clothingImageViews {
-                iv.isUserInteractionEnabled = false
+            for (_, item) in clothingItems {
+                item.view.isUserInteractionEnabled = false
             }
         } else {
             editingMode = true
             insertSubview(gridView, at: 0)
 
-            for (_, iv) in clothingImageViews {
-                iv.isUserInteractionEnabled = true
+            for (_, item) in clothingItems {
+                item.view.isUserInteractionEnabled = true
             }
         }
     }
@@ -100,7 +102,7 @@ class OutfitCanvasView: UIView {
         attachEditingGestures(to: itemView)
 
         addSubview(itemView)
-        clothingImageViews[clothing.id] = itemView
+        clothingItems[clothing.id] = (clothing, itemView)
         delegate?.canvasView(self, didAddClothing: clothing)
     }
     
@@ -120,7 +122,7 @@ class OutfitCanvasView: UIView {
         }
 
         addSubview(imageView)
-        clothingImageViews[clothing.id] = imageView
+        clothingItems[clothing.id] = (clothing, imageView)
         delegate?.canvasView(self, didAddClothing: clothing)
     }
 
@@ -145,9 +147,9 @@ class OutfitCanvasView: UIView {
     }
 
     func removeClothing(_ clothing: Clothing) {
-        guard editingMode, let itemView = clothingImageViews[clothing.id] else { return }
-        itemView.removeFromSuperview()
-        clothingImageViews.removeValue(forKey: clothing.id)
+        guard editingMode, let item = clothingItems[clothing.id] else { return }
+        item.view.removeFromSuperview()
+        clothingItems.removeValue(forKey: clothing.id)
         delegate?.canvasView(self, didRemoveClothing: clothing)
     }
 
@@ -192,21 +194,23 @@ class OutfitCanvasView: UIView {
 
     func loadOutfit(placements: [CanvasPlacement]) {
         Task {
-            for imageView in clothingImageViews.values {
-                imageView.removeFromSuperview()
+            for item in clothingItems.values {
+                item.view.removeFromSuperview()
             }
             
-            clothingImageViews.removeAll()
+            clothingItems.removeAll()
             
             let sortedPlacements = placements.sorted { $0.z < $1.z }
             
             let clothingIDs = placements.map { $0.clothing_id }
             let images = await AppRepository.shared.clothingRepository.getClothingImages(with: clothingIDs)
+            let clothings = await AppRepository.shared.clothingRepository.fetchClothes(ids: clothingIDs)
+            let clothingByID = Dictionary(uniqueKeysWithValues: clothings.map { ($0.id, $0) })
             
             layoutIfNeeded()
             
             for placement in sortedPlacements {
-                guard let image = images[placement.clothing_id] else {
+                guard let image = images[placement.clothing_id], let clothing = clothingByID[placement.clothing_id] else {
                     continue
                 }
                 
@@ -216,7 +220,7 @@ class OutfitCanvasView: UIView {
                 )
                 
                 addSubview(imageView)
-                clothingImageViews[placement.clothing_id] = imageView
+                clothingItems[placement.clothing_id] = (clothing, imageView)
             }
         }
     }
@@ -263,8 +267,9 @@ class OutfitCanvasView: UIView {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
         let rotate = UIRotationGestureRecognizer(target: self, action: #selector(handleRotate(_:)))
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
 
-        [pan, pinch, rotate].forEach {
+        [pan, pinch, rotate, longPress].forEach {
             $0.delegate = self
             view.addGestureRecognizer($0)
         }
@@ -360,6 +365,20 @@ class OutfitCanvasView: UIView {
         
         targetView.transform = targetView.transform.rotated(by: gesture.rotation)
         gesture.rotation = 0
+    }
+    
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard editingMode, let targetView = gesture.view, let id = targetView.accessibilityIdentifier, let item = clothingItems[id] else { return }
+        
+        switch gesture.state {
+        case .began:
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            delegate?.canvasViewDidBeginInteraction(self)
+            delegate?.canvasView(self, didLongPressClothing: item.clothing)
+        case .ended, .cancelled, .failed:
+            delegate?.canvasViewDidEndInteraction(self)
+        default: break
+        }
     }
 }
 
