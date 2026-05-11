@@ -21,21 +21,13 @@ class AuthenticationManager {
     static let shared = AuthenticationManager()
     
     private let authStateSubject = CurrentValueSubject<AuthState, Never>(.unknown)
-    private let currentUserSubject = CurrentValueSubject<User?, Never>(nil)
     
     var authState: AuthState { authStateSubject.value }
     
     var authStatePublisher: AnyPublisher<AuthState, Never> { authStateSubject.eraseToAnyPublisher() }
     
-    var currentUser: User? { currentUserSubject.value }
-    var currentUserPublisher: AnyPublisher<User?, Never> { currentUserSubject.eraseToAnyPublisher() }
-    
     private func setAuthState(_ newState: AuthState) {
         authStateSubject.send(newState)
-    }
-    
-    private func setCurrentUser(_ user: User?) {
-        currentUserSubject.send(user)
     }
     
     func determineCurrentAuthState() async -> AuthState {
@@ -83,7 +75,7 @@ class AuthenticationManager {
             await TokenManager.shared.setTokens(keychainModel)
             
             setAuthState(.guest)
-            await refreshCurrentUser()
+            await AppRepository.shared.userRepository.refreshCurrentUser()
         } catch {
             setAuthState(.unauthenticated)
             throw error
@@ -101,7 +93,7 @@ class AuthenticationManager {
             await SyncManager.shared.syncWithServer(forceFull: true)
             
             setAuthState(.authenticated)
-            await refreshCurrentUser()
+            await AppRepository.shared.userRepository.refreshCurrentUser()
         } catch {
             setAuthState(.unauthenticated)
             throw error
@@ -119,7 +111,7 @@ class AuthenticationManager {
             let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
             await TokenManager.shared.setTokens(keychainModel)
             
-            setCurrentUser(upgradeAccountResponse.user.toDomain())
+            try AppRepository.shared.userRepository.setCurrentUser(upgradeAccountResponse.user.toDomain())
             setAuthState(.authenticated)
             return upgradeAccountResponse.user.toDomain()
         } catch {
@@ -139,7 +131,7 @@ class AuthenticationManager {
             try? await APIClient.shared.authHandler.invalidateRefreshToken(refreshToken: token.refreshToken)
         }
         
-        setCurrentUser(nil)
+        AppRepository.shared.userRepository.clear()
         setAuthState(.unauthenticated)
         
         await SyncManager.shared.clearSyncState()
@@ -152,16 +144,8 @@ class AuthenticationManager {
         try await APIClient.shared.authHandler.deleteAccount()
         await SyncManager.shared.clearSyncState()
         await TokenManager.shared.clearTokens()
+        AppRepository.shared.userRepository.clear()
         
         try? await registerAsGuest()
-    }
-    
-    func refreshCurrentUser() async {
-        do {
-            let user = try await APIClient.shared.userHandler.fetchCurrentUser()
-            setCurrentUser(user.toDomain())
-        } catch {
-            ErrorHandler.handleSilently(error)
-        }
     }
 }
