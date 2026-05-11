@@ -520,7 +520,7 @@ class ProfileViewController: UIViewController {
             }
             .store(in: &cancellables)
         
-        AuthenticationManager.shared.currentUserPublisher
+        AppRepository.shared.userRepository.currentUserPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] user in
                 self?.handleUserChange(user)
@@ -567,7 +567,7 @@ class ProfileViewController: UIViewController {
             configureGuestLayout()
         case .authenticated:
             configureAuthenticatedLayout()
-            handleUserChange(AuthenticationManager.shared.currentUser)
+            handleUserChange(AppRepository.shared.userRepository.currentUser)
         }
         
         Task { await loadGenericData() }
