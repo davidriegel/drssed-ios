@@ -80,13 +80,8 @@ class OutfitComposerViewController: UIViewController {
         config.imagePlacement = .top
         config.imagePadding = 2
         config.attributedTitle = AttributedString(String(localized: "outfitcomposer.clear"), attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: UIFont.systemFontSize - 2, weight: .semibold)]))
-        let bt = UIButton(configuration: config, primaryAction: UIAction { _ in
-            let picker = self.clothingPickerNavController.viewControllers.first as! OutfitComposerViewController_Picker
-
-            for (index, _) in self.pickedClothing.enumerated() {
-                picker.clothingCollectionView.delegate?.collectionView?(picker.clothingCollectionView, didDeselectItemAt: IndexPath(row: index, section: 0))
-                picker.clothingCollectionView.deselectItem(at: IndexPath(row: index, section: 0), animated: true)
-            }
+        let bt = UIButton(configuration: config, primaryAction: UIAction { [weak self] _ in
+            self?.didTapClear()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.titleLabel?.adjustsFontSizeToFitWidth = true
@@ -113,6 +108,50 @@ class OutfitComposerViewController: UIViewController {
         bt.titleLabel?.numberOfLines = 1
         return bt
     }()
+
+    lazy var addButton: UIButton = {
+        var config = UIButton.Configuration.glass()
+        config.baseForegroundColor = .label
+        config.titleLineBreakMode = .byClipping
+        config.image = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 14, weight: .bold)))
+        config.imagePlacement = .top
+        config.imagePadding = 2
+        config.attributedTitle = AttributedString(String(localized: "common.add"), attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: UIFont.systemFontSize - 2, weight: .semibold)]))
+        let bt = UIButton(configuration: config, primaryAction: UIAction { _ in
+            self.navigationController?.present(self.clothingPickerNavController, animated: true)
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.titleLabel?.adjustsFontSizeToFitWidth = true
+        bt.titleLabel?.minimumScaleFactor = 0.5
+        bt.titleLabel?.numberOfLines = 1
+        return bt
+    }()
+    
+    // MARK: - Submit Button
+
+    lazy var submitButton: UIButton = {
+        let bt = UIButton()
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.configuration = .prominentGlass()
+        bt.configuration?.baseBackgroundColor = .accent
+        bt.setAttributedTitle(NSAttributedString(string: String(localized: "common.continue"), attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
+        bt.configuration?.titlePadding = 5
+        bt.configuration?.baseForegroundColor = .label
+        bt.backgroundColor = .accent.withAlphaComponent(0.3)
+        bt.isEnabled = false
+        return bt
+    }()
+    
+    // MARK: - Functions
+    
+    private func didTapClear() {
+        let picker = self.clothingPickerNavController.viewControllers.first as! OutfitComposerViewController_Picker
+        
+        for clothing in pickedClothing {
+            canvasView.removeClothing(clothing)
+            picker.programmaticallyDeselect(clothingID: clothing.id)
+        }
+    }
     
     private func didTapSuggest() {
         randomButton.isEnabled = false
@@ -160,39 +199,6 @@ class OutfitComposerViewController: UIViewController {
             }
         }
     }
-
-    lazy var addButton: UIButton = {
-        var config = UIButton.Configuration.glass()
-        config.baseForegroundColor = .label
-        config.titleLineBreakMode = .byClipping
-        config.image = UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 14, weight: .bold)))
-        config.imagePlacement = .top
-        config.imagePadding = 2
-        config.attributedTitle = AttributedString(String(localized: "common.add"), attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: UIFont.systemFontSize - 2, weight: .semibold)]))
-        let bt = UIButton(configuration: config, primaryAction: UIAction { _ in
-            self.navigationController?.present(self.clothingPickerNavController, animated: true)
-        })
-        bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.titleLabel?.adjustsFontSizeToFitWidth = true
-        bt.titleLabel?.minimumScaleFactor = 0.5
-        bt.titleLabel?.numberOfLines = 1
-        return bt
-    }()
-    
-    // MARK: - Submit Button
-
-    lazy var submitButton: UIButton = {
-        let bt = UIButton()
-        bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.configuration = .prominentGlass()
-        bt.configuration?.baseBackgroundColor = .accent
-        bt.setAttributedTitle(NSAttributedString(string: String(localized: "common.continue"), attributes: [.font : UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]), for: .normal)
-        bt.configuration?.titlePadding = 5
-        bt.configuration?.baseForegroundColor = .label
-        bt.backgroundColor = .accent.withAlphaComponent(0.3)
-        bt.isEnabled = false
-        return bt
-    }()
     
     // MARK: - Configuration
 
