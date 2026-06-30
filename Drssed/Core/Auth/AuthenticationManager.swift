@@ -145,7 +145,24 @@ class AuthenticationManager {
         await SyncManager.shared.clearSyncState()
         await TokenManager.shared.clearTokens()
         AppRepository.shared.userRepository.clear()
-        
+
         try? await registerAsGuest()
+    }
+
+    func changePassword(currentPassword: String, newPassword: String) async throws {
+        do {
+            try await APIClient.shared.userHandler.changePassword(currentPassword: currentPassword, newPassword: newPassword)
+        } catch APIError.unauthorized {
+            throw AuthenticationError.invalidCredentials
+        }
+    }
+
+    func changeEmail(currentPassword: String, newEmail: String) async throws {
+        do {
+            try await APIClient.shared.userHandler.changeEmail(currentPassword: currentPassword, newEmail: newEmail)
+            await AppRepository.shared.userRepository.refreshCurrentUser()
+        } catch APIError.unauthorized {
+            throw AuthenticationError.invalidCredentials
+        }
     }
 }
