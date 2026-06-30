@@ -35,7 +35,7 @@ final class ClothingDetailsController: UIViewController {
         
         self.selectedSeasonsArray = item.seasons
         self.selectedTagsArray = item.tags
-        self.selectedCategory = item.category
+        self.selectedCategory = item.subCategory
         configureViewComponents()
         
         view.addGestureRecognizer(dismissKeyboardTapGesture)
@@ -68,12 +68,10 @@ final class ClothingDetailsController: UIViewController {
     let allowsEditing: Bool
     let colorPickerView = UIColorPickerViewController()
     
-    var selectedCategory: ClothingCategories = .TOP {
+    var selectedCategory: ClothingSubCategories? {
         didSet {
-            itemCategorySelection.text = selectedCategory.localizedName
-            Task { @MainActor in
-                itemCategoryPicker.selectRow(itemCategoriesDataSource.firstIndex(of: itemCategorySelection.text ?? "") ?? 0, inComponent: 0, animated: false)
-            }
+            itemCategorySelection.text = selectedCategory?.localizedName ?? String(localized: "common.placeholder.select")
+            itemCategorySelection.textColor = selectedCategory == nil ? .placeholderText : .label
         }
     }
     
@@ -95,16 +93,6 @@ final class ClothingDetailsController: UIViewController {
             }
         }
     }
-    
-    let itemCategoriesDataSource: [String] = {
-        var ar: [String] = ["*"]
-        for clothingCategory in ClothingCategories.allCases {
-            ar.append(clothingCategory.localizedName)
-            ar.append("*")
-        }
-        
-        return ar
-    }()
     
     var selectedTagsArray: [Tags] = [] {
         didSet {
@@ -131,13 +119,6 @@ final class ClothingDetailsController: UIViewController {
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
         return tap
-    }()
-    
-    lazy var dismissPickerAction: UIAction = {
-        let ac = UIAction {_ in
-            self.dismissPickers()
-        }
-        return ac
     }()
     
     // MARK: - Functions
@@ -171,14 +152,6 @@ final class ClothingDetailsController: UIViewController {
     func dismissPickers() -> Void {
         self.itemSeasonsPickerView.hideSeasonsPickerView()
         self.itemTagsPickerView.hideTagsPickerView()
-        
-        UIView.animate(withDuration: 0.3) {
-            self.itemCategoryPicker.alpha = 0
-            self.itemCategoryPickerDone.alpha = 0
-        } completion: { _ in
-            self.itemCategoryPicker.isHidden = true
-            self.itemCategoryPickerDone.isHidden = true
-        }
     }
     
     func disableEditing() -> Void {
@@ -274,7 +247,7 @@ final class ClothingDetailsController: UIViewController {
             self.itemColorButton.backgroundColor = self.item.color
             self.colorPickerView.selectedColor = self.item.color
             
-            self.selectedCategory = self.item.category
+            self.selectedCategory = self.item.subCategory
             self.selectedSeasonsArray = self.item.seasons
             self.selectedTagsArray = self.item.tags
         }
@@ -407,19 +380,14 @@ final class ClothingDetailsController: UIViewController {
     
     lazy var itemCategoryField: CustomButtonInput = {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.category.title"))
-        view.fieldInput.isUserInteractionEnabled = true
+        view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in
-        UIView.animate(withDuration: 0.3) {
-            self.itemCategoryPicker.isHidden = false
-            self.itemCategoryPickerDone.isHidden = false
-            
-            self.itemCategoryPicker.alpha = 1
-            self.itemCategoryPickerDone.alpha = 1
-        }}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction { [weak self] _ in
+            self?.presentCategoryPicker()
+        }, for: .primaryActionTriggered)
         return view
     }()
-    
+
     lazy var itemCategorySelection: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -427,35 +395,8 @@ final class ClothingDetailsController: UIViewController {
         label.textColor = .label
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 13, weight: .heavy)
-        label.text = item.category.localizedName
+        label.text = item.subCategory.localizedName
         return label
-    }()
-    
-    lazy var itemCategoryPicker: UIPickerView = {
-        let pv = UIPickerView()
-        pv.isHidden = true
-        pv.translatesAutoresizingMaskIntoConstraints = false
-        pv.alpha = 0
-        pv.backgroundColor = .secondarySystemBackground
-        pv.autoresizingMask = .flexibleWidth
-        pv.contentMode = .center
-        
-        let topBorder = CALayer()
-        topBorder.backgroundColor = UIColor.darkGray.cgColor
-        topBorder.frame = CGRectMake(0, 0, self.view.frame.width, 1.5)
-        pv.layer.addSublayer(topBorder)
-        return pv
-    }()
-    
-    lazy var itemCategoryPickerDone: UIButton = {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        let title = NSAttributedString(string: String(localized: "common.done"), attributes: [.font : UIFont.systemFont(ofSize: 18, weight: .bold)])
-        button.isHidden = true
-        button.alpha = 0
-        button.setAttributedTitle(title, for: .normal)
-        button.setTitleColor(.label, for: .normal)
-        return button
     }()
     
     /// Color UI
@@ -550,9 +491,7 @@ final class ClothingDetailsController: UIViewController {
         colorPickerView.selectedColor = item.color
         colorPickerView.delegate = self
         
-        //navigationController?.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneTapped))
-        
-        [segmentController, itemDoneButton, itemDeleteButton, itemImageView, itemNameField, itemCategoryField, itemCategorySelection, itemCategoryPicker, itemCategoryPickerDone, itemColorPickerField, itemColorButton, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsSelection, itemTagsPickerView].forEach {
+        [segmentController, itemDoneButton, itemDeleteButton, itemImageView, itemNameField, itemCategoryField, itemCategorySelection, itemColorPickerField, itemColorButton, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsSelection, itemTagsPickerView].forEach {
             view.addSubview($0)
         }
         
@@ -653,59 +592,32 @@ final class ClothingDetailsController: UIViewController {
             itemTagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
         ])
         
-        view.addSubview(itemCategoryPicker)
-        itemCategoryPicker.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor).isActive = true
-        itemCategoryPicker.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
-        itemCategoryPicker.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        itemCategoryPicker.delegate = self
-        itemCategoryPicker.dataSource = self
-        itemCategoryPicker.selectRow(0, inComponent: 0, animated: false)
-         
-        view.addSubview(itemCategoryPickerDone)
-        itemCategoryPickerDone.topAnchor.constraint(equalTo: itemCategoryPicker.topAnchor, constant: 10).isActive = true
-        itemCategoryPickerDone.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        itemCategoryPickerDone.addAction(dismissPickerAction, for: .primaryActionTriggered)
+    }
+
+    private func presentCategoryPicker() {
+        view.endEditing(true)
+
+        let picker = CategoryPickerSheetController(preselected: selectedCategory, delegate: self)
+        let nav = UINavigationController(rootViewController: picker)
+        nav.modalPresentationStyle = .pageSheet
+
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
+        }
+
+        present(nav, animated: true)
     }
 }
 
-extension ClothingDetailsController: UIPickerViewDelegate, UIPickerViewDataSource {
-    func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return itemCategoriesDataSource.count
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusing view: UIView?) -> UIView {
-        guard itemCategoriesDataSource[row].contains("*") else {
-            let label = UILabel()
-            label.textAlignment = .center
-            label.text = itemCategoriesDataSource[row]
-            label.font = UIFont.systemFont(ofSize: 22)
-
-            return label
-        }
-        
-        let splitter = UIView()
-        splitter.backgroundColor = .lightGray
-        splitter.frame = CGRect(x: 0, y: 0, width: pickerView.frame.width, height: 2)
-        return splitter
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        var newText = itemCategoriesDataSource[row]
-        let previousIndex = itemCategoriesDataSource.firstIndex(of: itemCategorySelection.text ?? "") ?? 0
-        
-        if newText.contains("*") {
-            pickerView.selectRow(row > previousIndex ? row - 1 : row + 1, inComponent: component, animated: true)
-            newText = itemCategoriesDataSource[row > previousIndex ? row - 1 : row + 1]
-        }
-        
-        itemCategorySelection.text = newText
-        selectedCategory = ClothingCategories.fromLocalized(newText) ?? .TOP
-        itemCategorySelection.textColor = .label
-        item.category = selectedCategory
+extension ClothingDetailsController: CategoryPickerSheetControllerDelegate {
+    func categoryPicker(_ controller: CategoryPickerSheetController,
+                        didSelect subCategory: ClothingSubCategories,
+                        in category: ClothingCategories) {
+        selectedCategory = subCategory
+        item.category = category
+        item.subCategory = subCategory
     }
 }
 
