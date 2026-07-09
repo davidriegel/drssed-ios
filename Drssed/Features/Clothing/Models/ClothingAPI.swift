@@ -16,8 +16,9 @@ public struct ClothingAPI: Codable, Hashable {
     let is_public: Bool
     let name: String
     let seasons, tags: [String]
+    let warmth_level: Int?
     let user_id: String
-    
+
     func toDomain() -> Clothing {
         return Clothing.init(from: self)
     }

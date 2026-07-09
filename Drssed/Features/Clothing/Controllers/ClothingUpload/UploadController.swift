@@ -41,7 +41,9 @@ class UploadController: UIViewController {
     }
     
     var imageID: String = ""
-    
+
+    var selectedWarmth: Warmth = .MILD
+
     var selectedTagsArray: [Tags] = [] {
         didSet {
             var selected = [String]()
@@ -145,6 +147,14 @@ class UploadController: UIViewController {
         view.alpha = 0
         view.layer.borderColor = UIColor.darkGray.cgColor
         view.layer.borderWidth = 1
+        return view
+    }()
+
+    // MARK: -- Warmth
+
+    lazy var warmthPickerView: WarmthPickerView = {
+        let view = WarmthPickerView(delegate: self, preselected: selectedWarmth)
+        view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
@@ -358,7 +368,7 @@ class UploadController: UIViewController {
             return
         }
 
-        let domainModel = Clothing(name: name, imageID: imageID, category: subCategory.category, subCategory: subCategory, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray)
+        let domainModel = Clothing(name: name, imageID: imageID, category: subCategory.category, subCategory: subCategory, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray, warmth: selectedWarmth)
         
         Task {
             await clothingRepo.addOrUpdateClothing(from: domainModel)
@@ -480,8 +490,15 @@ class UploadController: UIViewController {
             clothingSeasonsSelection.bottomAnchor.constraint(equalTo: clothingSeasonsField.fieldBackground.bottomAnchor)
         ])
         
+        view.addSubview(warmthPickerView)
+        NSLayoutConstraint.activate([
+            warmthPickerView.topAnchor.constraint(equalTo: clothingSeasonsField.bottomAnchor, constant: 10),
+            warmthPickerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            warmthPickerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20)
+        ])
+
         view.addSubview(descriptionLabel)
-        descriptionLabel.topAnchor.constraint(equalTo: clothingSeasonsField.bottomAnchor, constant: 15).isActive = true
+        descriptionLabel.topAnchor.constraint(equalTo: warmthPickerView.bottomAnchor, constant: 15).isActive = true
         descriptionLabel.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
         descriptionLabel.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
         
@@ -734,8 +751,14 @@ extension UploadController: TagsPickerViewDelegate {
             selectedTagsArray.append(tag)
         }
     }
-    
+
     func tagsDoneButtonPressed() {
         hideTagsPickerView()
+    }
+}
+
+extension UploadController: WarmthPickerViewDelegate {
+    func warmthSelected(_ warmth: Warmth) {
+        selectedWarmth = warmth
     }
 }

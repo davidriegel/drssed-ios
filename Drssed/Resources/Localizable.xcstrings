@@ -1349,6 +1349,108 @@
         }
       }
     },
+    "common.warmth.airy" : {
+      "comment" : "Warmth level 1 (least warm): airy, breathable pieces like mesh or thin summer wear.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Luftig"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Airy"
+          }
+        }
+      }
+    },
+    "common.warmth.light" : {
+      "comment" : "Warmth level 2: light garments like t-shirts and thin shirts.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
+    },
+    "common.warmth.mild" : {
+      "comment" : "Warmth level 3 (middle): all-season pieces like long sleeves and jeans.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mild"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mild"
+          }
+        }
+      }
+    },
+    "common.warmth.title" : {
+      "comment" : "Section title for the warmth level picker in the clothing upload flow.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wärme"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warmth"
+          }
+        }
+      }
+    },
+    "common.warmth.toasty" : {
+      "comment" : "Warmth level 5 (warmest): heavily insulating pieces like down jackets and heavy coats.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wärmend"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toasty"
+          }
+        }
+      }
+    },
+    "common.warmth.warm" : {
+      "comment" : "Warmth level 4: warm pieces like sweaters and thick pants.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm"
+          }
+        }
+      }
+    },
     "common.undo" : {
       "localizations" : {
         "de" : {
