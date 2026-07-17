@@ -52,7 +52,7 @@ final class ClothingHandler {
             tagsStrings.append(tag.rawValue)
         }
         
-        let uploadDict = ["name": domainModel.name, "description": domainModel.description, "category": domainModel.category.rawValue, "sub_category": domainModel.subCategory.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": domainModel.imageID, "color": domainModel.color.hexString] as [String : Any]
+        let uploadDict = ["name": domainModel.name, "description": domainModel.description, "category": domainModel.category.rawValue, "sub_category": domainModel.subCategory.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": domainModel.imageID, "color": domainModel.color.hexString, "warmth_level": domainModel.warmth.rawValue] as [String : Any]
         
         let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
         let request = try await APIClient.shared.createRequest(endpoint: "/users/me/clothing", method: .POST, body: uploadData)
@@ -158,7 +158,11 @@ final class ClothingHandler {
         if oldClothing.imageID != newClothing.imageID {
             uploadDict["image_id"] = newClothing.imageID
         }
-        
+
+        if oldClothing.warmth != newClothing.warmth {
+            uploadDict["warmth_level"] = newClothing.warmth.rawValue
+        }
+
         let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
         let request = try await APIClient.shared.createRequest(endpoint: "/clothing/\(oldClothing.id)", method: .PATCH, body: uploadData)
         let clothingWrapper: ClothingWrapper = try await APIClient.shared.executeRequestAndDecode(request: request)

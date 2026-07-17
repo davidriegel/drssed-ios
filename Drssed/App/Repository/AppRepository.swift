@@ -11,13 +11,15 @@ final public class AppRepository {
     public static let shared = AppRepository()
     public let clothingRepository: ClothingRepository
     public let outfitRepository: OutfitRepository
+    public let userRepository: UserRepository
     
-    public init(context: NSManagedObjectContext) {
+    private init(context: NSManagedObjectContext) {
         clothingRepository = ClothingRepository(context: context)
         outfitRepository = OutfitRepository(context: context)
+        userRepository = UserRepository.shared
     }
 
-    public convenience init() {
+    private convenience init() {
         self.init(context: PersistenceController.shared.container.viewContext)
     }
 }

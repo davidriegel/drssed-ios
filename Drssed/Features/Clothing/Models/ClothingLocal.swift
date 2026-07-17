@@ -27,6 +27,7 @@ class ClothingLocal: NSManagedObject {
     @NSManaged var tags: [String]
     @NSManaged var updatedAt: Date
     @NSManaged var userID: String
+    @NSManaged var warmth: Int16
 
     // MARK: - Convenience Initializer
 
@@ -43,6 +44,7 @@ class ClothingLocal: NSManagedObject {
         name: String,
         seasons: [String] = [],
         tags: [String] = [],
+        warmth: Int16 = 3,
         updatedAt: Date = Date(),
         userID: String
     ) {
@@ -58,6 +60,7 @@ class ClothingLocal: NSManagedObject {
         self.name = name
         self.seasons = seasons
         self.tags = tags
+        self.warmth = warmth
         self.updatedAt = updatedAt
         self.userID = userID
     }
@@ -86,5 +89,6 @@ extension ClothingLocal {
         self.seasons = domainModel.seasons.map { $0.rawValue }
         self.userID = domainModel.userID
         self.tags = domainModel.tags.map { $0.rawValue }
+        self.warmth = Int16(domainModel.warmth.rawValue)
     }
 }

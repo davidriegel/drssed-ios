@@ -15,14 +15,23 @@ public final class ClothingLocalDataSource {
         self.ctx = context
     }
 
-    public func fetch(filterSeasons: [Seasons]? = nil, filterTags: [Tags]? = nil, filterCategories: [ClothingCategories]? = nil, isPublic: Bool? = nil, sortBy: [NSSortDescriptor] = [NSSortDescriptor(key: "updatedAt", ascending: false)]) async throws -> [Clothing] {
-        
+    public func fetch(
+        ids: [String]? = nil,
+        filterSeasons: [Seasons]? = nil,
+        filterTags: [Tags]? = nil,
+        filterCategories: [ClothingCategories]? = nil,
+        isPublic: Bool? = nil,
+        sortBy: [NSSortDescriptor] = [NSSortDescriptor(key: "updatedAt", ascending: false)]
+    ) async throws -> [Clothing] {
         let sortBlueprints: [(String, Bool)] = sortBy.map { ($0.key ?? "updatedAt", $0.ascending) }
 
         let result = try await self.ctx.perform { [sortBlueprints, ctx = self.ctx] in
             let req: NSFetchRequest<ClothingLocal> = ClothingLocal.fetchRequestTyped()
             var predicates: [NSPredicate] = []
 
+            if let ids, !ids.isEmpty {
+                predicates.append(NSPredicate(format: "id IN %@", ids))
+            }
             if let seasons = filterSeasons, !seasons.isEmpty {
                 let subs = seasons.map { NSPredicate(format: "ANY seasons == %@", $0.rawValue) }
                 predicates.append(NSCompoundPredicate(orPredicateWithSubpredicates: subs))
@@ -48,24 +57,7 @@ public final class ClothingLocalDataSource {
             let rows = try ctx.fetch(req)
             return rows.compactMap(Clothing.init(from:))
         }
-        
-        return result
-    }
-    
-    public func fetch(ids: [String], sortBy: [NSSortDescriptor] = [NSSortDescriptor(key: "updatedAt", ascending: false)]) async throws -> [Clothing] {
-        let sortBlueprints: [(String, Bool)] = sortBy.map { ($0.key ?? "updatedAt", $0.ascending) }
-        
-        let result = try await self.ctx.perform { [sortBlueprints, ctx = self.ctx] in
-            let req: NSFetchRequest<ClothingLocal> = ClothingLocal.fetchRequestTyped()
-            let predicate = NSPredicate(format: "id IN %@", ids)
-            
-            req.predicate = predicate
-            req.sortDescriptors = sortBlueprints.map { NSSortDescriptor(key: $0.0, ascending: $0.1) }
-            
-            let rows = try ctx.fetch(req)
-            return rows.compactMap(Clothing.init(from:))
-        }
-        
+
         return result
     }
     

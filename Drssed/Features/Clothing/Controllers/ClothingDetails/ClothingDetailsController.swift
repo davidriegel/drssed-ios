@@ -35,7 +35,7 @@ final class ClothingDetailsController: UIViewController {
         
         self.selectedSeasonsArray = item.seasons
         self.selectedTagsArray = item.tags
-        self.selectedCategory = item.category
+        self.selectedCategory = item.subCategory
         configureViewComponents()
         
         view.addGestureRecognizer(dismissKeyboardTapGesture)
@@ -68,12 +68,10 @@ final class ClothingDetailsController: UIViewController {
     let allowsEditing: Bool
     let colorPickerView = UIColorPickerViewController()
     
-    var selectedCategory: ClothingCategories = .TOP {
+    var selectedCategory: ClothingSubCategories? {
         didSet {
-            itemCategorySelection.text = selectedCategory.localizedName
-            Task { @MainActor in
-                itemCategoryPicker.selectRow(itemCategoriesDataSource.firstIndex(of: itemCategorySelection.text ?? "") ?? 0, inComponent: 0, animated: false)
-            }
+            itemCategorySelection.text = selectedCategory?.localizedName ?? String(localized: "common.placeholder.select")
+            itemCategorySelection.textColor = selectedCategory == nil ? .placeholderText : .label
         }
     }
     
@@ -95,16 +93,6 @@ final class ClothingDetailsController: UIViewController {
             }
         }
     }
-    
-    let itemCategoriesDataSource: [String] = {
-        var ar: [String] = ["*"]
-        for clothingCategory in ClothingCategories.allCases {
-            ar.append(clothingCategory.localizedName)
-            ar.append("*")
-        }
-        
-        return ar
-    }()
     
     var selectedTagsArray: [Tags] = [] {
         didSet {
@@ -131,13 +119,6 @@ final class ClothingDetailsController: UIViewController {
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
         return tap
-    }()
-    
-    lazy var dismissPickerAction: UIAction = {
-        let ac = UIAction {_ in
-            self.dismissPickers()
-        }
-        return ac
     }()
     
     // MARK: - Functions
@@ -171,14 +152,6 @@ final class ClothingDetailsController: UIViewController {
     func dismissPickers() -> Void {
         self.itemSeasonsPickerView.hideSeasonsPickerView()
         self.itemTagsPickerView.hideTagsPickerView()
-        
-        UIView.animate(withDuration: 0.3) {
-            self.itemCategoryPicker.alpha = 0
-            self.itemCategoryPickerDone.alpha = 0
-        } completion: { _ in
-            self.itemCategoryPicker.isHidden = true
-            self.itemCategoryPickerDone.isHidden = true
-        }
     }
     
     func disableEditing() -> Void {
@@ -202,11 +175,13 @@ final class ClothingDetailsController: UIViewController {
         
         itemTagsField.fieldInput.isUserInteractionEnabled = false
         itemTagsField.indicatorImageView.isHidden = true
-        
+
+        itemWarmthPickerView.isUserInteractionEnabled = false
+
         itemImageHeightConstraint?.isActive = false
-        itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 1.0)
+        itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 0.8)
         itemImageHeightConstraint?.isActive = true
-        
+
         dismissPickers()
         
         UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut]) {
@@ -229,7 +204,9 @@ final class ClothingDetailsController: UIViewController {
         
         itemTagsField.fieldInput.isUserInteractionEnabled = true
         itemTagsField.indicatorImageView.isHidden = false
-        
+
+        itemWarmthPickerView.isUserInteractionEnabled = true
+
         itemImageHeightConstraint?.isActive = false
         itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 0.3)
         itemImageHeightConstraint?.isActive = true
@@ -274,9 +251,10 @@ final class ClothingDetailsController: UIViewController {
             self.itemColorButton.backgroundColor = self.item.color
             self.colorPickerView.selectedColor = self.item.color
             
-            self.selectedCategory = self.item.category
+            self.selectedCategory = self.item.subCategory
             self.selectedSeasonsArray = self.item.seasons
             self.selectedTagsArray = self.item.tags
+            self.itemWarmthPickerView.setWarmth(self.item.warmth)
         }
     }
     
@@ -407,19 +385,14 @@ final class ClothingDetailsController: UIViewController {
     
     lazy var itemCategoryField: CustomButtonInput = {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.category.title"))
-        view.fieldInput.isUserInteractionEnabled = true
+        view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in
-        UIView.animate(withDuration: 0.3) {
-            self.itemCategoryPicker.isHidden = false
-            self.itemCategoryPickerDone.isHidden = false
-            
-            self.itemCategoryPicker.alpha = 1
-            self.itemCategoryPickerDone.alpha = 1
-        }}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction { [weak self] _ in
+            self?.presentCategoryPicker()
+        }, for: .primaryActionTriggered)
         return view
     }()
-    
+
     lazy var itemCategorySelection: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -427,35 +400,8 @@ final class ClothingDetailsController: UIViewController {
         label.textColor = .label
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 13, weight: .heavy)
-        label.text = item.category.localizedName
+        label.text = item.subCategory.localizedName
         return label
-    }()
-    
-    lazy var itemCategoryPicker: UIPickerView = {
-        let pv = UIPickerView()
-        pv.isHidden = true
-        pv.translatesAutoresizingMaskIntoConstraints = false
-        pv.alpha = 0
-        pv.backgroundColor = .secondarySystemBackground
-        pv.autoresizingMask = .flexibleWidth
-        pv.contentMode = .center
-        
-        let topBorder = CALayer()
-        topBorder.backgroundColor = UIColor.darkGray.cgColor
-        topBorder.frame = CGRectMake(0, 0, self.view.frame.width, 1.5)
-        pv.layer.addSublayer(topBorder)
-        return pv
-    }()
-    
-    lazy var itemCategoryPickerDone: UIButton = {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        let title = NSAttributedString(string: String(localized: "common.done"), attributes: [.font : UIFont.systemFont(ofSize: 18, weight: .bold)])
-        button.isHidden = true
-        button.alpha = 0
-        button.setAttributedTitle(title, for: .normal)
-        button.setTitleColor(.label, for: .normal)
-        return button
     }()
     
     /// Color UI
@@ -537,175 +483,198 @@ final class ClothingDetailsController: UIViewController {
         view.layer.borderWidth = 1
         return view
     }()
-    
+
+    /// Warmth UI
+
+    lazy var itemWarmthPickerView: WarmthPickerView = {
+        let view = WarmthPickerView(delegate: self, preselected: item.warmth)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
+    /// Scroll container (keeps all fields reachable on smaller screens)
+
+    lazy var scrollView: UIScrollView = {
+        let scroll = UIScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.alwaysBounceVertical = true
+        scroll.keyboardDismissMode = .interactive
+        scroll.showsVerticalScrollIndicator = false
+        return scroll
+    }()
+
+    lazy var contentView: UIView = {
+        let content = UIView()
+        content.translatesAutoresizingMaskIntoConstraints = false
+        return content
+    }()
+
     // MARK: - UI Setup
     
     func configureViewComponents() -> Void {
         view.backgroundColor = .background
 
-        itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 1.0)
+        itemImageHeightConstraint = itemImageView.heightAnchor.constraint(equalTo: itemImageView.widthAnchor, multiplier: 0.8)
         itemImageHeightConstraint?.isActive = true
-        
+
         colorPickerView.supportsAlpha = false
         colorPickerView.selectedColor = item.color
         colorPickerView.delegate = self
-        
-        //navigationController?.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneTapped))
-        
-        [segmentController, itemDoneButton, itemDeleteButton, itemImageView, itemNameField, itemCategoryField, itemCategorySelection, itemCategoryPicker, itemCategoryPickerDone, itemColorPickerField, itemColorButton, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsSelection, itemTagsPickerView].forEach {
+
+        [segmentController, itemDoneButton, itemDeleteButton, scrollView].forEach {
             view.addSubview($0)
         }
-        
+
+        scrollView.addSubview(contentView)
+
+        [itemImageView, itemNameField, itemCategoryField, itemCategorySelection, itemColorPickerField, itemColorButton, itemSeasonsField, itemSeasonsSelection, itemWarmthPickerView, itemTagsField, itemTagsSelection, itemSeasonsPickerView, itemTagsPickerView].forEach {
+            contentView.addSubview($0)
+        }
+
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
             segmentController.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
-        
+
         segmentController.addAction(UIAction { _ in
             self.segmentController.selectedSegmentIndex == 0 ? self.disableEditing() : self.enableEditing()
         }, for: .valueChanged)
-        
+
         NSLayoutConstraint.activate([
             itemDoneButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
             itemDoneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
-        
+
         NSLayoutConstraint.activate([
             itemDeleteButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
             itemDeleteButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20)
         ])
-        
+
         NSLayoutConstraint.activate([
-            itemImageView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 15),
-            itemImageView.leadingAnchor.constraint(lessThanOrEqualTo: view.leadingAnchor, constant: 20),
-            itemImageView.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20),
-            itemImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+            scrollView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 15),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
         ])
-        
+
+        NSLayoutConstraint.activate([
+            itemImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 15),
+            itemImageView.leadingAnchor.constraint(lessThanOrEqualTo: contentView.leadingAnchor, constant: 20),
+            itemImageView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -20),
+            itemImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
+        ])
+
         NSLayoutConstraint.activate([
             itemNameField.topAnchor.constraint(equalTo: itemImageView.bottomAnchor, constant: 20),
-            itemNameField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            itemNameField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            itemNameField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            itemNameField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             itemNameField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
         ])
-        
+
         NSLayoutConstraint.activate([
             itemCategoryField.topAnchor.constraint(equalTo: itemNameField.bottomAnchor, constant: 10),
-            itemCategoryField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            itemCategoryField.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -5),
+            itemCategoryField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            itemCategoryField.trailingAnchor.constraint(equalTo: contentView.centerXAnchor, constant: -5),
             itemCategoryField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
+
             itemCategorySelection.topAnchor.constraint(equalTo: itemCategoryField.fieldBackground.topAnchor),
             itemCategorySelection.leadingAnchor.constraint(equalTo: itemCategoryField.leadingAnchor),
             itemCategorySelection.trailingAnchor.constraint(equalTo: itemCategoryField.trailingAnchor),
             itemCategorySelection.bottomAnchor.constraint(equalTo: itemCategoryField.fieldBackground.bottomAnchor)
         ])
-        
+
         NSLayoutConstraint.activate([
             itemColorPickerField.topAnchor.constraint(equalTo: itemNameField.bottomAnchor, constant: 10),
-            itemColorPickerField.leadingAnchor.constraint(equalTo: view.centerXAnchor, constant: 5),
-            itemColorPickerField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            itemColorPickerField.leadingAnchor.constraint(equalTo: contentView.centerXAnchor, constant: 5),
+            itemColorPickerField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             itemColorPickerField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
+
             itemColorButton.topAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.topAnchor, constant: 5),
             itemColorButton.leadingAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.leadingAnchor, constant: 5),
             itemColorButton.trailingAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.trailingAnchor, constant: -5),
             itemColorButton.bottomAnchor.constraint(equalTo: itemColorPickerField.fieldBackground.bottomAnchor, constant: -5)
         ])
-        
+
         NSLayoutConstraint.activate([
             itemSeasonsField.topAnchor.constraint(equalTo: itemCategoryField.bottomAnchor, constant: 10),
-            itemSeasonsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            itemSeasonsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            itemSeasonsField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            itemSeasonsField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             itemSeasonsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
+
             itemSeasonsSelection.topAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.topAnchor),
             itemSeasonsSelection.leadingAnchor.constraint(equalTo: itemSeasonsField.leadingAnchor),
             itemSeasonsSelection.trailingAnchor.constraint(equalTo: itemSeasonsField.trailingAnchor),
             itemSeasonsSelection.bottomAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.bottomAnchor)
         ])
-        
+
         NSLayoutConstraint.activate([
             itemTagsField.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
-            itemTagsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            itemTagsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+            itemTagsField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            itemTagsField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             itemTagsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
+
             itemTagsSelection.topAnchor.constraint(equalTo: itemTagsField.fieldBackground.topAnchor),
             itemTagsSelection.leadingAnchor.constraint(equalTo: itemTagsField.leadingAnchor),
             itemTagsSelection.trailingAnchor.constraint(equalTo: itemTagsField.trailingAnchor),
             itemTagsSelection.bottomAnchor.constraint(equalTo: itemTagsField.fieldBackground.bottomAnchor)
         ])
-        
-        view.bringSubviewToFront(itemSeasonsPickerView)
+
+        NSLayoutConstraint.activate([
+            itemWarmthPickerView.topAnchor.constraint(equalTo: itemTagsField.bottomAnchor, constant: 10),
+            itemWarmthPickerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            itemWarmthPickerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            itemWarmthPickerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+        ])
+
+        contentView.bringSubviewToFront(itemSeasonsPickerView)
         NSLayoutConstraint.activate([
             itemSeasonsPickerView.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 15),
             itemSeasonsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
-            itemSeasonsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
-            itemSeasonsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
+            itemSeasonsPickerView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.8),
+            itemSeasonsPickerView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
         ])
-        
-        view.bringSubviewToFront(itemTagsPickerView)
+
+        contentView.bringSubviewToFront(itemTagsPickerView)
         NSLayoutConstraint.activate([
             itemTagsPickerView.topAnchor.constraint(equalTo: itemTagsField.bottomAnchor, constant: 15),
             itemTagsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
-            itemTagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
-            itemTagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
+            itemTagsPickerView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.8),
+            itemTagsPickerView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
         ])
         
-        view.addSubview(itemCategoryPicker)
-        itemCategoryPicker.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor).isActive = true
-        itemCategoryPicker.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
-        itemCategoryPicker.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        itemCategoryPicker.delegate = self
-        itemCategoryPicker.dataSource = self
-        itemCategoryPicker.selectRow(0, inComponent: 0, animated: false)
-         
-        view.addSubview(itemCategoryPickerDone)
-        itemCategoryPickerDone.topAnchor.constraint(equalTo: itemCategoryPicker.topAnchor, constant: 10).isActive = true
-        itemCategoryPickerDone.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        itemCategoryPickerDone.addAction(dismissPickerAction, for: .primaryActionTriggered)
+    }
+
+    private func presentCategoryPicker() {
+        view.endEditing(true)
+
+        let picker = CategoryPickerSheetController(preselected: selectedCategory, delegate: self)
+        let nav = UINavigationController(rootViewController: picker)
+        nav.modalPresentationStyle = .pageSheet
+
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
+        }
+
+        present(nav, animated: true)
     }
 }
 
-extension ClothingDetailsController: UIPickerViewDelegate, UIPickerViewDataSource {
-    func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return itemCategoriesDataSource.count
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusing view: UIView?) -> UIView {
-        guard itemCategoriesDataSource[row].contains("*") else {
-            let label = UILabel()
-            label.textAlignment = .center
-            label.text = itemCategoriesDataSource[row]
-            label.font = UIFont.systemFont(ofSize: 22)
-
-            return label
-        }
-        
-        let splitter = UIView()
-        splitter.backgroundColor = .lightGray
-        splitter.frame = CGRect(x: 0, y: 0, width: pickerView.frame.width, height: 2)
-        return splitter
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        var newText = itemCategoriesDataSource[row]
-        let previousIndex = itemCategoriesDataSource.firstIndex(of: itemCategorySelection.text ?? "") ?? 0
-        
-        if newText.contains("*") {
-            pickerView.selectRow(row > previousIndex ? row - 1 : row + 1, inComponent: component, animated: true)
-            newText = itemCategoriesDataSource[row > previousIndex ? row - 1 : row + 1]
-        }
-        
-        itemCategorySelection.text = newText
-        selectedCategory = ClothingCategories.fromLocalized(newText) ?? .TOP
-        itemCategorySelection.textColor = .label
-        item.category = selectedCategory
+extension ClothingDetailsController: CategoryPickerSheetControllerDelegate {
+    func categoryPicker(_ controller: CategoryPickerSheetController,
+                        didSelect subCategory: ClothingSubCategories,
+                        in category: ClothingCategories) {
+        selectedCategory = subCategory
+        item.category = category
+        item.subCategory = subCategory
     }
 }
 
@@ -736,6 +705,12 @@ extension ClothingDetailsController: SeasonsPickerViewDelegate, TagsPickerViewDe
     
     func seasonsDoneButtonPressed() {
         itemSeasonsPickerView.hideSeasonsPickerView()
+    }
+}
+
+extension ClothingDetailsController: WarmthPickerViewDelegate {
+    func warmthSelected(_ warmth: Warmth) {
+        item.warmth = warmth
     }
 }
 

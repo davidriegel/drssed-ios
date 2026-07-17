@@ -113,7 +113,12 @@ class ClothesGalleryController: UIViewController {
         }
     }
     
-    var selectedCategory: ClothingCategories? = nil {
+    struct WardrobeFilter {
+        var topLevel: ClothingCategories? = nil
+        var subCategory: ClothingSubCategories? = nil
+    }
+
+    var wardrobeFilter = WardrobeFilter() {
         didSet {
             sortedAndFilteredDataSource = sortAndFilterDataSource(source: dataSource)
         }
@@ -190,14 +195,51 @@ class ClothesGalleryController: UIViewController {
         return rc
     }()
     
+    private let categoryOrder: [ClothingCategories] = [.JACKET, .TOP, .BOTTOM, .ONE_PIECE]
+
     lazy var categorySegmentControl: UISegmentedControl = {
-        let sc = UISegmentedControl(items: [String(localized: "common.all"), ClothingCategories.JACKET.localizedName, ClothingCategories.TOP.localizedName, ClothingCategories.BOTTOM.localizedName, ClothingCategories.ONE_PIECE.localizedName])
+        var items: [String] = [String(localized: "common.all")]
+        items.append(contentsOf: categoryOrder.map { $0.localizedName })
+        let sc = UISegmentedControl(items: items)
         sc.translatesAutoresizingMaskIntoConstraints = false
         sc.selectedSegmentIndex = 0
         sc.tintColor = .secondarySystemBackground
         sc.selectedSegmentTintColor = .accent
         return sc
     }()
+
+    lazy var subCategoryCollectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumInteritemSpacing = 8
+        layout.minimumLineSpacing = 8
+
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.translatesAutoresizingMaskIntoConstraints = false
+        cv.backgroundColor = .clear
+        cv.showsHorizontalScrollIndicator = false
+        cv.alwaysBounceHorizontal = true
+        cv.register(SubCategoryFilterCell.self, forCellWithReuseIdentifier: SubCategoryFilterCell.identifier)
+        cv.dataSource = self
+        cv.delegate = self
+        cv.isHidden = true
+        cv.alpha = 0
+        cv.heightAnchor.constraint(equalToConstant: SubCategoryFilterCell.height).isActive = true
+        return cv
+    }()
+
+    lazy var filterStackView: UIStackView = {
+        let sv = UIStackView(arrangedSubviews: [categorySegmentControl, subCategoryCollectionView])
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.axis = .vertical
+        sv.spacing = 16
+        sv.alignment = .fill
+        return sv
+    }()
+
+    /// nil → "All", non-nil → specific sub-category
+    private var subCategoryItems: [ClothingSubCategories?] = []
+    private var selectedSubCategoryIndex: Int = 0
     
     lazy var uploadButton: UIButton = {
         let bt = UIButton()
@@ -417,11 +459,73 @@ class ClothesGalleryController: UIViewController {
         return current[s2.count]
     }
     
+    private func updateSubCategorySegment(animated: Bool) {
+        let topLevel = wardrobeFilter.topLevel
+        let shouldShow = topLevel != nil
+
+        if let topLevel = topLevel {
+            var items: [ClothingSubCategories?] = [nil]
+            items.append(contentsOf: topLevel.subCategories.map { Optional($0) })
+            subCategoryItems = items
+            selectedSubCategoryIndex = 0
+            subCategoryCollectionView.reloadData()
+            subCategoryCollectionView.setContentOffset(.zero, animated: false)
+        }
+
+        let isCurrentlyVisible = !subCategoryCollectionView.isHidden
+        guard shouldShow != isCurrentlyVisible else { return }
+
+        animateSubSegment(show: shouldShow, animated: animated)
+    }
+
+    private func animateSubSegment(show: Bool, animated: Bool) {
+        let segmentHeight = categorySegmentControl.bounds.height
+        let collapsedTransform = CGAffineTransform(translationX: 0, y: -segmentHeight).scaledBy(x: 0.6, y: 0.6)
+
+        if show {
+            subCategoryCollectionView.transform = collapsedTransform
+            subCategoryCollectionView.alpha = 0
+            subCategoryCollectionView.isHidden = false
+        }
+
+        let changes = {
+            self.subCategoryCollectionView.transform = show ? .identity : collapsedTransform
+            self.subCategoryCollectionView.alpha = show ? 1 : 0
+            self.subCategoryCollectionView.isHidden = !show
+            self.view.layoutIfNeeded()
+        }
+
+        guard animated else {
+            changes()
+            return
+        }
+
+        UIView.animate(
+            withDuration: 0.35,
+            delay: 0,
+            usingSpringWithDamping: 0.75,
+            initialSpringVelocity: 0.5,
+            options: [.curveEaseInOut],
+            animations: changes
+        )
+    }
+
+    private func title(for item: ClothingSubCategories?) -> String {
+        item?.localizedName ?? String(localized: "common.all")
+    }
+
     func filterClothesType(source: [Clothing]? = nil) -> [Clothing] {
         let tempFilteredDataSource: [Clothing] = source != nil ? source! : dataSource
-        guard let clothingType = selectedCategory else { return tempFilteredDataSource }
-        
-        return tempFilteredDataSource.filter { $0.category == clothingType }
+
+        let byCategory: [Clothing]
+        if let topLevel = wardrobeFilter.topLevel {
+            byCategory = tempFilteredDataSource.filter { $0.category == topLevel }
+        } else {
+            byCategory = tempFilteredDataSource
+        }
+
+        guard let sub = wardrobeFilter.subCategory else { return byCategory }
+        return byCategory.filter { $0.subCategory == sub }
     }
     
     func sortAndFilterDataSource(source: [Clothing]? = nil) -> [Clothing] {
@@ -467,31 +571,24 @@ class ClothesGalleryController: UIViewController {
         
         navigationItem.rightBarButtonItems = [navFilterButton, navSortButton, emptyButton]
         
-        view.addSubview(categorySegmentControl)
+        view.addSubview(filterStackView)
         NSLayoutConstraint.activate([
-            categorySegmentControl.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            categorySegmentControl.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            categorySegmentControl.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
+            filterStackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            filterStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            filterStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
-        
-        categorySegmentControl.addAction(UIAction { _ in
-            switch self.categorySegmentControl.selectedSegmentIndex {
-            case 1:
-                self.selectedCategory = .JACKET
-            case 2:
-                self.selectedCategory = .TOP
-            case 3:
-                self.selectedCategory = .BOTTOM
-            case 4:
-                self.selectedCategory = .ONE_PIECE
-            default:
-                self.selectedCategory = nil
-            }
+
+        categorySegmentControl.addAction(UIAction { [weak self] _ in
+            guard let self = self else { return }
+            let index = self.categorySegmentControl.selectedSegmentIndex
+            let newTopLevel: ClothingCategories? = (index >= 1 && index <= self.categoryOrder.count) ? self.categoryOrder[index - 1] : nil
+            self.wardrobeFilter = WardrobeFilter(topLevel: newTopLevel, subCategory: nil)
+            self.updateSubCategorySegment(animated: true)
         }, for: .valueChanged)
-        
+
         view.addSubview(clothingCollectionView)
         clothingCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor).isActive = true
-        clothingCollectionView.topAnchor.constraint(equalTo: categorySegmentControl.bottomAnchor, constant: 20).isActive = true
+        clothingCollectionView.topAnchor.constraint(equalTo: filterStackView.bottomAnchor, constant: 20).isActive = true
         clothingCollectionView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 5).isActive = true
         clothingCollectionView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -5).isActive = true
         clothingCollectionView.refreshControl = clothingRefreshControll
@@ -510,7 +607,20 @@ class ClothesGalleryController: UIViewController {
     }
 }
 
-extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UploadControllerDelegate, ClothingDetailsDelegate {
+extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UISearchResultsUpdating, UploadControllerDelegate, ClothingDetailsDelegate {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        guard collectionView === subCategoryCollectionView else { return 0 }
+        return subCategoryItems.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard collectionView === subCategoryCollectionView else { return UICollectionViewCell() }
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SubCategoryFilterCell.identifier, for: indexPath) as! SubCategoryFilterCell
+        let item = subCategoryItems[indexPath.item]
+        cell.configure(title: title(for: item), isSelected: indexPath.item == selectedSubCategoryIndex)
+        return cell
+    }
+
     func didUpdateClothing() {
         reloadDataFromCoreData()
     }
@@ -563,6 +673,11 @@ extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDe
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        if collectionView === subCategoryCollectionView {
+            let item = subCategoryItems[indexPath.item]
+            return CGSize(width: SubCategoryFilterCell.width(for: title(for: item)), height: SubCategoryFilterCell.height)
+        }
+
         var columns: CGFloat = 4
         switch selectedViewMode {
         case .SMALL:
@@ -573,17 +688,30 @@ extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDe
             columns = 2
         }
         let horizontalSpacing: CGFloat = 10
-            
+
         let totalHorizontalSpacing = (columns - 1) * horizontalSpacing
-            
+
         let availableWidth = collectionView.bounds.width - totalHorizontalSpacing
-            
+
         let itemWidth = availableWidth / columns
-            
+
         return CGSize(width: floor(itemWidth), height: floor(itemWidth))
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if collectionView === subCategoryCollectionView {
+            let previousIndex = selectedSubCategoryIndex
+            guard previousIndex != indexPath.item else { return }
+            selectedSubCategoryIndex = indexPath.item
+            wardrobeFilter.subCategory = subCategoryItems[indexPath.item]
+
+            var indexPaths = [IndexPath(item: previousIndex, section: 0), indexPath]
+            indexPaths = indexPaths.filter { $0.item < subCategoryItems.count }
+            collectionView.reloadItems(at: indexPaths)
+            collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
+            return
+        }
+
         showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item])
     }
     

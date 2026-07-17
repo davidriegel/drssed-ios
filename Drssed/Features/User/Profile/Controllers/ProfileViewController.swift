@@ -194,7 +194,7 @@ class ProfileViewController: UIViewController {
         let row = SettingsRow(
             title: String(localized: "profile.account.email"),
             symbolName: "envelope",
-            action: { [weak self] in self?.wipMessage() }
+            action: { [weak self] in self?.didTapChangeEmail() }
         )
         row.translatesAutoresizingMaskIntoConstraints = false
         return row
@@ -211,7 +211,7 @@ class ProfileViewController: UIViewController {
         let row = SettingsRow(
             title: String(localized: "profile.account.password"),
             symbolName: "lock",
-            action: { [weak self] in self?.wipMessage() }
+            action: { [weak self] in self?.didTapChangePassword() }
         )
         row.translatesAutoresizingMaskIntoConstraints = false
         return row
@@ -290,7 +290,7 @@ class ProfileViewController: UIViewController {
         let row = SettingsRow(
             title: String(localized: "profile.about"),
             symbolName: "info.circle",
-            action: { [weak self] in self?.wipMessage() }
+            action: { [weak self] in self?.didTapAbout() }
         )
         row.translatesAutoresizingMaskIntoConstraints = false
         return row
@@ -392,6 +392,91 @@ class ProfileViewController: UIViewController {
             self.present(signInController, animated: true)
         }
     }
+
+    func didTapChangeEmail() {
+        let alert = UIAlertController(
+            title: String(localized: "profile.account.email"),
+            message: String(localized: "profile.account.email.message"),
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = String(localized: "profile.account.email.new.placeholder")
+            textField.textContentType = .emailAddress
+            textField.keyboardType = .emailAddress
+            textField.autocapitalizationType = .none
+            textField.autocorrectionType = .no
+        }
+
+        alert.addTextField { textField in
+            textField.placeholder = String(localized: "profile.account.password.current.placeholder")
+            textField.textContentType = .password
+            textField.isSecureTextEntry = true
+            textField.autocapitalizationType = .none
+        }
+
+        alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+
+        alert.addAction(UIAlertAction(
+            title: String(localized: "common.save"),
+            style: .default,
+            handler: { [weak alert] _ in
+                let newEmail = alert?.textFields?[0].text ?? ""
+                let currentPassword = alert?.textFields?[1].text ?? ""
+                Task {
+                    do {
+                        try await AuthenticationManager.shared.changeEmail(currentPassword: currentPassword, newEmail: newEmail)
+                    } catch {
+                        ErrorHandler.handle(error)
+                    }
+                }
+            }
+        ))
+
+        present(alert, animated: true)
+    }
+
+    func didTapChangePassword() {
+        let alert = UIAlertController(
+            title: String(localized: "profile.account.password"),
+            message: String(localized: "profile.account.password.message"),
+            preferredStyle: .alert
+        )
+
+        alert.addTextField { textField in
+            textField.placeholder = String(localized: "profile.account.password.current.placeholder")
+            textField.textContentType = .password
+            textField.isSecureTextEntry = true
+            textField.autocapitalizationType = .none
+        }
+
+        alert.addTextField { textField in
+            textField.placeholder = String(localized: "profile.account.password.new.placeholder")
+            textField.textContentType = .newPassword
+            textField.isSecureTextEntry = true
+            textField.autocapitalizationType = .none
+        }
+
+        alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+
+        alert.addAction(UIAlertAction(
+            title: String(localized: "common.save"),
+            style: .default,
+            handler: { [weak alert] _ in
+                let currentPassword = alert?.textFields?[0].text ?? ""
+                let newPassword = alert?.textFields?[1].text ?? ""
+                Task {
+                    do {
+                        try await AuthenticationManager.shared.changePassword(currentPassword: currentPassword, newPassword: newPassword)
+                    } catch {
+                        ErrorHandler.handle(error)
+                    }
+                }
+            }
+        ))
+
+        present(alert, animated: true)
+    }
     
     func didTapDeleteGuestAccount() {
         let alert = UIAlertController(
@@ -485,7 +570,7 @@ class ProfileViewController: UIViewController {
     }
     
     func didTapAbout() {
-        guard let url = URL(string: "about", relativeTo: URL(string: "https://drssed.app")) else {
+        guard let url = URL(string: "https://drssed.app") else {
             return
         }
         
@@ -493,7 +578,7 @@ class ProfileViewController: UIViewController {
     }
     
     func didTapPrivacy() {
-        guard let url = URL(string: "privacy", relativeTo: URL(string: "https://drssed.app")) else {
+        guard let url = URL(string: "/en/privacy", relativeTo: URL(string: "https://drssed.app")) else {
             return
         }
         
@@ -520,7 +605,7 @@ class ProfileViewController: UIViewController {
             }
             .store(in: &cancellables)
         
-        AuthenticationManager.shared.currentUserPublisher
+        AppRepository.shared.userRepository.currentUserPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] user in
                 self?.handleUserChange(user)
@@ -567,6 +652,7 @@ class ProfileViewController: UIViewController {
             configureGuestLayout()
         case .authenticated:
             configureAuthenticatedLayout()
+            handleUserChange(AppRepository.shared.userRepository.currentUser)
         }
         
         Task { await loadGenericData() }

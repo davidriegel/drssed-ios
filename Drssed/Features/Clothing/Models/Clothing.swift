@@ -21,9 +21,10 @@ public struct Clothing: Identifiable, Hashable, Sendable {
     var name: String
     var seasons: [Seasons]
     var tags: [Tags]
+    var warmth: Warmth
     let userID: String
-    
-    init(name: String, imageID: String, category: ClothingCategories, subCategory: ClothingSubCategories, itemDescription: String, color: UIColor, isPublic: Bool = true, seasons: [Seasons], tags: [Tags]) {
+
+    init(name: String, imageID: String, category: ClothingCategories, subCategory: ClothingSubCategories, itemDescription: String, color: UIColor, isPublic: Bool = true, seasons: [Seasons], tags: [Tags], warmth: Warmth) {
         self.id = UUID().uuidString
         self.name = name
         self.imageID = imageID
@@ -36,9 +37,10 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.isPublic = isPublic
         self.seasons = seasons
         self.tags = tags
+        self.warmth = warmth
         self.userID = UUID().uuidString
     }
-    
+
     init(from local: ClothingLocal) {
         self.id = local.id
         self.name = local.name
@@ -50,11 +52,12 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.isPublic = local.isPublic
         self.tags = local.tags.compactMap { Tags(rawValue: $0) }
         self.seasons = local.seasons.compactMap { Seasons(rawValue: $0) }
+        self.warmth = Warmth(rawValue: Int(local.warmth)) ?? .MILD
         self.createdAt = local.createdAt
         self.updatedAt = local.updatedAt
         self.userID = local.userID
     }
-    
+
     init(from api: ClothingAPI) {
         self.id = api.clothing_id
         self.name = api.name
@@ -66,6 +69,7 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.isPublic = api.is_public
         self.tags = api.tags.compactMap { Tags(rawValue: $0.uppercased()) }
         self.seasons = api.seasons.compactMap { Seasons(rawValue: $0.uppercased()) }
+        self.warmth = api.warmth_level.flatMap(Warmth.init(rawValue:)) ?? .MILD
         self.createdAt = api.created_at
         self.updatedAt = Date()
         self.userID = api.user_id

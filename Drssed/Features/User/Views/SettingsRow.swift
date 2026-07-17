@@ -42,7 +42,10 @@ final class SettingsRow: UIControl {
         let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.tintColor = .tertiaryLabel
+        imageView.contentMode = .scaleAspectFit
         imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+        imageView.setContentHuggingPriority(.required, for: .horizontal)
+        imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
         return imageView
     }()
     

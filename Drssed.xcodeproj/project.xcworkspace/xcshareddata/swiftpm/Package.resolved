@@ -1,5 +1,5 @@
 {
-  "originHash" : "54692a57a1323b751366e3e749d1aeeea50710fa0e1373ed44f99b51fcf0ae4a",
+  "originHash" : "779c19827cc8e134d690a0b983f71381c74dd099d352890670dffb3dfff1a152",
   "pins" : [
     {
       "identity" : "jwtdecode.swift",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "2f5274827d310e32c09325dd3e0007120940988e",
         "version" : "1.31.0"
+      }
+    },
+    {
+      "identity" : "toast-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/BastiaanJansen/toast-swift",
+      "state" : {
+        "revision" : "b8f0de845abca47eee747b6e671f1141ec4dcf3e",
+        "version" : "2.1.3"
       }
     },
     {

@@ -11,22 +11,24 @@ import SDWebImage
 protocol OutfitCanvasViewDelegate: AnyObject {
     func canvasView(_ canvasView: OutfitCanvasView, didAddClothing clothing: Clothing)
     func canvasView(_ canvasView: OutfitCanvasView, didRemoveClothing clothing: Clothing)
+    func canvasView(_ canvasView: OutfitCanvasView, didLongPressClothing clothing: Clothing)
     func canvasViewDidBeginInteraction(_ canvasView: OutfitCanvasView)
     func canvasViewDidEndInteraction(_ canvasView: OutfitCanvasView)
 }
 
 extension OutfitCanvasViewDelegate {
+    func canvasView(_ canvasView: OutfitCanvasView, didLongPressClothing clothing: Clothing) {}
     func canvasViewDidBeginInteraction(_ canvasView: OutfitCanvasView) {}
     func canvasViewDidEndInteraction(_ canvasView: OutfitCanvasView) {}
 }
 
 class OutfitCanvasView: UIView {
 
-    weak var delegate: OutfitCanvasViewDelegate?
-
-    var clothingImageViews: [String: UIImageView] = [:]
-
-    private var editingMode: Bool = false
+    // MARK: - Configuration
+    public weak var delegate: OutfitCanvasViewDelegate?
+    private var editingMode: Bool
+    private(set) var clothingItems: [String: (clothing: Clothing, view: UIImageView)] = [:]
+    private var lockBadgeViews: [String: UIView] = [:]
     
     lazy var gridView: GridView = {
         let gv = GridView()
@@ -39,33 +41,21 @@ class OutfitCanvasView: UIView {
     
     // MARK: - Initialization
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupCanvas()
-    }
-    
     init(editingMode edit: Bool = false) {
+        editingMode = edit
+        
         super.init(frame: CGRect())
         setupCanvas()
         if edit { toggleEditing() }
     }
     
     required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupCanvas()
+        fatalError("init(coder:) has not been implemented")
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
         layer.cornerRadius = CornerStyle.small.radius(for: self)
-    }
-    
-    private func setupCanvas() {
-        backgroundColor = .secondarySystemBackground
-        translatesAutoresizingMaskIntoConstraints = false
-        layer.borderWidth = 0.5
-        layer.borderColor = UIColor.separator.cgColor
-        clipsToBounds = true
     }
     
     // MARK: - Public Methods
@@ -75,39 +65,39 @@ class OutfitCanvasView: UIView {
             editingMode = false
             gridView.removeFromSuperview()
 
-            for (_, iv) in clothingImageViews {
-                iv.isUserInteractionEnabled = false
+            for (_, item) in clothingItems {
+                item.view.isUserInteractionEnabled = false
             }
         } else {
             editingMode = true
             insertSubview(gridView, at: 0)
 
-            for (_, iv) in clothingImageViews {
-                iv.isUserInteractionEnabled = true
+            for (_, item) in clothingItems {
+                item.view.isUserInteractionEnabled = true
             }
         }
     }
-
-    func addClothing(_ clothing: Clothing) {
+    
+    func addClothing(_ clothing: Clothing, at placement: CanvasPlacement? = nil) {
         guard editingMode else { return }
 
-        let itemView = UIImageView()
-        itemView.sd_setImage(with: URL(string: clothing.imageID, relativeTo: APIClient.clothingImagesURL))
-        itemView.tintColor = .label
-        itemView.contentMode = .scaleAspectFit
-        itemView.frame = CGRect(x: bounds.midX - 75, y: bounds.midY - 75, width: 150, height: 150)
-        itemView.accessibilityIdentifier = clothing.id
-        attachEditingGestures(to: itemView)
+        let imageView = createClothingImageView(clothingID: clothing.id)
+        attachEditingGestures(to: imageView)
+        let url = URL(string: clothing.imageID, relativeTo: APIClient.clothingImagesURL)
+        imageView.sd_setImage(with: url) { [weak self, weak imageView] image, _, _, _ in
+            guard let self, let imageView, let image else { return }
+            self.applyFrameAndTransform(to: imageView, image: image, placement: placement ?? CanvasPlacement(clothing_id: clothing.id, x: 0.5, y: 0.5, z: 0, scale: 0.3, rotation: 0))
+        }
 
-        addSubview(itemView)
-        clothingImageViews[clothing.id] = itemView
+        addSubview(imageView)
+        clothingItems[clothing.id] = (clothing, imageView)
         delegate?.canvasView(self, didAddClothing: clothing)
     }
 
     func removeClothing(_ clothing: Clothing) {
-        guard editingMode, let itemView = clothingImageViews[clothing.id] else { return }
-        itemView.removeFromSuperview()
-        clothingImageViews.removeValue(forKey: clothing.id)
+        guard editingMode, let item = clothingItems[clothing.id] else { return }
+        item.view.removeFromSuperview()
+        clothingItems.removeValue(forKey: clothing.id)
         delegate?.canvasView(self, didRemoveClothing: clothing)
     }
 
@@ -152,69 +142,121 @@ class OutfitCanvasView: UIView {
 
     func loadOutfit(placements: [CanvasPlacement]) {
         Task {
-            for imageView in clothingImageViews.values {
-                imageView.removeFromSuperview()
+            for item in clothingItems.values {
+                item.view.removeFromSuperview()
             }
             
-            clothingImageViews.removeAll()
+            clothingItems.removeAll()
             
             let sortedPlacements = placements.sorted { $0.z < $1.z }
             
             let clothingIDs = placements.map { $0.clothing_id }
             let images = await AppRepository.shared.clothingRepository.getClothingImages(with: clothingIDs)
+            let clothings = await AppRepository.shared.clothingRepository.fetchClothes(ids: clothingIDs)
+            let clothingByID = Dictionary(uniqueKeysWithValues: clothings.map { ($0.id, $0) })
             
             layoutIfNeeded()
             
             for placement in sortedPlacements {
-                guard let image = images[placement.clothing_id] else {
+                guard let image = images[placement.clothing_id], let clothing = clothingByID[placement.clothing_id] else {
                     continue
                 }
                 
-                let imageView = createClothingImageView(
-                    image: image,
-                    placement: placement
-                )
+                let imageView = createClothingImageView(clothingID: placement.clothing_id)
+                imageView.image = image
+                applyFrameAndTransform(to: imageView, image: image, placement: placement)
+                attachEditingGestures(to: imageView)
                 
                 addSubview(imageView)
-                clothingImageViews[placement.clothing_id] = imageView
+                clothingItems[placement.clothing_id] = (clothing, imageView)
             }
+        }
+    }
+
+    func setLocked(_ isLocked: Bool, for clothingID: String) {
+        guard let item = clothingItems[clothingID] else { return }
+
+        if isLocked {
+            guard lockBadgeViews[clothingID] == nil else { return }
+            let badge = makeLockBadge()
+            item.view.addSubview(badge)
+            positionLockBadge(badge, in: item.view)
+            lockBadgeViews[clothingID] = badge
+
+            badge.transform = CGAffineTransform(scaleX: 0.3, y: 0.3)
+            badge.alpha = 0
+            UIView.animate(
+                withDuration: 0.35,
+                delay: 0,
+                usingSpringWithDamping: 0.6,
+                initialSpringVelocity: 0.5,
+                options: [],
+                animations: {
+                    badge.transform = .identity
+                    badge.alpha = 1
+                }
+            )
+            
+            applyCounterRotation(to: badge, from: item.view)
+        } else {
+            guard let badge = lockBadgeViews[clothingID] else { return }
+            UIView.animate(
+                withDuration: 0.2,
+                animations: {
+                    badge.transform = CGAffineTransform(scaleX: 0.3, y: 0.3)
+                    badge.alpha = 0
+                },
+                completion: { _ in
+                    badge.removeFromSuperview()
+                }
+            )
+            lockBadgeViews.removeValue(forKey: clothingID)
         }
     }
     
     // MARK: - Private Methods
+    
+    private func setupCanvas() {
+        backgroundColor = .secondarySystemBackground
+        translatesAutoresizingMaskIntoConstraints = false
+        layer.borderWidth = 0.5
+        layer.borderColor = UIColor.separator.cgColor
+        clipsToBounds = true
+    }
+    
     private func createClothingImageView(
+        clothingID: String
+    ) -> UIImageView {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .label
+        imageView.accessibilityIdentifier = clothingID
+
+        return imageView
+    }
+
+    private func applyFrameAndTransform(
+        to imageView: UIImageView,
         image: UIImage,
         placement: CanvasPlacement
-    ) -> UIImageView {
-        let imageView = UIImageView(image: image)
-        imageView.contentMode = .scaleAspectFit
-        imageView.accessibilityIdentifier = placement.clothing_id
-        attachEditingGestures(to: imageView)
-        
+    ) {
         let canvasWidth = bounds.width
         let canvasHeight = bounds.height
-        
+
         let targetWidth = placement.scale * canvasWidth
-        let aspectRatio = image.size.height / image.size.width
+        let aspectRatio = image.size.height / max(image.size.width, 1)
         let targetHeight = targetWidth * aspectRatio
-        
-        imageView.frame = CGRect(
-            x: 0,
-            y: 0,
-            width: targetWidth,
-            height: targetHeight
-        )
-        
+
+        imageView.frame = CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+
         if placement.rotation != 0 {
             imageView.transform = CGAffineTransform(rotationAngle: placement.rotation)
         }
-        
-        let centerX = placement.x * canvasWidth
-        let centerY = placement.y * canvasHeight
-        
-        imageView.center = CGPoint(x: centerX, y: centerY)
 
-        return imageView
+        imageView.center = CGPoint(
+            x: placement.x * canvasWidth,
+            y: placement.y * canvasHeight
+        )
     }
 
     private func attachEditingGestures(to view: UIImageView) {
@@ -223,11 +265,53 @@ class OutfitCanvasView: UIView {
         let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         let pinch = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
         let rotate = UIRotationGestureRecognizer(target: self, action: #selector(handleRotate(_:)))
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPress.minimumPressDuration = 0.4
 
-        [pan, pinch, rotate].forEach {
+        [pan, pinch, rotate, longPress].forEach {
             $0.delegate = self
             view.addGestureRecognizer($0)
         }
+    }
+    
+    private func applyCounterRotation(to badge: UIView, from itemView: UIView) {
+        let rotation = atan2(itemView.transform.b, itemView.transform.a)
+        badge.transform = CGAffineTransform(rotationAngle: -rotation)
+    }
+    
+    private func makeLockBadge() -> UIView {
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.9)
+        container.layer.cornerRadius = 12
+        container.layer.shadowColor = UIColor.black.cgColor
+        container.layer.shadowOpacity = 0.15
+        container.layer.shadowRadius = 3
+        container.layer.shadowOffset = CGSize(width: 0, height: 1)
+
+        let icon = UIImageView(image: UIImage(
+            systemName: "lock.fill",
+            withConfiguration: UIImage.SymbolConfiguration(font: .systemFont(ofSize: 12, weight: .bold))
+        ))
+        icon.tintColor = .accent
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(icon)
+
+        NSLayoutConstraint.activate([
+            container.widthAnchor.constraint(equalToConstant: 24),
+            container.heightAnchor.constraint(equalToConstant: 24),
+            icon.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+
+        return container
+    }
+
+    private func positionLockBadge(_ badge: UIView, in itemView: UIImageView) {
+        NSLayoutConstraint.activate([
+            badge.topAnchor.constraint(equalTo: itemView.topAnchor, constant: 4),
+            badge.trailingAnchor.constraint(equalTo: itemView.trailingAnchor, constant: -4)
+        ])
     }
 
     // MARK: - Gesture Handlers
@@ -319,7 +403,26 @@ class OutfitCanvasView: UIView {
         }
         
         targetView.transform = targetView.transform.rotated(by: gesture.rotation)
+        
+        if let id = targetView.accessibilityIdentifier, let badge = lockBadgeViews[id] {
+            applyCounterRotation(to: badge, from: targetView)
+        }
+        
         gesture.rotation = 0
+    }
+    
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard editingMode, let targetView = gesture.view, let id = targetView.accessibilityIdentifier, let item = clothingItems[id] else { return }
+        
+        switch gesture.state {
+        case .began:
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            delegate?.canvasViewDidBeginInteraction(self)
+            delegate?.canvasView(self, didLongPressClothing: item.clothing)
+        case .ended, .cancelled, .failed:
+            delegate?.canvasViewDidEndInteraction(self)
+        default: break
+        }
     }
 }
 

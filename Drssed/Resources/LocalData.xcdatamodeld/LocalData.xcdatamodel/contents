@@ -14,6 +14,7 @@
         <attribute name="tags" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
         <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="userID" attributeType="String" defaultValueString=""/>
+        <attribute name="warmth" attributeType="Integer 16" defaultValueString="3" usesScalarValueType="YES"/>
     </entity>
     <entity name="OutfitLocal" representedClassName="OutfitLocal" syncable="YES">
         <attribute name="createdAt" attributeType="Date" defaultDateTimeInterval="781107900" usesScalarValueType="NO"/>

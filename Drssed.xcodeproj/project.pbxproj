@@ -18,6 +18,7 @@
 		C918BC592F61EA8600663AF4 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = C918BC582F61EA8600663AF4 /* LICENSE */; };
 		C95C4B302E7727A900844DC8 /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B2F2E7727A900844DC8 /* CropViewController */; };
 		C95C4B322E7727A900844DC8 /* TOCropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = C95C4B312E7727A900844DC8 /* TOCropViewController */; };
+		C98E1B1C2FB0FC5B0099C975 /* Toast in Frameworks */ = {isa = PBXBuildFile; productRef = C98E1B1B2FB0FC5B0099C975 /* Toast */; };
 		C9D57F7F2F75B50E00757EBC /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C9D57F7E2F75B50E00757EBC /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
@@ -67,6 +68,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C98E1B1C2FB0FC5B0099C975 /* Toast in Frameworks */,
 				63E874822C680C7D00A907FD /* SDWebImage in Frameworks */,
 				C95C4B322E7727A900844DC8 /* TOCropViewController in Frameworks */,
 				C95C4B302E7727A900844DC8 /* CropViewController in Frameworks */,
@@ -176,6 +178,7 @@
 				639680C02E3250270073479F /* JWTDecode */,
 				C95C4B2F2E7727A900844DC8 /* CropViewController */,
 				C95C4B312E7727A900844DC8 /* TOCropViewController */,
+				C98E1B1B2FB0FC5B0099C975 /* Toast */,
 			);
 			productName = Outfitter;
 			productReference = 637D85E82BE94CC90010BDBF /* Drssed.app */;
@@ -255,6 +258,7 @@
 				63E874802C680C7D00A907FD /* XCRemoteSwiftPackageReference "SDWebImage" */,
 				639680BF2E3250270073479F /* XCRemoteSwiftPackageReference "JWTDecode" */,
 				C95C4B2E2E7727A900844DC8 /* XCRemoteSwiftPackageReference "TOCropViewController" */,
+				C98E1B1A2FB0FC5B0099C975 /* XCRemoteSwiftPackageReference "toast-swift" */,
 			);
 			productRefGroup = 637D85E92BE94CC90010BDBF /* Products */;
 			projectDirPath = "";
@@ -687,6 +691,14 @@
 				minimumVersion = 3.0.0;
 			};
 		};
+		C98E1B1A2FB0FC5B0099C975 /* XCRemoteSwiftPackageReference "toast-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/BastiaanJansen/toast-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -714,6 +726,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C95C4B2E2E7727A900844DC8 /* XCRemoteSwiftPackageReference "TOCropViewController" */;
 			productName = TOCropViewController;
+		};
+		C98E1B1B2FB0FC5B0099C975 /* Toast */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C98E1B1A2FB0FC5B0099C975 /* XCRemoteSwiftPackageReference "toast-swift" */;
+			productName = Toast;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

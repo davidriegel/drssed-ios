@@ -17,21 +17,10 @@ protocol UploadControllerDelegate: AnyObject {
 class UploadController: UIViewController {
     weak var delegate: UploadControllerDelegate?
     private let clothingRepo: ClothingRepository = ClothingRepository()
-        
-    let clothingCategoriesDataSource: [String] = {
-        var ar: [String] = ["*"]
-        for clothingCategory in ClothingCategories.allCases {
-            ar.append(clothingCategory.localizedName)
-            ar.append("*")
-        }
-        
-        return ar
-    }()
-    
+
     var fileExtension: String = ""
-    
-    var selectedCategory: ClothingCategories?
-    var selectedSubCategory: ClothingSubCategories = .T_SHIRT
+
+    var selectedSubCategory: ClothingSubCategories?
     var selectedSeasonsArray: [Seasons] = [] {
         didSet {
             var selected = [String]()
@@ -52,7 +41,9 @@ class UploadController: UIViewController {
     }
     
     var imageID: String = ""
-    
+
+    var selectedWarmth: Warmth = .MILD
+
     var selectedTagsArray: [Tags] = [] {
         didSet {
             var selected = [String]()
@@ -128,33 +119,6 @@ class UploadController: UIViewController {
         return label
     }()
     
-    lazy var categoryPicker: UIPickerView = {
-        let pv = UIPickerView()
-        pv.isHidden = true
-        pv.translatesAutoresizingMaskIntoConstraints = false
-        pv.alpha = 0
-        pv.backgroundColor = .secondarySystemBackground
-        pv.autoresizingMask = .flexibleWidth
-        pv.contentMode = .center
-        
-        let topBorder = CALayer()
-        topBorder.backgroundColor = UIColor.darkGray.cgColor
-        topBorder.frame = CGRectMake(0, 0, self.view.frame.width, 1.5)
-        pv.layer.addSublayer(topBorder)
-        return pv
-    }()
-    
-    lazy var categoryPickerDone: UIButton = {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        let title = NSAttributedString(string: String(localized: "common.done"), attributes: [.font : UIFont.systemFont(ofSize: 18, weight: .bold)])
-        button.isHidden = true
-        button.alpha = 0
-        button.setAttributedTitle(title, for: .normal)
-        button.setTitleColor(.label, for: .normal)
-        return button
-    }()
-  
     // MARK: -- Seasons
     
     lazy var clothingSeasonsField: CustomButtonInput = {
@@ -183,6 +147,14 @@ class UploadController: UIViewController {
         view.alpha = 0
         view.layer.borderColor = UIColor.darkGray.cgColor
         view.layer.borderWidth = 1
+        return view
+    }()
+
+    // MARK: -- Warmth
+
+    lazy var warmthPickerView: WarmthPickerView = {
+        let view = WarmthPickerView(delegate: self, preselected: selectedWarmth)
+        view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
@@ -375,28 +347,28 @@ class UploadController: UIViewController {
             return ErrorHandler.handle(CustomError.missingValue(field: String(localized: "common.name.title")))
         }
         
-        var category: ClothingCategories!
-        
-        if let selectedCategory = selectedCategory {
-            category = selectedCategory
+        var subCategory: ClothingSubCategories!
+
+        if let selectedSubCategory = selectedSubCategory {
+            subCategory = selectedSubCategory
         } else {
             errorAlert.message = String(localized: "clothingupload.error.missing.category")
         }
-        
+
         if selectedSeasonsArray.isEmpty {
             errorAlert.message = String(localized: "clothingupload.error.missing.seasons")
         }
-        
+
         if selectedTagsArray.isEmpty {
             errorAlert.message = String(localized: "clothingupload.error.missing.tags")
         }
-        
+
         guard errorAlert.message == nil else {
             self.present(errorAlert, animated: true)
             return
         }
-        
-        let domainModel = Clothing(name: name, imageID: imageID, category: category, subCategory: selectedSubCategory, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray)
+
+        let domainModel = Clothing(name: name, imageID: imageID, category: subCategory.category, subCategory: subCategory, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray, warmth: selectedWarmth)
         
         Task {
             await clothingRepo.addOrUpdateClothing(from: domainModel)
@@ -413,31 +385,19 @@ class UploadController: UIViewController {
     
     @objc
     func showCategoryPicker(_ sender: UIButton) {
-        guard categoryPicker.isHidden == true else {
-            return
+        view.endEditing(true)
+
+        let picker = CategoryPickerSheetController(preselected: selectedSubCategory, delegate: self)
+        let nav = UINavigationController(rootViewController: picker)
+        nav.modalPresentationStyle = .pageSheet
+
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = true
         }
-        
-        categoryPicker.isHidden = false
-        categoryPickerDone.isHidden = false
-        
-        UIView.animate(withDuration: 0.3) {
-            self.categoryPicker.alpha = 1
-            self.categoryPickerDone.alpha = 1
-        }
-    }
-    
-    @objc func hidePickerView() {
-        UIView.animate(withDuration: 0.3) {
-            let topConstraint = self.itemImageView.constraintsAffectingLayout(for: .vertical).first { $0.firstAttribute == .top } // force unwrap needs to exist.
-            topConstraint!.constant = 15
-            self.itemImageView.setNeedsLayout()
-            self.view.layoutIfNeeded()
-            self.categoryPicker.alpha = 0
-            self.categoryPickerDone.alpha = 0
-        } completion: { _ in
-            self.categoryPicker.isHidden = true
-            self.categoryPickerDone.isHidden = true
-        }
+
+        present(nav, animated: true)
     }
     
     @objc func showSeasonsPickerView() {
@@ -530,8 +490,15 @@ class UploadController: UIViewController {
             clothingSeasonsSelection.bottomAnchor.constraint(equalTo: clothingSeasonsField.fieldBackground.bottomAnchor)
         ])
         
+        view.addSubview(warmthPickerView)
+        NSLayoutConstraint.activate([
+            warmthPickerView.topAnchor.constraint(equalTo: clothingSeasonsField.bottomAnchor, constant: 10),
+            warmthPickerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            warmthPickerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20)
+        ])
+
         view.addSubview(descriptionLabel)
-        descriptionLabel.topAnchor.constraint(equalTo: clothingSeasonsField.bottomAnchor, constant: 15).isActive = true
+        descriptionLabel.topAnchor.constraint(equalTo: warmthPickerView.bottomAnchor, constant: 15).isActive = true
         descriptionLabel.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
         descriptionLabel.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
         
@@ -596,27 +563,6 @@ class UploadController: UIViewController {
         tagsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4).isActive = true
         tagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         tagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor).isActive = true
-        
-        setupExtraViews()
-    }
-    
-    // MARK: -- Extra Views
-    
-    func setupExtraViews() {
-        view.addSubview(categoryPicker)
-        categoryPicker.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor).isActive = true
-        categoryPicker.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
-        categoryPicker.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-        categoryPicker.delegate = self
-        categoryPicker.dataSource = self
-        categoryPicker.selectRow(0, inComponent: 0, animated: false)
-        
-        view.addSubview(categoryPickerDone)
-        categoryPickerDone.topAnchor.constraint(equalTo: categoryPicker.topAnchor, constant: 10).isActive = true
-        categoryPickerDone.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        categoryPickerDone.addTarget(self, action: #selector(hidePickerView), for: .touchUpInside)
-        
-        // MARK: --
     }
 }
 
@@ -654,42 +600,12 @@ extension UploadController: UITextViewDelegate {
     }
 }
 
-extension UploadController: UIPickerViewDelegate, UIPickerViewDataSource {
-    func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return clothingCategoriesDataSource.count
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusing view: UIView?) -> UIView {
-        guard clothingCategoriesDataSource[row].contains("*") else {
-            let label = UILabel()
-            label.textAlignment = .center
-            label.text = clothingCategoriesDataSource[row]
-            label.font = UIFont.systemFont(ofSize: 22)
-
-            return label
-        }
-        
-        let splitter = UIView()
-        splitter.backgroundColor = .lightGray
-        splitter.frame = CGRect(x: 0, y: 0, width: pickerView.frame.width, height: 2)
-        return splitter
-    }
-    
-    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        var newText = clothingCategoriesDataSource[row]
-        let previousIndex = clothingCategoriesDataSource.firstIndex(of: clothingCategorySelection.text ?? "") ?? 0
-        
-        if newText.contains("*") {
-            pickerView.selectRow(row > previousIndex ? row - 1 : row + 1, inComponent: component, animated: true)
-            newText = clothingCategoriesDataSource[row > previousIndex ? row - 1 : row + 1]
-        }
-        
-        clothingCategorySelection.text = newText
-        selectedCategory = ClothingCategories.fromLocalized(newText)
+extension UploadController: CategoryPickerSheetControllerDelegate {
+    func categoryPicker(_ controller: CategoryPickerSheetController,
+                        didSelect subCategory: ClothingSubCategories,
+                        in category: ClothingCategories) {
+        selectedSubCategory = subCategory
+        clothingCategorySelection.text = subCategory.localizedName
         clothingCategorySelection.textColor = .label
     }
 }
@@ -757,12 +673,9 @@ extension UploadController: TOCropViewControllerDelegate {
                 colorPickerView.selectedColor = clothingColor
                 clothingColorPickerButton.backgroundColor = clothingColor
                 selectedSubCategory = clothingSubCategory
-                
-                if let index = clothingCategoriesDataSource.firstIndex(of: clothingCategory.localizedName) {
-                    categoryPicker.selectRow(index, inComponent: 0, animated: true)
-                    categoryPicker.delegate?.pickerView?(categoryPicker, didSelectRow: index, inComponent: 0)
-                }
-                
+                clothingCategorySelection.text = clothingSubCategory.localizedName
+                clothingCategorySelection.textColor = .label
+
                 itemImageView.sd_setImage(with: clothingURL)
                 itemImageView.hideSkeleton()
             } catch APIError.payloadTooLarge {
@@ -838,8 +751,14 @@ extension UploadController: TagsPickerViewDelegate {
             selectedTagsArray.append(tag)
         }
     }
-    
+
     func tagsDoneButtonPressed() {
         hideTagsPickerView()
+    }
+}
+
+extension UploadController: WarmthPickerViewDelegate {
+    func warmthSelected(_ warmth: Warmth) {
+        selectedWarmth = warmth
     }
 }
