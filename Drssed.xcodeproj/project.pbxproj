@@ -511,6 +511,7 @@
 				CODE_SIGN_ENTITLEMENTS = Drssed/Resources/Drssed.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Drssed/Info-Debug.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Drssed;
@@ -545,6 +546,7 @@
 				CODE_SIGN_ENTITLEMENTS = Drssed/Resources/Drssed.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Drssed/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Drssed;
