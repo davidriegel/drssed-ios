@@ -305,7 +305,6 @@ class OutfitComposerViewController_Submit: UIViewController {
             Task {
                 let outfit = Outfit(
                     name: self.outfitNameField.fieldInput.text ?? "",
-                    itemDescription: "",
                     isPublic: self.outfitPublicField.fieldInput.isOn,
                     isFavorite: self.outfitFavoriteField.fieldInput.isOn,
                     seasons: self.selectedSeasonsArray,

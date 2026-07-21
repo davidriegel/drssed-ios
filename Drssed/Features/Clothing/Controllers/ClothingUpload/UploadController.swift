@@ -368,7 +368,7 @@ class UploadController: UIViewController {
             return
         }
 
-        let domainModel = Clothing(name: name, imageID: imageID, category: subCategory.category, subCategory: subCategory, itemDescription: descriptionTextView.text ?? "", color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray, warmth: selectedWarmth)
+        let domainModel = Clothing(name: name, imageID: imageID, category: subCategory.category, subCategory: subCategory, color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray, warmth: selectedWarmth)
         
         Task {
             await clothingRepo.addOrUpdateClothing(from: domainModel)
