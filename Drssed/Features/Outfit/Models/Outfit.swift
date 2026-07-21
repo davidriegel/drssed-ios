@@ -12,7 +12,6 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     public let id: String
     var updatedAt: Date
     let createdAt: Date
-    var description: String?
     var isPublic: Bool
     var isFavorite: Bool
     var name: String
@@ -21,10 +20,9 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     var tags: [Tags]
     let userID: String
     
-    init(name: String, itemDescription: String, isPublic: Bool = true, isFavorite: Bool = false, seasons: [Seasons], tags: [Tags], scene: [CanvasPlacement]) {
+    init(name: String, isPublic: Bool = true, isFavorite: Bool = false, seasons: [Seasons], tags: [Tags], scene: [CanvasPlacement]) {
         self.id = UUID().uuidString
         self.name = name
-        self.description = itemDescription
         self.createdAt = Date()
         self.updatedAt = Date()
         self.isPublic = isPublic
@@ -38,7 +36,6 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     init(from local: OutfitLocal) {
         self.id = local.id
         self.name = local.name
-        self.description = local.itemDescription
         self.isPublic = local.isPublic
         self.tags = local.tags.compactMap { Tags(rawValue: $0) }
         self.seasons = local.seasons.compactMap { Seasons(rawValue: $0) }
@@ -52,7 +49,6 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     init(from api: OutfitAPI) {
         self.id = api.outfit_id
         self.name = api.name
-        self.description = api.description
         self.isPublic = api.is_public
         self.isFavorite = api.is_favorite
         self.tags = api.tags.compactMap { Tags(rawValue: $0.uppercased()) }
@@ -72,7 +68,6 @@ extension Outfit {
             is_favorite: self.isFavorite,
             created_at: self.createdAt, updated_at: self.updatedAt,
             scene: self.scene,
-            description: self.description,
             tags: self.tags.map { $0.rawValue.lowercased() },
             seasons: self.seasons.map { $0.rawValue.lowercased() },
             user_id: self.userID,

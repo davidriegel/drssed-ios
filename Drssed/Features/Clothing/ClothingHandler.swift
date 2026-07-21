@@ -30,13 +30,35 @@ final class ClothingHandler {
     // MARK: -- POST REMOVE CLOTHING BACKGROUND
     
     public func removeClothingBackground(from image: UIImage) async throws -> (String, URL, UIColor, ClothingCategories, ClothingSubCategories) {
-        let request = try await APIClient.shared.createRequest(withImage: image, endpoint: "/images/preview", method: .POST)
-        
-        let imageResponse: ImagePreview = try await APIClient.shared.executeRequestAndDecode(request: request)
-        
-        guard let url = URL(string: imageResponse.image_url, relativeTo: APIClient.baseURL) else { throw URLError(.badURL) }
-        
-        return (imageResponse.image_id, url, UIColor(hex: imageResponse.image_color) ?? UIColor.white, imageResponse.image_category, imageResponse.image_sub_category)
+        let uploadRequest = try await APIClient.shared.createRequest(withImage: image, endpoint: "/images/preview", method: .POST)
+        let job: ImagePreviewJob = try await APIClient.shared.executeRequestAndDecode(request: uploadRequest)
+
+        let maxAttempts = 60
+        let pollInterval: UInt64 = 1_000_000_000
+
+        for _ in 0..<maxAttempts {
+            let statusRequest = try await APIClient.shared.createRequest(endpoint: "/images/preview/\(job.job_id)", method: .GET)
+            let status: ImagePreviewStatus = try await APIClient.shared.executeRequestAndDecode(request: statusRequest)
+
+            switch status.status {
+            case "ready":
+                guard let urlString = status.image_url, let imageID = status.image_id, let colorHex = status.image_color, let category = status.image_category, let subCategory = status.image_sub_category, let url = URL(string: urlString, relativeTo: APIClient.baseURL) else {
+                    throw URLError(.badServerResponse)
+                }
+                
+                return (imageID, url, UIColor(hex: colorHex) ?? .white, category, subCategory)
+            case "failed":
+                throw APIError.unprocessableContent(
+                    message: String(localized: "imagepicker.backgroundRemoval.error"),
+                    suggestion: String(localized: "imagepicker.uploadimage.hint")
+                )
+
+            default:  // "processing"
+                try await Task.sleep(nanoseconds: pollInterval)
+            }
+        }
+
+        throw URLError(.timedOut)
     }
     
     // MARK: -- POST UPLOAD CLOATHING
@@ -52,7 +74,7 @@ final class ClothingHandler {
             tagsStrings.append(tag.rawValue)
         }
         
-        let uploadDict = ["name": domainModel.name, "description": domainModel.description, "category": domainModel.category.rawValue, "sub_category": domainModel.subCategory.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": domainModel.imageID, "color": domainModel.color.hexString, "warmth_level": domainModel.warmth.rawValue] as [String : Any]
+        let uploadDict = ["name": domainModel.name, "category": domainModel.category.rawValue, "sub_category": domainModel.subCategory.rawValue, "seasons": seasonsStrings, "tags": tagsStrings, "image_id": domainModel.imageID, "color": domainModel.color.hexString, "warmth_level": domainModel.warmth.rawValue] as [String : Any]
         
         let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
         let request = try await APIClient.shared.createRequest(endpoint: "/users/me/clothing", method: .POST, body: uploadData)
@@ -129,10 +151,6 @@ final class ClothingHandler {
         
         if oldClothing.name != newClothing.name {
             uploadDict["name"] = newClothing.name
-        }
-        
-        if oldClothing.description != newClothing.description {
-            uploadDict["description"] = newClothing.description
         }
         
         if oldClothing.category != newClothing.category {

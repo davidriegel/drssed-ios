@@ -1,5 +1,5 @@
 //
-//  ClothingAPI 2.swift
+//  ClothingAPI.swift
 //  Drssed
 //
 //  Created by David Riegel on 17.09.25.
@@ -15,7 +15,6 @@ public struct Clothing: Identifiable, Hashable, Sendable {
     var updatedAt: Date
     let createdAt: Date
     var imageID: String
-    var description: String
     var color: UIColor
     var isPublic: Bool
     var name: String
@@ -24,13 +23,12 @@ public struct Clothing: Identifiable, Hashable, Sendable {
     var warmth: Warmth
     let userID: String
 
-    init(name: String, imageID: String, category: ClothingCategories, subCategory: ClothingSubCategories, itemDescription: String, color: UIColor, isPublic: Bool = true, seasons: [Seasons], tags: [Tags], warmth: Warmth) {
+    init(name: String, imageID: String, category: ClothingCategories, subCategory: ClothingSubCategories, color: UIColor, isPublic: Bool = true, seasons: [Seasons], tags: [Tags], warmth: Warmth) {
         self.id = UUID().uuidString
         self.name = name
         self.imageID = imageID
         self.category = category
         self.subCategory = subCategory
-        self.description = itemDescription
         self.color = color
         self.createdAt = Date()
         self.updatedAt = Date()
@@ -47,7 +45,6 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.category = ClothingCategories(rawValue: local.category)!
         self.subCategory = ClothingSubCategories(rawValue: local.subCategory)!
         self.color = UIColor(hex: local.color) ?? .white
-        self.description = local.itemDescription
         self.imageID = local.imageID
         self.isPublic = local.isPublic
         self.tags = local.tags.compactMap { Tags(rawValue: $0) }
@@ -64,7 +61,6 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.category = api.category
         self.subCategory = api.sub_category
         self.color = UIColor(hex: api.color) ?? .white
-        self.description = api.description
         self.imageID = api.image_id
         self.isPublic = api.is_public
         self.tags = api.tags.compactMap { Tags(rawValue: $0.uppercased()) }

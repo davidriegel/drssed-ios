@@ -21,7 +21,6 @@ class ClothingLocal: NSManagedObject {
     @NSManaged var id: String
     @NSManaged var imageID: String
     @NSManaged var isPublic: Bool
-    @NSManaged var itemDescription: String
     @NSManaged var name: String
     @NSManaged var seasons: [String]
     @NSManaged var tags: [String]
@@ -40,7 +39,6 @@ class ClothingLocal: NSManagedObject {
         id: String,
         imageID: String,
         isPublic: Bool = false,
-        itemDescription: String = "",
         name: String,
         seasons: [String] = [],
         tags: [String] = [],
@@ -56,7 +54,6 @@ class ClothingLocal: NSManagedObject {
         self.id = id
         self.imageID = imageID
         self.isPublic = isPublic
-        self.itemDescription = itemDescription
         self.name = name
         self.seasons = seasons
         self.tags = tags
@@ -81,7 +78,6 @@ extension ClothingLocal {
         self.imageID = domainModel.imageID
         self.category = domainModel.category.rawValue
         self.subCategory = domainModel.subCategory.rawValue
-        self.itemDescription = domainModel.description
         self.color = domainModel.color.hexString
         self.createdAt = domainModel.createdAt
         self.updatedAt = Date()
