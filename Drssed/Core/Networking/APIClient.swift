@@ -27,6 +27,7 @@ final public class APIClient {
     let userHandler: UserHandler = UserHandler()
     let clothingHandler: ClothingHandler = ClothingHandler()
     let outfitHandler: OutfitHandler = OutfitHandler()
+    let wearHandler: WearHandler = WearHandler()
     
     public enum requestMethods {
         case GET

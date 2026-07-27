@@ -10,6 +10,7 @@ import Foundation
 final class SyncManager {
     private let clothesRepo = AppRepository.shared.clothingRepository
     private let outfitRepo = AppRepository.shared.outfitRepository
+    private let wearRepo = AppRepository.shared.wearRepository
     
     public static let shared = SyncManager()
     
@@ -28,8 +29,9 @@ final class SyncManager {
     private func shouldPerformFullSync() -> Bool {
         let clothingLastSync = SyncCursors.get(.clothing)
         let outfitLastSync = SyncCursors.get(.outfit)
-        
-        if clothingLastSync == nil || outfitLastSync == nil {
+        let wearLastSync = SyncCursors.get(.wear)
+
+        if clothingLastSync == nil || outfitLastSync == nil || wearLastSync == nil {
             return true
         }
         
@@ -47,6 +49,7 @@ final class SyncManager {
         
         await clothesRepo.deleteAllLocal()
         await outfitRepo.deleteAllLocal()
+        await wearRepo.deleteAllLocal()
     }
     
     private func performFullSync() async {
@@ -58,7 +61,11 @@ final class SyncManager {
             let outfitSyncResponse = try await APIClient.shared.outfitHandler.syncOutfits(updatedSince: nil)
             await self.outfitRepo.syncWithServerModels(outfitSyncResponse.updated)
             SyncCursors.set(.outfit, to: outfitSyncResponse.serverTime)
-            
+
+            let wearSyncResponse = try await APIClient.shared.wearHandler.syncWears(updatedSince: nil)
+            await self.wearRepo.syncWithServerModels(wearSyncResponse.updated)
+            SyncCursors.set(.wear, to: wearSyncResponse.serverTime)
+
         } catch let error as AuthenticationError {
             ErrorHandler.handleSilently(error)
         } catch {
@@ -77,7 +84,12 @@ final class SyncManager {
             let outfitSyncResponse = try await APIClient.shared.outfitHandler.syncOutfits(updatedSince: outfitLastSync)
             await self.outfitRepo.applyServerSync(updated: outfitSyncResponse.updated, deleted: outfitSyncResponse.deleted)
             SyncCursors.set(.outfit, to: outfitSyncResponse.serverTime)
-            
+
+            let wearLastSync = SyncCursors.get(.wear)
+            let wearSyncResponse = try await APIClient.shared.wearHandler.syncWears(updatedSince: wearLastSync)
+            await self.wearRepo.applyServerSync(updated: wearSyncResponse.updated, deleted: wearSyncResponse.deleted)
+            SyncCursors.set(.wear, to: wearSyncResponse.serverTime)
+
         } catch let error as AuthenticationError {
             ErrorHandler.handleSilently(error)
         } catch {

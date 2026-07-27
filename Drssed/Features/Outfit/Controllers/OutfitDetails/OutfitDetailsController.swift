@@ -30,8 +30,14 @@ final class OutfitDetailsController: UIViewController {
     }
     
     var didUpdate: Bool = false
-    
+
     let clothingRepo = ClothingRepository()
+    let wearRepo: WearRepository = AppRepository.shared.wearRepository
+
+    /// The wear entry of this outfit for today, if it was already worn.
+    private var todaysWear: OutfitWear? {
+        didSet { updateWearButton() }
+    }
     
     weak var delegate: OutfitDetailsDelegate?
     
@@ -48,9 +54,11 @@ final class OutfitDetailsController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         configureViewComponents()
         self.navigationController?.presentationController?.delegate = self
+
+        Task { await refreshTodaysWear() }
     }
     
     // MARK: - Variables -
@@ -138,8 +146,19 @@ final class OutfitDetailsController: UIViewController {
         return bt
     }()
     
+    // Wear button
+
+    lazy var itemWearButton: UIButton = {
+        let bt = UIButton(primaryAction: UIAction { _ in
+            self.wearButtonTapped()
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.tintColor = .accent
+        return bt
+    }()
+
     // Preview Canvas
-    
+
     lazy var itemPreviewView: OutfitCanvasView = {
         let cv = OutfitCanvasView(editingMode: false)
         cv.delegate = self
@@ -253,6 +272,119 @@ final class OutfitDetailsController: UIViewController {
     func favoriteToggled() {
         item.isFavorite.toggle()
     }
+
+    // MARK: Wear
+
+    private func refreshTodaysWear() async {
+        let wear = await wearRepo.getWear(forOutfit: item.id)
+
+        await MainActor.run {
+            self.todaysWear = wear
+        }
+    }
+
+    /// Opens the editor for today, or removes the entry again when the outfit is already worn today.
+    ///
+    /// The editor is shown instead of logging right away so the details are at least offered –
+    /// every field in it stays optional.
+    private func wearButtonTapped() {
+        if let wear = todaysWear {
+            promptRemoveWear(wear)
+            return
+        }
+
+        presentWearEditor(mode: .create(outfitID: item.id))
+    }
+
+    /// Logs a wear for today without asking for details – the weather still comes along.
+    private func logWearToday() async {
+        guard let logged = await wearRepo.logWearNow(outfitID: item.id) else { return }
+
+        await MainActor.run {
+            self.todaysWear = logged
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        }
+    }
+
+    private func promptRemoveWear(_ wear: OutfitWear) {
+        let alert = UIAlertController(
+            title: String(localized: "wear.remove.title"),
+            message: String(localized: "wear.remove.question"),
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+
+        alert.addAction(UIAlertAction(title: String(localized: "common.delete"), style: .destructive, handler: { _ in
+            Task {
+                guard await self.wearRepo.deleteWear(with: wear.id) else { return }
+
+                await MainActor.run {
+                    self.todaysWear = nil
+                }
+            }
+        }))
+
+        present(alert, animated: true)
+    }
+
+    private func presentWearEditor(mode: WearEditorController.Mode) {
+        let editor = WearEditorController(mode: mode)
+        editor.delegate = self
+
+        let navController = UINavigationController(rootViewController: editor)
+        navController.setNavigationBarHidden(true, animated: false)
+
+        if let sheet = navController.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+
+        present(navController, animated: true)
+    }
+
+    private func updateWearButton() {
+        let isWornToday = todaysWear != nil
+        let symbol = isWornToday ? "checkmark.circle.fill" : "checkmark.circle"
+
+        itemWearButton.setImage(
+            UIImage(systemName: symbol, withConfiguration: UIImage.SymbolConfiguration(font: .preferredFont(forTextStyle: .headline), scale: .large)),
+            for: .normal
+        )
+        itemWearButton.accessibilityLabel = isWornToday
+            ? String(localized: "wear.action.remove")
+            : String(localized: "wear.action.today")
+        itemWearButton.menu = wearMenu()
+    }
+
+    private func wearMenu() -> UIMenu {
+        var items: [UIAction] = []
+
+        if let wear = todaysWear {
+            items.append(UIAction(title: String(localized: "wear.action.edit"), image: UIImage(systemName: "square.and.pencil"), handler: { _ in
+                self.presentWearEditor(mode: .edit(wear))
+            }))
+
+            items.append(UIAction(title: String(localized: "wear.action.remove"), image: UIImage(systemName: "trash"), attributes: .destructive, handler: { _ in
+                self.promptRemoveWear(wear)
+            }))
+
+            items.append(UIAction(title: String(localized: "wear.action.log"), image: UIImage(systemName: "calendar.badge.plus"), handler: { _ in
+                self.presentWearEditor(mode: .create(outfitID: self.item.id))
+            }))
+        } else {
+            items.append(UIAction(title: String(localized: "wear.action.today"), image: UIImage(systemName: "checkmark.circle"), handler: { _ in
+                self.presentWearEditor(mode: .create(outfitID: self.item.id))
+            }))
+
+            // Shortcut for everyone who does not want to fill in the sheet.
+            items.append(UIAction(title: String(localized: "wear.action.todayQuick"), image: UIImage(systemName: "bolt"), handler: { _ in
+                Task { await self.logWearToday() }
+            }))
+        }
+
+        return UIMenu(title: String(localized: "wear.menu.title"), children: items)
+    }
     
     func saveItemChanges() async {
         if await AppRepository.shared.outfitRepository.addOrUpdateOutfit(from: item) {
@@ -341,7 +473,7 @@ final class OutfitDetailsController: UIViewController {
     private func configureViewComponents() {
         view.backgroundColor = .background
         
-        [segmentController, itemDeleteButton, itemDoneButton, itemPreviewView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
+        [segmentController, itemDeleteButton, itemWearButton, itemDoneButton, itemPreviewView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
         
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
@@ -355,9 +487,13 @@ final class OutfitDetailsController: UIViewController {
         NSLayoutConstraint.activate([
             itemDeleteButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
             itemDeleteButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            itemWearButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
+            itemWearButton.leadingAnchor.constraint(equalTo: itemDeleteButton.trailingAnchor, constant: 15),
             itemDoneButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
             itemDoneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
+
+        updateWearButton()
         
         NSLayoutConstraint.activate([
             itemPreviewView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 20),
@@ -426,6 +562,25 @@ final class OutfitDetailsController: UIViewController {
         ])
         
         updateUIFromItem()
+    }
+}
+
+extension OutfitDetailsController: WearEditorDelegate {
+    func wearEditor(_ controller: WearEditorController, didSave wear: OutfitWear) {
+        guard wear.outfitID == item.id else { return }
+
+        // A wear can be logged for or moved to another day, only today's entry drives the button.
+        if wear.isOnSameDay(as: Date()) {
+            todaysWear = wear
+        } else if todaysWear?.id == wear.id {
+            todaysWear = nil
+        }
+    }
+
+    func wearEditor(_ controller: WearEditorController, didDelete wearID: String) {
+        if todaysWear?.id == wearID {
+            todaysWear = nil
+        }
     }
 }
 

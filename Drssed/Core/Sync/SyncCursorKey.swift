@@ -11,6 +11,7 @@ import os
 enum SyncCursorKey: String, CaseIterable {
     case clothing = "clothing_last_sync"
     case outfit = "outfit_last_sync"
+    case wear = "wear_last_sync"
 }
 
 enum SyncCursors {

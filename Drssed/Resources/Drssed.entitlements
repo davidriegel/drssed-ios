@@ -6,5 +6,7 @@
 	<array>
 		<string>webcredentials:drssed.app</string>
 	</array>
+	<key>com.apple.developer.weatherkit</key>
+	<true/>
 </dict>
 </plist>
