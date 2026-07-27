@@ -1,1 +1,2 @@
 "NSCameraUsageDescription" = "Wir benötigen Zugriff auf die Kamera, damit du ein Foto von deinem Kleidungsstück machen kannst.";
+"NSLocationWhenInUseUsageDescription" = "Wir nutzen deinen Standort, um beim Eintragen eines getragenen Outfits das Wetter automatisch auszufüllen.";

@@ -9,6 +9,7 @@ import UIKit
 
 class OutfitsGalleryViewController: UIViewController {
     private let outfitRepo: OutfitRepository = AppRepository.shared.outfitRepository
+    private let wearRepo: WearRepository = AppRepository.shared.wearRepository
     
     private enum viewMode: CaseIterable {
         case SMALL
@@ -222,6 +223,63 @@ class OutfitsGalleryViewController: UIViewController {
         }
     }
     
+    // MARK: -- Wear
+
+    private func outfit(at indexPath: IndexPath) -> Outfit? {
+        guard let id = diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
+        return dataSourceByID[id]
+    }
+
+    /// Menu entries for an outfit, built once its wear state for today is known.
+    private func wearMenuElements(for outfit: Outfit, todaysWear: OutfitWear?) -> [UIMenuElement] {
+        var items: [UIAction] = []
+
+        if let wear = todaysWear {
+            items.append(UIAction(title: String(localized: "wear.action.edit"), image: UIImage(systemName: "square.and.pencil"), handler: { _ in
+                self.presentWearEditor(mode: .edit(wear))
+            }))
+
+            items.append(UIAction(title: String(localized: "wear.action.remove"), image: UIImage(systemName: "trash"), attributes: .destructive, handler: { _ in
+                Task {
+                    guard await self.wearRepo.deleteWear(with: wear.id) else { return }
+                    await MainActor.run { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+                }
+            }))
+
+            items.append(UIAction(title: String(localized: "wear.action.log"), image: UIImage(systemName: "calendar.badge.plus"), handler: { _ in
+                self.presentWearEditor(mode: .create(outfitID: outfit.id))
+            }))
+        } else {
+            items.append(UIAction(title: String(localized: "wear.action.today"), image: UIImage(systemName: "checkmark.circle"), handler: { _ in
+                self.presentWearEditor(mode: .create(outfitID: outfit.id))
+            }))
+
+            // Shortcut for everyone who does not want to fill in the sheet.
+            items.append(UIAction(title: String(localized: "wear.action.todayQuick"), image: UIImage(systemName: "bolt"), handler: { _ in
+                Task {
+                    guard await self.wearRepo.logWearNow(outfitID: outfit.id) != nil else { return }
+                    await MainActor.run { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
+                }
+            }))
+        }
+
+        return items
+    }
+
+    private func presentWearEditor(mode: WearEditorController.Mode) {
+        let editor = WearEditorController(mode: mode)
+
+        let navController = UINavigationController(rootViewController: editor)
+        navController.setNavigationBarHidden(true, animated: false)
+
+        if let sheet = navController.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+        }
+
+        navigationController?.present(navController, animated: true)
+    }
+
     func showOutfitDetails(of outfit: Outfit) {
         let detailsController = OutfitDetailsController(outfit: outfit)
         detailsController.delegate = self
@@ -580,5 +638,21 @@ extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionVi
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         showOutfitDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item])
+    }
+
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let outfit = outfit(at: indexPath) else { return nil }
+
+        return UIContextMenuConfiguration(identifier: outfit.id as NSString, previewProvider: nil) { _ in
+            // Today's wear is only known after a Core Data lookup, so the entries load in place.
+            let wearElements = UIDeferredMenuElement.uncached { completion in
+                Task { @MainActor in
+                    let todaysWear = await self.wearRepo.getWear(forOutfit: outfit.id)
+                    completion(self.wearMenuElements(for: outfit, todaysWear: todaysWear))
+                }
+            }
+
+            return UIMenu(title: outfit.name, children: [wearElements])
+        }
     }
 }

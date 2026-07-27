@@ -1,1 +1,2 @@
 "NSCameraUsageDescription" = "We need to access the camera, for you to take a picture of your clothing piece.";
+"NSLocationWhenInUseUsageDescription" = "We use your location to fill in the weather when you log an outfit as worn.";
