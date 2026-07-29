@@ -130,8 +130,21 @@ final class OutfitHandler {
         let uploadData = try JSONSerialization.data(withJSONObject: apiModel)
         let request = try await APIClient.shared.createRequest(endpoint: "/outfits/generate", method: .POST, body: uploadData)
         let generatedOutfits: GenerateOutfitsResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
-        
+
         return generatedOutfits.outfits
+    }
+
+    // MARK: -- RECOMMEND OUTFITS
+
+    /// Asks for outfits that suit the felt temperature, ranked by how well they fit.
+    func recommendOutfits(feelsLike: Double, limit: Int = 5) async throws -> [OutfitSummaryAPI] {
+        let apiModel: [String: Any] = ["feels_like": feelsLike, "limit": limit]
+
+        let uploadData = try JSONSerialization.data(withJSONObject: apiModel)
+        let request = try await APIClient.shared.createRequest(endpoint: "/outfits/recommend", method: .POST, body: uploadData)
+        let recommendedOutfits: RecommendOutfitsResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
+
+        return recommendedOutfits.outfits
     }
 }
 

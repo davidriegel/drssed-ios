@@ -31,6 +31,9 @@ final class OutfitDetailsController: UIViewController {
     
     var didUpdate: Bool = false
 
+    /// A read-only sheet only shows the outfit – editing, deleting and wearing stay out of it.
+    let isReadOnly: Bool
+
     let clothingRepo = ClothingRepository()
     let wearRepo: WearRepository = AppRepository.shared.wearRepository
 
@@ -38,27 +41,48 @@ final class OutfitDetailsController: UIViewController {
     private var todaysWear: OutfitWear? {
         didSet { updateWearButton() }
     }
-    
+
+    private var wearStats: OutfitWearStats = .none {
+        didSet { itemStatsView.configure(with: wearStats) }
+    }
+
+    private var clothingGridHeightConstraint: NSLayoutConstraint?
+
     weak var delegate: OutfitDetailsDelegate?
-    
-    init(outfit: Outfit) {
+
+    init(outfit: Outfit, isReadOnly: Bool = false) {
         self.savedItem = outfit
         self.item = outfit
-        
+        self.isReadOnly = isReadOnly
+
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         configureViewComponents()
         self.navigationController?.presentationController?.delegate = self
 
+        Task { await refreshWearStats() }
+
+        guard !isReadOnly else { return }
+
         Task { await refreshTodaysWear() }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        // The grid grows with the number of pieces; its width only settles once laid out.
+        guard clothingGridHeightConstraint?.constant != clothingGridHeight() else { return }
+
+        clothingGridHeightConstraint?.constant = clothingGridHeight()
+        outfitItemsCollectionView.collectionViewLayout.invalidateLayout()
     }
     
     // MARK: - Variables -
@@ -247,8 +271,36 @@ final class OutfitDetailsController: UIViewController {
         return view
     }()
     
+    // Scrolling content
+
+    lazy var scrollView: UIScrollView = {
+        let sv = UIScrollView()
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.alwaysBounceVertical = true
+        sv.keyboardDismissMode = .interactive
+        sv.showsVerticalScrollIndicator = false
+        return sv
+    }()
+
+    lazy var contentStack: UIStackView = {
+        let sv = UIStackView()
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.axis = .vertical
+        sv.spacing = 10
+        sv.alignment = .fill
+        return sv
+    }()
+
+    // Wear history
+
+    lazy var itemStatsView: OutfitStatsView = {
+        let view = OutfitStatsView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     // Outfit items
-    
+
     lazy var  outfitItemsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.minimumLineSpacing = 10
@@ -274,6 +326,23 @@ final class OutfitDetailsController: UIViewController {
     }
 
     // MARK: Wear
+
+    /// Loads the wear history of this outfit from the local store.
+    private func refreshWearStats() async {
+        let wears = await wearRepo.fetchWears(outfitID: item.id)
+        let stats = OutfitWearStats(wears: wears)
+
+        await MainActor.run { self.wearStats = stats }
+    }
+
+    /// Height the item grid needs for all of its rows – it does not scroll on its own.
+    private func clothingGridHeight() -> CGFloat {
+        let columns = 3
+        let rows = max(1, Int(ceil(Double(item.scene.count) / Double(columns))))
+        let cellWidth = (view.bounds.width - 40 - CGFloat(columns - 1) * 10) / CGFloat(columns)
+
+        return CGFloat(rows) * cellWidth + CGFloat(rows - 1) * 10
+    }
 
     private func refreshTodaysWear() async {
         let wear = await wearRepo.getWear(forOutfit: item.id)
@@ -463,27 +532,31 @@ final class OutfitDetailsController: UIViewController {
     
     private func updateUIFromItem() {
         itemPreviewView.loadOutfit(placements: item.scene)
-        
+
         itemNameTextField.fieldInput.text = item.name
         selectedSeasonsArray = item.seasons
         selectedTagsArray = item.tags
         itemFavoriteField.fieldInput.isOn = item.isFavorite
+        itemStatsView.configure(with: wearStats)
     }
     
     private func configureViewComponents() {
         view.backgroundColor = .background
-        
-        [segmentController, itemDeleteButton, itemWearButton, itemDoneButton, itemPreviewView, itemNameTextField, itemSeasonsField, itemSeasonsSelection, itemSeasonsPickerView, itemTagsField, itemTagsPickerView, outfitItemsCollectionView].forEach { view.addSubview($0) }
-        
+
+        // The header stays pinned, everything below it scrolls – the item grid alone can be
+        // taller than the sheet once an outfit holds more than three pieces.
+        [segmentController, itemDeleteButton, itemWearButton, itemDoneButton, scrollView, itemSeasonsPickerView, itemTagsPickerView].forEach { view.addSubview($0) }
+        scrollView.addSubview(contentStack)
+
         NSLayoutConstraint.activate([
             segmentController.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 15),
             segmentController.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
-        
+
         segmentController.addAction(UIAction { _ in
             self.toggleEditing()
         }, for: .valueChanged)
-        
+
         NSLayoutConstraint.activate([
             itemDeleteButton.centerYAnchor.constraint(equalTo: segmentController.centerYAnchor),
             itemDeleteButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
@@ -493,72 +566,92 @@ final class OutfitDetailsController: UIViewController {
             itemDoneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
         ])
 
-        updateWearButton()
-        
+        if isReadOnly {
+            [segmentController, itemDeleteButton, itemWearButton, itemDoneButton].forEach { $0.isHidden = true }
+            // A character budget is an editing affordance and has no business in a sheet
+            // that cannot be edited.
+            itemNameTextField.characterCounter(enabled: false, withCharacters: 50)
+        } else {
+            updateWearButton()
+        }
+
+        // Without the controls above it the content moves up into their place.
+        let scrollTop = isReadOnly
+            ? scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20)
+            : scrollView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 20)
+
         NSLayoutConstraint.activate([
-            itemPreviewView.topAnchor.constraint(equalTo: segmentController.bottomAnchor, constant: 20),
+            scrollTop,
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -20),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 20),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -20)
+        ])
+
+        let previewRow = UIView()
+        previewRow.translatesAutoresizingMaskIntoConstraints = false
+        previewRow.addSubview(itemPreviewView)
+
+        let tagsRow = UIStackView(arrangedSubviews: [itemTagsField, itemFavoriteField])
+        tagsRow.axis = .horizontal
+        tagsRow.alignment = .center
+        tagsRow.spacing = 5
+        tagsRow.translatesAutoresizingMaskIntoConstraints = false
+
+        // Everything joins the hierarchy before the constraints are activated – the preview
+        // sizes itself against the safe area, which needs a common ancestor.
+        [previewRow, itemStatsView, itemNameTextField, itemSeasonsField, tagsRow, outfitItemsCollectionView].forEach { contentStack.addArrangedSubview($0) }
+
+        contentStack.setCustomSpacing(20, after: previewRow)
+        contentStack.setCustomSpacing(20, after: itemStatsView)
+
+        itemSeasonsField.addSubview(itemSeasonsSelection)
+        itemTagsField.addSubview(itemTagsSelection)
+
+        let clothingGridHeight = outfitItemsCollectionView.heightAnchor.constraint(equalToConstant: clothingGridHeight())
+        clothingGridHeightConstraint = clothingGridHeight
+
+        NSLayoutConstraint.activate([
+            itemPreviewView.topAnchor.constraint(equalTo: previewRow.topAnchor),
+            itemPreviewView.bottomAnchor.constraint(equalTo: previewRow.bottomAnchor),
+            itemPreviewView.centerXAnchor.constraint(equalTo: previewRow.centerXAnchor),
             itemPreviewView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.5),
             itemPreviewView.heightAnchor.constraint(equalTo: itemPreviewView.widthAnchor, multiplier: 4.0 / 3.0),
-            itemPreviewView.centerXAnchor.constraint(equalTo: view.centerXAnchor)
-        ])
-        
-        NSLayoutConstraint.activate([
-            itemNameTextField.topAnchor.constraint(equalTo: itemPreviewView.bottomAnchor, constant: 20),
-            itemNameTextField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            itemNameTextField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            itemNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65)
-        ])
-        
-        NSLayoutConstraint.activate([
-            itemSeasonsField.topAnchor.constraint(equalTo: itemNameTextField.bottomAnchor, constant: 10),
-            itemSeasonsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            itemSeasonsField.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
+
+            itemNameTextField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+
             itemSeasonsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            
             itemSeasonsSelection.topAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.topAnchor),
             itemSeasonsSelection.leadingAnchor.constraint(equalTo: itemSeasonsField.leadingAnchor),
             itemSeasonsSelection.trailingAnchor.constraint(equalTo: itemSeasonsField.trailingAnchor),
             itemSeasonsSelection.bottomAnchor.constraint(equalTo: itemSeasonsField.fieldBackground.bottomAnchor),
-            
-            itemSeasonsPickerView.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 15),
-            itemSeasonsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
-            itemSeasonsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
-            itemSeasonsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
-        ])
-        
-        let sv = UIStackView(arrangedSubviews: [itemTagsField, itemFavoriteField])
-        
-        sv.axis = .horizontal
-        sv.alignment = .center
-        sv.spacing = 5
-        sv.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(sv)
-        NSLayoutConstraint.activate([
-            sv.topAnchor.constraint(equalTo: itemSeasonsField.bottomAnchor, constant: 10),
-            sv.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            sv.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
-            sv.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
-            itemTagsField.heightAnchor.constraint(equalTo: sv.heightAnchor)
-        ])
-        
-        itemTagsField.addSubview(itemTagsSelection)
-        NSLayoutConstraint.activate([
+
+            tagsRow.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
+            itemTagsField.heightAnchor.constraint(equalTo: tagsRow.heightAnchor),
             itemTagsSelection.topAnchor.constraint(equalTo: itemTagsField.fieldBackground.topAnchor),
             itemTagsSelection.leadingAnchor.constraint(equalTo: itemTagsField.leadingAnchor),
             itemTagsSelection.trailingAnchor.constraint(equalTo: itemTagsField.trailingAnchor),
             itemTagsSelection.bottomAnchor.constraint(equalTo: itemTagsField.fieldBackground.bottomAnchor),
-            
-            itemTagsPickerView.topAnchor.constraint(equalTo: itemTagsField.bottomAnchor, constant: 15),
+
+            clothingGridHeight
+        ])
+
+        // The pickers float above the dimmed background instead of following their field,
+        // which would scroll them out of sight.
+        NSLayoutConstraint.activate([
+            itemSeasonsPickerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            itemSeasonsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
+            itemSeasonsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
+            itemSeasonsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+
+            itemTagsPickerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             itemTagsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4),
             itemTagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
             itemTagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
-        ])
-        
-        NSLayoutConstraint.activate([
-            outfitItemsCollectionView.topAnchor.constraint(equalTo: itemTagsField.bottomAnchor, constant: 10),
-            outfitItemsCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
-            outfitItemsCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
-            outfitItemsCollectionView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.2)
         ])
         
         updateUIFromItem()
@@ -635,7 +728,8 @@ extension OutfitDetailsController: UICollectionViewDataSource, UICollectionViewD
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = (collectionView.frame.width - 40) / 3
+        // Three per row, matching what `clothingGridHeight()` reserves.
+        let width = (collectionView.frame.width - 2 * 10) / 3
         return CGSize(width: width, height: width)
     }
 }
