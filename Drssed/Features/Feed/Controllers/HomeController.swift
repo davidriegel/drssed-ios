@@ -7,45 +7,71 @@
 
 import UIKit
 
-/// Calendar of the logged wears: a month grid of the worn outfits with the
-/// entries of the selected day listed below.
+/// Home screen of the app: the outfits that suit today's weather on top, below them the
+/// month grid of everything that was worn.
+///
+/// The grid is a log that only ever grows – entries appear by wearing an outfit and are
+/// not edited or removed from here, which is why a day opens read-only.
 public class HomeController: UIViewController {
     private let wearRepo: WearRepository = AppRepository.shared.wearRepository
+    private let outfitRepo: OutfitRepository = AppRepository.shared.outfitRepository
     private let calendar: Calendar = .current
+
+    private lazy var recommendationSession = OutfitRecommendationSession()
 
     /// Any date inside the month that is currently shown.
     private var anchorDate: Date = Date() {
         didSet { Task { await reloadMonth() } }
     }
 
-    private var selectedDate: Date {
-        didSet {
-            updateSelectedDay()
-            calendarCollectionView.reloadData()
-        }
-    }
-
     private var days: [WearCalendarDay] = [] {
         didSet {
-            calendarHeightConstraint?.constant = gridHeight(forRows: days.count / 7)
+            // A month spans five or six rows, which changes how tall a row may be.
+            calendarCollectionView.collectionViewLayout.invalidateLayout()
             calendarCollectionView.reloadData()
             updateMonthLabels()
-            updateSelectedDay()
         }
     }
 
-    private var selectedDayWears: [OutfitWear] = [] {
+    private var recommendations: [Outfit] = [] {
         didSet {
-            dayLogTableView.reloadData()
-            emptyDayLabel.isHidden = !selectedDayWears.isEmpty
+            recommendationCollectionView.reloadData()
+            updateRecommendationState()
         }
     }
 
-    private var calendarHeightConstraint: NSLayoutConstraint?
+    /// Outfits that already carry an entry for today, so the shortcut cannot log them twice.
+    private var wornTodayOutfitIDs: Set<String> = []
+
+    /// The weather the current recommendations are based on.
+    private var weather: WeatherSnapshot? {
+        didSet { updateWeatherLabel() }
+    }
+
+    /// Why there is nothing to suggest – each case needs its own wording, and some of them
+    /// a way out.
+    private enum RecommendationGap {
+        case offline
+        case locationDenied
+        case weatherUnavailable
+        case noOutfits
+        case noMatch
+    }
+
+    private var recommendationGap: RecommendationGap = .noMatch
+
+    /// When the suggestions last came in, so that they do not keep describing this morning's
+    /// weather after the app has been in the background all day.
+    private var lastRecommendationLoad: Date?
+
+    private static let recommendationStaleAfter: TimeInterval = 30 * 60
+
+    private var recommendationHeightConstraint: NSLayoutConstraint?
+
+    /// The row height the grid was last laid out with, so that recomputing it cannot loop.
+    private var appliedDayCellHeight: CGFloat = 0
 
     public init() {
-        self.selectedDate = Calendar.current.startOfDay(for: Date())
-
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -59,21 +85,147 @@ public class HomeController: UIViewController {
         configureViewComponents()
 
         Task { await reloadMonth() }
+        Task { await reloadRecommendations() }
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        updateGreeting()
+
         Task { await reloadMonth() }
+
+        // The suggestions stay put while they are still current; once they describe weather
+        // from hours ago they are fetched again rather than quietly going stale.
+        if let lastLoad = lastRecommendationLoad, Date().timeIntervalSince(lastLoad) < Self.recommendationStaleAfter {
+            Task { await refreshWornToday() }
+        } else {
+            Task { await reloadRecommendations() }
+        }
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        // The cards scale with the width of the screen, which is only final once laid out.
+        if recommendationHeightConstraint?.constant != recommendationSectionHeight {
+            recommendationHeightConstraint?.constant = recommendationSectionHeight
+            recommendationCollectionView.collectionViewLayout.invalidateLayout()
+            centerRecommendations()
+        }
+
+        // The row height follows the space left over for the grid, which is only known now.
+        if appliedDayCellHeight != dayCellHeight {
+            appliedDayCellHeight = dayCellHeight
+            calendarCollectionView.collectionViewLayout.invalidateLayout()
+        }
     }
 
     // MARK: - UI Elements -
 
-    private lazy var monthLabel: UILabel = {
+    private lazy var recommendationTitleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: 20, weight: .black)
         label.textColor = .label
+        label.text = String(localized: "home.recommendations.title")
+        return label
+    }()
+
+    private lazy var recommendationWeatherLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .secondaryLabel
+        return label
+    }()
+
+    private lazy var rerollButton: UIButton = {
+        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
+            self.didTapReroll()
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setImage(UIImage(systemName: "arrow.triangle.2.circlepath", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
+        bt.tintColor = .accent
+        bt.accessibilityLabel = String(localized: "home.recommendations.reroll")
+        return bt
+    }()
+
+    /// Apple requires the trademark and a link to the legal page wherever WeatherKit data shows up.
+    private lazy var weatherAttributionButton: UIButton = {
+        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
+            guard let url = URL(string: "https://weatherkit.apple.com/legal-attribution.html") else { return }
+            UIApplication.shared.open(url)
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setTitle("\u{F8FF} Weather", for: .normal)
+        bt.titleLabel?.font = .systemFont(ofSize: 11, weight: .medium)
+        bt.setTitleColor(.tertiaryLabel, for: .normal)
+        bt.isHidden = true
+        return bt
+    }()
+
+    private lazy var recommendationSpinner: UIActivityIndicatorView = {
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        spinner.hidesWhenStopped = true
+        spinner.color = .secondaryLabel
+        return spinner
+    }()
+
+    private lazy var recommendationCollectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumLineSpacing = Self.recommendationSpacing
+        layout.minimumInteritemSpacing = Self.recommendationSpacing
+
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.translatesAutoresizingMaskIntoConstraints = false
+        cv.register(OutfitRecommendationCell.self, forCellWithReuseIdentifier: OutfitRecommendationCell.identifier)
+        cv.dataSource = self
+        cv.delegate = self
+        cv.isScrollEnabled = false
+        cv.backgroundColor = .background
+        return cv
+    }()
+
+    private lazy var recommendationEmptyLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 13, weight: .medium)
+        label.textColor = .tertiaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 2
+        return label
+    }()
+
+    /// Shown only for the gaps the user can actually close.
+    private lazy var recommendationActionButton: UIButton = {
+        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
+            self.didTapRecommendationAction()
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.titleLabel?.font = .systemFont(ofSize: 13, weight: .heavy)
+        bt.setTitleColor(.accent, for: .normal)
+        return bt
+    }()
+
+    private lazy var recommendationEmptyStack: UIStackView = {
+        let sv = UIStackView(arrangedSubviews: [recommendationEmptyLabel, recommendationActionButton])
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.axis = .vertical
+        sv.alignment = .center
+        sv.spacing = 6
+        sv.isHidden = true
+        return sv
+    }()
+
+    private lazy var historyTitleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 20, weight: .black)
+        label.textColor = .label
+        label.text = String(localized: "home.history.title")
         return label
     }()
 
@@ -109,7 +261,6 @@ public class HomeController: UIViewController {
 
     private lazy var todayButton: UIBarButtonItem = {
         UIBarButtonItem(title: String(localized: "calendar.today"), primaryAction: UIAction { _ in
-            self.selectedDate = self.calendar.startOfDay(for: Date())
             self.anchorDate = Date()
         })
     }()
@@ -150,50 +301,237 @@ public class HomeController: UIViewController {
         return cv
     }()
 
-    private lazy var selectedDayLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 13, weight: .black)
-        label.textColor = .label
-        return label
-    }()
+    // MARK: - Recommendations -
 
-    private lazy var emptyDayLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = String(localized: "calendar.day.empty")
-        label.font = .systemFont(ofSize: 13, weight: .medium)
-        label.textColor = .tertiaryLabel
-        label.textAlignment = .center
-        return label
-    }()
+    /// Fetches the suggestions for the current weather.
+    ///
+    /// Errors stay quiet here because this also runs unprompted when the screen opens – a
+    /// reroll the user asked for reports them (see `didTapReroll`).
+    private func reloadRecommendations() async {
+        let snapshot = await WeatherProvider.shared.currentWeather()
 
-    private lazy var dayLogTableView: UITableView = {
-        let tv = UITableView()
-        tv.translatesAutoresizingMaskIntoConstraints = false
-        tv.register(WearLogCell.self, forCellReuseIdentifier: WearLogCell.identifier)
-        tv.dataSource = self
-        tv.delegate = self
-        tv.backgroundColor = .background
-        tv.separatorStyle = .none
-        tv.rowHeight = UITableView.automaticDimension
-        tv.estimatedRowHeight = 74
-        tv.refreshControl = refreshControl
-        return tv
-    }()
+        await MainActor.run { self.weather = snapshot }
 
-    private lazy var refreshControl: UIRefreshControl = {
-        let rc = UIRefreshControl()
-        rc.addAction(UIAction { _ in
-            Task {
-                await SyncManager.shared.syncWithServer()
-                await self.reloadMonth()
-
-                await MainActor.run { rc.endRefreshing() }
+        guard let snapshot else {
+            let gap: RecommendationGap = await MainActor.run {
+                if LocationProvider.shared.isDenied { return .locationDenied }
+                return NetworkManager.shared.isReachable ? .weatherUnavailable : .offline
             }
-        }, for: .valueChanged)
-        return rc
-    }()
+
+            await MainActor.run {
+                self.recommendationGap = gap
+                self.recommendations = []
+            }
+            return
+        }
+
+        await refreshWornToday()
+
+        do {
+            let page = try await recommendationSession.nextPage(feelsLike: snapshot.feelsLike)
+
+            // Nothing came back: either the wardrobe is empty or nothing suits the weather.
+            var gap: RecommendationGap = .noMatch
+            if page.isEmpty, await outfitRepo.fetchOutfits().isEmpty {
+                gap = .noOutfits
+            }
+
+            await MainActor.run {
+                self.recommendationGap = gap
+                self.recommendations = page
+                self.lastRecommendationLoad = Date()
+            }
+        } catch {
+            ErrorHandler.handleSilently(error)
+
+            let isReachable = NetworkManager.shared.isReachable
+
+            await MainActor.run {
+                self.recommendationGap = isReachable ? .noMatch : .offline
+                self.recommendations = []
+            }
+        }
+    }
+
+    private func didTapReroll() {
+        rerollButton.isEnabled = false
+        recommendationSpinner.startAnimating()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        Task { @MainActor in
+            defer {
+                self.rerollButton.isEnabled = true
+                self.recommendationSpinner.stopAnimating()
+            }
+
+            // The weather may have moved on since the screen was opened.
+            let snapshot = await WeatherProvider.shared.currentWeather()
+            self.weather = snapshot
+
+            guard let snapshot else {
+                self.recommendations = []
+                return
+            }
+
+            do {
+                self.recommendations = try await self.recommendationSession.nextPage(feelsLike: snapshot.feelsLike)
+                self.lastRecommendationLoad = Date()
+            } catch {
+                ErrorHandler.handle(error)
+            }
+        }
+    }
+
+    private func refreshWornToday() async {
+        let startOfToday = calendar.startOfDay(for: Date())
+
+        guard let startOfTomorrow = calendar.date(byAdding: .day, value: 1, to: startOfToday) else { return }
+
+        let wears = await wearRepo.fetchWears(from: startOfToday, to: startOfTomorrow)
+        let outfitIDs = Set(wears.map(\.outfitID))
+
+        await MainActor.run {
+            guard self.wornTodayOutfitIDs != outfitIDs else { return }
+
+            self.wornTodayOutfitIDs = outfitIDs
+            self.recommendationCollectionView.reloadData()
+        }
+    }
+
+    /// Logs a suggestion as worn right now, weather included, without asking for details.
+    private func wearRecommendation(_ outfit: Outfit) async {
+        guard let logged = await wearRepo.logWearNow(outfitID: outfit.id) else { return }
+
+        await MainActor.run {
+            self.wornTodayOutfitIDs.insert(logged.outfitID)
+            self.recommendationCollectionView.reloadData()
+
+            ToastPresenter.success(String(format: NSLocalizedString("home.recommendations.worn", comment: ""), outfit.name))
+        }
+
+        await reloadMonth()
+    }
+
+    private func openOutfit(with outfitID: String) {
+        Task {
+            guard let outfit = await outfitRepo.getOutfit(with: outfitID) else { return }
+
+            await MainActor.run { self.presentOutfitDetails(for: outfit) }
+        }
+    }
+
+    /// Lets the user pick which of the day's outfits to look at. Wearing more than one
+    /// outfit a day is rare, so this stays a sheet instead of a permanent list.
+    private func presentWearPicker(for day: WearCalendarDay) {
+        let sheet = UIAlertController(
+            title: day.date?.formatted(date: .long, time: .omitted),
+            message: nil,
+            preferredStyle: .actionSheet
+        )
+
+        for wear in day.wears {
+            let title = wear.outfitName ?? String(localized: "calendar.outfit.unknown")
+
+            sheet.addAction(UIAlertAction(title: title, style: .default) { _ in
+                self.openOutfit(with: wear.outfitID)
+            })
+        }
+
+        sheet.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
+
+        present(sheet, animated: true)
+    }
+
+    /// Opens an outfit for viewing only – nothing on this screen edits an outfit or a wear.
+    private func presentOutfitDetails(for outfit: Outfit) {
+        let detailsController = OutfitDetailsController(outfit: outfit, isReadOnly: true)
+
+        let navController = UINavigationController(rootViewController: detailsController)
+        navController.setNavigationBarHidden(true, animated: false)
+
+        if let sheet = navController.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+        }
+
+        navigationController?.present(navController, animated: true)
+    }
+
+    private func updateRecommendationState() {
+        let isEmpty = recommendations.isEmpty
+
+        recommendationCollectionView.isHidden = isEmpty
+        recommendationEmptyStack.isHidden = !isEmpty
+
+        switch recommendationGap {
+        case .offline:
+            recommendationEmptyLabel.text = String(localized: "home.recommendations.empty.offline")
+            recommendationActionButton.setTitle(nil, for: .normal)
+        case .locationDenied:
+            recommendationEmptyLabel.text = String(localized: "home.recommendations.empty.location")
+            recommendationActionButton.setTitle(String(localized: "home.recommendations.action.settings"), for: .normal)
+        case .weatherUnavailable:
+            recommendationEmptyLabel.text = String(localized: "home.recommendations.empty.weather")
+            recommendationActionButton.setTitle(nil, for: .normal)
+        case .noOutfits:
+            recommendationEmptyLabel.text = String(localized: "home.recommendations.empty.noOutfits")
+            recommendationActionButton.setTitle(String(localized: "home.recommendations.action.createOutfit"), for: .normal)
+        case .noMatch:
+            recommendationEmptyLabel.text = String(localized: "home.recommendations.empty")
+            recommendationActionButton.setTitle(nil, for: .normal)
+        }
+
+        recommendationActionButton.isHidden = recommendationActionButton.title(for: .normal) == nil
+
+        recommendationHeightConstraint?.constant = recommendationSectionHeight
+        recommendationCollectionView.collectionViewLayout.invalidateLayout()
+        centerRecommendations()
+    }
+
+    private func didTapRecommendationAction() {
+        switch recommendationGap {
+        case .locationDenied:
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(url)
+        case .noOutfits:
+            // The lookbook is where an outfit gets put together.
+            tabBarController?.selectedIndex = 2
+        default:
+            break
+        }
+    }
+
+    /// Keeps the row centred when it does not fill the width, instead of letting a lone
+    /// card cling to the left edge.
+    private func centerRecommendations() {
+        guard !recommendations.isEmpty else {
+            recommendationCollectionView.contentInset = .zero
+            return
+        }
+
+        let count = CGFloat(recommendations.count)
+        let contentWidth = count * recommendationCellWidth + (count - 1) * Self.recommendationSpacing
+        let inset = max(0, (recommendationCollectionView.bounds.width - contentWidth) / 2)
+
+        recommendationCollectionView.contentInset = UIEdgeInsets(top: 0, left: inset, bottom: 0, right: inset)
+    }
+
+    private func updateWeatherLabel() {
+        guard let weather else {
+            recommendationWeatherLabel.text = String(localized: "home.recommendations.weather.unavailable")
+            weatherAttributionButton.isHidden = true
+            return
+        }
+
+        let feelsLike = NumberFormatter.localizedString(from: NSNumber(value: weather.feelsLike), number: .decimal)
+
+        recommendationWeatherLabel.text = String(
+            format: NSLocalizedString("home.recommendations.weather", comment: ""),
+            feelsLike,
+            weather.condition.localizedName
+        )
+        weatherAttributionButton.isHidden = false
+    }
 
     // MARK: - Data -
 
@@ -204,15 +542,7 @@ public class HomeController: UIViewController {
         let wears = await wearRepo.fetchWears(from: monthStart, to: monthEnd)
         let days = WearCalendarDay.month(for: anchorDate, wears: wears, calendar: calendar)
 
-        await MainActor.run {
-            self.days = days
-
-            // Keep the selection inside the month that is on screen.
-            if !days.contains(where: { $0.date == self.selectedDate }),
-               let firstOfMonth = days.first(where: { $0.date != nil })?.date {
-                self.selectedDate = firstOfMonth
-            }
-        }
+        await MainActor.run { self.days = days }
     }
 
     private func moveMonth(by months: Int) {
@@ -220,50 +550,87 @@ public class HomeController: UIViewController {
         anchorDate = moved
     }
 
-    private func updateSelectedDay() {
-        selectedDayLabel.text = selectedDate.formatted(date: .complete, time: .omitted)
-        selectedDayWears = days.first { $0.date == selectedDate }?.wears ?? []
-    }
-
     private func updateMonthLabels() {
-        monthLabel.text = anchorDate.formatted(.dateTime.month(.wide).year())
-
+        let month = anchorDate.formatted(.dateTime.month(.wide).year())
         let entries = days.reduce(0) { $0 + $1.wears.count }
-        monthSummaryLabel.text = String(format: NSLocalizedString("calendar.month.entries", comment: ""), entries)
+        let entriesText = String(format: NSLocalizedString("calendar.month.entries", comment: ""), entries)
+
+        monthSummaryLabel.text = "\(month) · \(entriesText)"
     }
 
-    private func gridHeight(forRows rows: Int) -> CGFloat {
-        return CGFloat(max(rows, 1)) * dayCellHeight
+    /// The navigation title greets by time of day, so the screen reads as a home rather than
+    /// as a calendar.
+    ///
+    /// This sets `navigationItem.title` rather than `title`, which would also relabel the
+    /// tab bar item – the tabs carry icons only.
+    private func updateGreeting() {
+        let key: String.LocalizationValue
+
+        switch calendar.component(.hour, from: Date()) {
+        case 5..<11: key = "home.greeting.morning"
+        case 11..<17: key = "home.greeting.day"
+        case 17..<22: key = "home.greeting.evening"
+        default: key = "home.greeting.night"
+        }
+
+        navigationItem.title = String(localized: key)
     }
 
     private var dayCellWidth: CGFloat {
-        return (view.bounds.width - 40) / 7
+        return (view.bounds.width - 2 * Self.gridMargin) / 7
     }
 
+    /// Rows are 4:3 where there is room for it, and shrink to fit when a month spans six
+    /// rows instead of five. Sizing them from the space the grid actually got keeps the
+    /// section headings above it from being squeezed away.
     private var dayCellHeight: CGFloat {
-        return dayCellWidth * 4.0 / 3.0
+        let preferred = dayCellWidth * 4.0 / 3.0
+        let rows = CGFloat(max(1, days.count / 7))
+        let available = calendarCollectionView.bounds.height
+
+        guard available > 0 else { return preferred }
+
+        return min(preferred, available / rows)
     }
 
-    private func presentWearEditor(for wear: OutfitWear) {
-        let editor = WearEditorController(mode: .edit(wear))
-        editor.delegate = self
+    /// The grid sits closer to the edges than the rest of the screen: every point of width
+    /// goes into the outfit thumbnails, which are what makes a day recognisable.
+    private static let gridMargin: CGFloat = 10
 
-        let navController = UINavigationController(rootViewController: editor)
-        navController.setNavigationBarHidden(true, animated: false)
+    private static let recommendationSpacing: CGFloat = 4
 
-        if let sheet = navController.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-        }
+    /// Fewer than three suggestions share the row between them instead of leaving the rest
+    /// of the width blank. A single one keeps the width of two, so it stays a card rather
+    /// than turning into a banner.
+    private var recommendationColumns: CGFloat {
+        return CGFloat(min(3, max(2, recommendations.count)))
+    }
 
-        present(navController, animated: true)
+    private var recommendationCellWidth: CGFloat {
+        let available = view.bounds.width - 40 - Self.recommendationSpacing * (recommendationColumns - 1)
+        return available / recommendationColumns
+    }
+
+    /// Capped so that a wider card does not push the month grid past the bottom of the screen.
+    private var recommendationCellHeight: CGFloat {
+        return min(recommendationCellWidth * 1.2, 152)
+    }
+
+    /// While there is nothing to suggest the strip collapses to the height of its notice,
+    /// so that the log moves up instead of leaving a hole. A notice that offers a way out
+    /// needs the extra line for its button.
+    private var recommendationSectionHeight: CGFloat {
+        guard recommendations.isEmpty else { return recommendationCellHeight }
+
+        return recommendationActionButton.isHidden ? 52 : 82
     }
 
     // MARK: - Layout -
 
     private func configureViewComponents() {
         view.backgroundColor = .background
-        title = String(localized: "calendar.title")
+
+        updateGreeting()
 
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
@@ -271,51 +638,69 @@ public class HomeController: UIViewController {
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = todayButton
 
-        [monthLabel, monthSummaryLabel, previousMonthButton, nextMonthButton, weekdayStack, calendarCollectionView, selectedDayLabel, dayLogTableView, emptyDayLabel].forEach { view.addSubview($0) }
+        [recommendationTitleLabel, recommendationWeatherLabel, rerollButton, weatherAttributionButton, recommendationSpinner, recommendationCollectionView, recommendationEmptyStack, historyTitleLabel, monthSummaryLabel, previousMonthButton, nextMonthButton, weekdayStack, calendarCollectionView].forEach { view.addSubview($0) }
 
-        let calendarHeight = calendarCollectionView.heightAnchor.constraint(equalToConstant: gridHeight(forRows: 6))
-        calendarHeightConstraint = calendarHeight
+        let recommendationHeight = recommendationCollectionView.heightAnchor.constraint(equalToConstant: recommendationCellHeight)
+        recommendationHeightConstraint = recommendationHeight
 
         NSLayoutConstraint.activate([
-            monthLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
-            monthLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            recommendationTitleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+            recommendationTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
 
-            monthSummaryLabel.topAnchor.constraint(equalTo: monthLabel.bottomAnchor, constant: 2),
-            monthSummaryLabel.leadingAnchor.constraint(equalTo: monthLabel.leadingAnchor),
+            rerollButton.centerYAnchor.constraint(equalTo: recommendationTitleLabel.centerYAnchor),
+            rerollButton.leadingAnchor.constraint(greaterThanOrEqualTo: recommendationTitleLabel.trailingAnchor, constant: 10),
+            rerollButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            rerollButton.widthAnchor.constraint(equalToConstant: 44),
 
-            nextMonthButton.centerYAnchor.constraint(equalTo: monthLabel.centerYAnchor),
+            recommendationSpinner.centerYAnchor.constraint(equalTo: recommendationTitleLabel.centerYAnchor),
+            recommendationSpinner.trailingAnchor.constraint(equalTo: rerollButton.leadingAnchor, constant: -6),
+
+            recommendationWeatherLabel.topAnchor.constraint(equalTo: recommendationTitleLabel.bottomAnchor, constant: 2),
+            recommendationWeatherLabel.leadingAnchor.constraint(equalTo: recommendationTitleLabel.leadingAnchor),
+
+            weatherAttributionButton.centerYAnchor.constraint(equalTo: recommendationWeatherLabel.centerYAnchor),
+            weatherAttributionButton.leadingAnchor.constraint(greaterThanOrEqualTo: recommendationWeatherLabel.trailingAnchor, constant: 10),
+            weatherAttributionButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+
+            recommendationCollectionView.topAnchor.constraint(equalTo: recommendationWeatherLabel.bottomAnchor, constant: 8),
+            recommendationCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            recommendationCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            recommendationHeight,
+
+            recommendationEmptyStack.topAnchor.constraint(equalTo: recommendationCollectionView.topAnchor, constant: 10),
+            recommendationEmptyStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            recommendationEmptyStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+
+            historyTitleLabel.topAnchor.constraint(equalTo: recommendationCollectionView.bottomAnchor, constant: 18),
+            historyTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+
+            nextMonthButton.centerYAnchor.constraint(equalTo: historyTitleLabel.centerYAnchor),
             nextMonthButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             nextMonthButton.widthAnchor.constraint(equalToConstant: 44),
 
-            previousMonthButton.centerYAnchor.constraint(equalTo: monthLabel.centerYAnchor),
+            previousMonthButton.centerYAnchor.constraint(equalTo: historyTitleLabel.centerYAnchor),
             previousMonthButton.trailingAnchor.constraint(equalTo: nextMonthButton.leadingAnchor),
             previousMonthButton.widthAnchor.constraint(equalToConstant: 44),
 
+            monthSummaryLabel.topAnchor.constraint(equalTo: historyTitleLabel.bottomAnchor, constant: 2),
+            monthSummaryLabel.leadingAnchor.constraint(equalTo: historyTitleLabel.leadingAnchor),
+            monthSummaryLabel.trailingAnchor.constraint(lessThanOrEqualTo: previousMonthButton.leadingAnchor, constant: -10),
+
             weekdayStack.topAnchor.constraint(equalTo: monthSummaryLabel.bottomAnchor, constant: 12),
-            weekdayStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            weekdayStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            weekdayStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Self.gridMargin),
+            weekdayStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Self.gridMargin),
 
+            // The grid takes whatever is left below the headings instead of demanding a
+            // fixed height – its rows adapt, the text above it does not have to.
             calendarCollectionView.topAnchor.constraint(equalTo: weekdayStack.bottomAnchor, constant: 6),
-            calendarCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            calendarCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            calendarHeight,
-
-            selectedDayLabel.topAnchor.constraint(equalTo: calendarCollectionView.bottomAnchor, constant: 14),
-            selectedDayLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            selectedDayLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-
-            dayLogTableView.topAnchor.constraint(equalTo: selectedDayLabel.bottomAnchor, constant: 8),
-            dayLogTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            dayLogTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            dayLogTableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-
-            emptyDayLabel.topAnchor.constraint(equalTo: dayLogTableView.topAnchor, constant: 20),
-            emptyDayLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            emptyDayLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20)
+            calendarCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Self.gridMargin),
+            calendarCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Self.gridMargin),
+            calendarCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         addMonthSwipeGestures()
-        updateSelectedDay()
+        updateWeatherLabel()
+        updateRecommendationState()
     }
 
     /// Swiping the grid moves to the previous or next month.
@@ -341,79 +726,69 @@ public class HomeController: UIViewController {
     }
 }
 
-// MARK: - Calendar grid
+// MARK: - Suggestions and wear log
 
 extension HomeController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if collectionView === recommendationCollectionView {
+            return recommendations.count
+        }
+
         return days.count
     }
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if collectionView === recommendationCollectionView {
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: OutfitRecommendationCell.identifier,
+                for: indexPath
+            ) as! OutfitRecommendationCell
+
+            let outfit = recommendations[indexPath.item]
+            cell.configure(with: outfit, isWornToday: wornTodayOutfitIDs.contains(outfit.id))
+            cell.onWear = { [weak self] in
+                Task { await self?.wearRecommendation(outfit) }
+            }
+
+            return cell
+        }
+
         let cell = collectionView.dequeueReusableCell(
             withReuseIdentifier: WearCalendarDayCell.identifier,
             for: indexPath
         ) as! WearCalendarDayCell
 
-        let day = days[indexPath.item]
-        cell.configure(day: day, isSelected: day.date == selectedDate)
+        cell.configure(day: days[indexPath.item])
 
         return cell
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        if collectionView === recommendationCollectionView {
+            return CGSize(width: recommendationCellWidth, height: recommendationCellHeight)
+        }
+
         return CGSize(width: dayCellWidth, height: dayCellHeight)
     }
 
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let date = days[indexPath.item].date else { return }
-        selectedDate = date
-    }
-}
-
-// MARK: - Entries of the selected day
-
-extension HomeController: UITableViewDataSource, UITableViewDelegate {
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return selectedDayWears.count
-    }
-
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: WearLogCell.identifier, for: indexPath) as! WearLogCell
-        cell.configure(with: selectedDayWears[indexPath.row])
-        return cell
-    }
-
-    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        presentWearEditor(for: selectedDayWears[indexPath.row])
-    }
-
-    public func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let wear = selectedDayWears[indexPath.row]
-
-        let delete = UIContextualAction(style: .destructive, title: String(localized: "common.delete")) { _, _, completion in
-            Task {
-                let deleted = await self.wearRepo.deleteWear(with: wear.id)
-
-                if deleted {
-                    await self.reloadMonth()
-                }
-
-                await MainActor.run { completion(deleted) }
-            }
+        if collectionView === recommendationCollectionView {
+            presentOutfitDetails(for: recommendations[indexPath.item])
+            return
         }
 
-        return UISwipeActionsConfiguration(actions: [delete])
-    }
-}
+        // A day of the log shows what was worn on it, nothing more.
+        let day = days[indexPath.item]
 
-// MARK: - Wear editor
+        guard let first = day.wears.first else { return }
 
-extension HomeController: WearEditorDelegate {
-    func wearEditor(_ controller: WearEditorController, didSave wear: OutfitWear) {
-        Task { await reloadMonth() }
-    }
+        // The grid badges a day that carries several outfits, so all of them have to be
+        // reachable – otherwise the badge promises something the screen cannot deliver.
+        guard day.wears.count == 1 else {
+            presentWearPicker(for: day)
+            return
+        }
 
-    func wearEditor(_ controller: WearEditorController, didDelete wearID: String) {
-        Task { await reloadMonth() }
+        openOutfit(with: first.outfitID)
     }
 }

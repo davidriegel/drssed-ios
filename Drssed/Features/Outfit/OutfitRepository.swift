@@ -133,6 +133,25 @@ public final class OutfitRepository {
         return domainModels
     }
 
+    // MARK: - Weather based recommendations
+
+    /// Outfits the server recommends for the felt temperature, in the order it ranked them.
+    ///
+    /// Only summaries come back, so the full outfits are read from the local store – a
+    /// recommendation that has not been synced to this device yet is dropped instead of
+    /// being shown without its scene.
+    public func recommendOutfits(feelsLike: Double, limit: Int = 5) async throws -> [Outfit] {
+        let summaries = try await APIClient.shared.outfitHandler.recommendOutfits(feelsLike: feelsLike, limit: limit)
+        let outfitIDs = summaries.map(\.outfit_id)
+
+        guard !outfitIDs.isEmpty else { return [] }
+
+        let stored = try await localDataSource.fetch(ids: outfitIDs)
+        let storedByID = Dictionary(uniqueKeysWithValues: stored.map { ($0.id, $0) })
+
+        return outfitIDs.compactMap { storedByID[$0] }
+    }
+
     // MARK: - Private
     private func upsertOutfit(_ domainModel: Outfit) async {
         do {

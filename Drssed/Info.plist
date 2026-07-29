@@ -5,7 +5,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>We need to access the camera, for you to take a picture of your clothing piece.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>We use your location to fill in the weather when you log an outfit as worn.</string>
+	<string>We use your location to look up the local weather, so we can suggest outfits that suit today and fill in the conditions when you log one as worn.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
