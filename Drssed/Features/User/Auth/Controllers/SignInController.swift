@@ -85,7 +85,7 @@ class SignInController: UIViewController {
     @objc
     func pushSignUp() {
         guard let nav = navigationController else { return }
-        let signUpController = SignUpController()
+        let signUpController = AccountUpgradeController()
         var stack = nav.viewControllers
         stack[stack.count - 1] = signUpController
         nav.setViewControllers(stack, animated: true)

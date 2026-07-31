@@ -1,6 +1,6 @@
 //
-//  SignUpController.swift
-//  Clothing Booth
+//  AccountUpgradeController.swift
+//  Drssed
 //
 //  Created by David Riegel on 09.08.24.
 //
@@ -9,7 +9,7 @@ import UIKit
 import PhotosUI
 import CropViewController
 
-class SignUpController: UIViewController {
+class AccountUpgradeController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,8 +40,8 @@ class SignUpController: UIViewController {
     }()
     
     lazy var galleryButton: UIButton = {
-        let button = UIButton(primaryAction: UIAction { _ in
-            self.showImageSourceOptions()
+        let button = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.presentDefaultPicker()
         })
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setImage(UIImage(systemName: "photo.fill", withConfiguration: UIImage.SymbolConfiguration(hierarchicalColor: .label)), for: .normal)
@@ -156,32 +156,6 @@ class SignUpController: UIViewController {
     }
     
     @objc
-    func showImageSourceOptions() {
-        let actionSheet = UIAlertController(title: String(localized: "imagepicker.source.title"), message: String(localized: "imagepicker.source.message"), preferredStyle: .actionSheet)
-        
-        actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.library"), style: .default) { [weak self] _ in
-            self?.presentPhotoPicker()
-        })
-        
-        actionSheet.addAction(UIAlertAction(title: String(localized: "imagepicker.source.default"), style: .default) { [weak self] _ in
-            self?.presentDefaultPicker()
-        })
-        
-        actionSheet.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
-        
-        present(actionSheet, animated: true)
-    }
-    
-    private func presentPhotoPicker() {
-        var configuration = PHPickerConfiguration(photoLibrary: .shared())
-        configuration.selectionLimit = 1
-        configuration.filter = .images
-        
-        let picker = PHPickerViewController(configuration: configuration)
-        picker.delegate = self
-        present(picker, animated: true)
-    }
-    
     private func presentDefaultPicker() {
         let defaultAvatarPicker = DefaultAvatarPickerController(delegate: self)
         let navigationController = UINavigationController(rootViewController: defaultAvatarPicker)
@@ -219,7 +193,7 @@ class SignUpController: UIViewController {
             profilePictureImageView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor)
         ])
         
-        let profilePicture = UITapGestureRecognizer(target: self, action: #selector(showImageSourceOptions))
+        let profilePicture = UITapGestureRecognizer(target: self, action: #selector(presentDefaultPicker))
         profilePictureImageView.addGestureRecognizer(profilePicture)
         
         view.addSubview(galleryButton)
@@ -266,7 +240,7 @@ class SignUpController: UIViewController {
     }
 }
 
-extension SignUpController: UITextFieldDelegate {
+extension AccountUpgradeController: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         return true
     }
@@ -288,13 +262,13 @@ extension SignUpController: UITextFieldDelegate {
     }
 }
 
-extension SignUpController: UIDefaultAvatarPickerDelegate {
+extension AccountUpgradeController: UIDefaultAvatarPickerDelegate {
     func defaultAvatarPicker(_ image: UIImage, _ named: String) {
         self.defaultAvatar = named
     }
 }
 
-extension SignUpController: PHPickerViewControllerDelegate {
+extension AccountUpgradeController: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         
@@ -319,7 +293,7 @@ extension SignUpController: PHPickerViewControllerDelegate {
     }
 }
 
-extension SignUpController: CropViewControllerDelegate {
+extension AccountUpgradeController: CropViewControllerDelegate {
     func cropViewController(_ cropViewController: CropViewController, didCropToImage image: UIImage, withRect cropRect: CGRect, angle: Int) {
         Task {
             cropViewController.dismiss(animated: true)

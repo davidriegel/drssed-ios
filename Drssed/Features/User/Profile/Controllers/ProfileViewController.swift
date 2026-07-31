@@ -381,7 +381,7 @@ class ProfileViewController: UIViewController {
     
     func pushSignUp() {
         DispatchQueue.main.async {
-            let signUpController = UINavigationController(rootViewController: SignUpController())
+            let signUpController = UINavigationController(rootViewController: AccountUpgradeController())
             self.present(signUpController, animated: true)
         }
     }
