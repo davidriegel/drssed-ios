@@ -68,6 +68,27 @@ final class AuthHandler {
         return upgradeResponse
     }
     
+    // MARK: - register new account
+    
+    public func registerAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws -> TokenAPIResponse {
+        guard !(username?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) || !(email?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) else { throw AuthenticationError.missingCredentials }
+        
+        var dict: [String: String] = ["password": password, "profile_picture": profilePicture]
+        
+        if let username = username {
+            dict["username"] = username
+        }
+        if let email = email {
+            dict["email"] = email
+        }
+
+        let uploadData = try JSONEncoder().encode(dict)
+        let request = try await APIClient.shared.createRequest(endpoint: "/auth/register", method: .POST, body: uploadData, authentication: false)
+        let tokenResponse: TokenAPIResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
+        
+        return tokenResponse
+    }
+    
     // MARK: -- POST SEND VERIFICATION EMAIL
     
     public func sendVerificationEmail() async throws {
