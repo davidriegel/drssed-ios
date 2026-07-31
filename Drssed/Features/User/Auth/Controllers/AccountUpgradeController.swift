@@ -66,7 +66,7 @@ class AccountUpgradeController: UIViewController {
     // MARK: -- Password
     
     lazy var passwordField: CustomTextFieldInput = {
-        let view = CustomTextFieldInput(fieldTitle: String(localized: "common.password"), placeholder: String(localized: "auth.signup.password.placeholder"))
+        let view = CustomTextFieldInput(fieldTitle: String(localized: "common.password"), placeholder: String(localized: "auth.upgrade.password.placeholder"))
         view.fieldInput.autocapitalizationType = .none
         view.fieldInput.isSecureTextEntry = true
         view.fieldInput.delegate = self
@@ -96,8 +96,8 @@ class AccountUpgradeController: UIViewController {
     lazy var signInTextButton: UIButton = {
         var bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
-        var title = NSMutableAttributedString(string: String(localized: "auth.signup.signin.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
-        title.append(NSAttributedString(string: String(localized: "auth.signup.signin.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
+        var title = NSMutableAttributedString(string: String(localized: "auth.upgrade.signin.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
+        title.append(NSAttributedString(string: String(localized: "auth.upgrade.signin.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
         bt.setAttributedTitle(title, for: .normal)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(pushSignIn), for: .touchUpInside)
@@ -186,7 +186,7 @@ class AccountUpgradeController: UIViewController {
     
     func configureViewComponents() {
         view.backgroundColor = .background
-        title = String(localized: "auth.signup.title")
+        title = String(localized: "auth.upgrade.title")
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
