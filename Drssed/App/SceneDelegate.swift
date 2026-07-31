@@ -5,11 +5,24 @@
 //  Created by David Riegel on 06.05.24.
 //
 
+import Combine
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
+
+    private var authStateCancellable: AnyCancellable?
+
+    /// Set as soon as the app has had an account of any kind. It separates a fresh install,
+    /// which is let straight in as a guest, from a user who signed out or deleted theirs and
+    /// should get the choice instead of a silent new guest account.
+    private static let hasHadAccountKey = "hasHadAccount"
+
+    private var hasHadAccount: Bool {
+        get { UserDefaults.standard.bool(forKey: Self.hasHadAccountKey) }
+        set { UserDefaults.standard.set(newValue, forKey: Self.hasHadAccountKey) }
+    }
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
@@ -34,16 +47,36 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         case .unknown, .unauthenticated:
             await handleUnauthenticatedState()
         case .guest:
+            hasHadAccount = true
             await showMainApp(asGuest: true)
         case .authenticated:
+            hasHadAccount = true
             await showMainApp(asGuest: false)
         }
+
+        await observeAuthState()
     }
-    
+
+    /// A fresh install is let straight in as a guest. Anything later means the user signed
+    /// out or deleted their account, and gets to choose what happens next instead of
+    /// silently receiving a new guest account.
     private func handleUnauthenticatedState() async {
+        guard hasHadAccount else {
+            await registerGuestAndEnterApp()
+            return
+        }
+
+        await showAuthLanding()
+    }
+
+    /// Routes on its own rather than leaving it to the auth-state observer: this runs during
+    /// start-up, before that observer exists.
+    private func registerGuestAndEnterApp() async {
         do {
-            try await AuthenticationManager.shared.registerAsGuest()
             await SyncManager.shared.clearSyncState()
+            try await AuthenticationManager.shared.registerAsGuest()
+
+            hasHadAccount = true
             await showMainApp(asGuest: true)
         } catch {
             await MainActor.run {
@@ -56,6 +89,43 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     }
                 )
             }
+        }
+    }
+
+    private func showAuthLanding() async {
+        await MainActor.run {
+            self.window?.rootViewController = AuthLandingController()
+        }
+    }
+
+    /// Signing out and deleting happen deep inside the app, so the swap back to the choice
+    /// screen – and forward again once an account exists – is handled here for all of them.
+    private func observeAuthState() async {
+        await MainActor.run {
+            self.authStateCancellable = AuthenticationManager.shared.authStatePublisher
+                .removeDuplicates()
+                .sink { [weak self] state in
+                    guard let self else { return }
+
+                    // Only the two runtime transitions belong here. Start-up routes itself,
+                    // and matching on the exact screen keeps the two from colliding.
+                    let root = self.window?.rootViewController
+                    let isShowingApp = root is TabBarController
+                    let isShowingLanding = root is AuthLandingController
+
+                    switch state {
+                    case .unauthenticated where isShowingApp:
+                        Task { await self.showAuthLanding() }
+                    case .guest where isShowingLanding:
+                        self.hasHadAccount = true
+                        Task { await self.showMainApp(asGuest: true) }
+                    case .authenticated where isShowingLanding:
+                        self.hasHadAccount = true
+                        Task { await self.showMainApp(asGuest: false) }
+                    default:
+                        break
+                    }
+                }
         }
     }
     

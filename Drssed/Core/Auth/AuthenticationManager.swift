@@ -124,29 +124,31 @@ class AuthenticationManager {
         try await APIClient.shared.authHandler.sendVerificationEmail()
     }
     
+    /// Signing out and deleting leave the app without an account on purpose: minting a
+    /// fresh guest right away would bury the choice between registering, signing in and
+    /// carrying on as a guest – and would leave an abandoned account behind every time.
     func signOut() async {
         guard let token = await TokenManager.shared.currentTokens() else { return }
-        
+
         Task.detached {
             try? await APIClient.shared.authHandler.invalidateRefreshToken(refreshToken: token.refreshToken)
         }
-        
+
         AppRepository.shared.userRepository.clear()
-        setAuthState(.unauthenticated)
-        
+
         await SyncManager.shared.clearSyncState()
         await TokenManager.shared.clearTokens()
-        
-        try? await registerAsGuest()
+
+        setAuthState(.unauthenticated)
     }
-    
+
     func deleteAccount() async throws {
         try await APIClient.shared.authHandler.deleteAccount()
         await SyncManager.shared.clearSyncState()
         await TokenManager.shared.clearTokens()
         AppRepository.shared.userRepository.clear()
 
-        try? await registerAsGuest()
+        setAuthState(.unauthenticated)
     }
 
     func changePassword(currentPassword: String, newPassword: String) async throws {
