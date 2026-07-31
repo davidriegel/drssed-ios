@@ -54,7 +54,7 @@ final class AuthLandingController: UIViewController {
 
     private lazy var signUpButton: UIButton = {
         let bt = UIButton(primaryAction: UIAction { _ in
-            self.presentModally(AccountUpgradeController())
+            self.presentModally(SignUpController())
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.configuration = .prominentGlass()
