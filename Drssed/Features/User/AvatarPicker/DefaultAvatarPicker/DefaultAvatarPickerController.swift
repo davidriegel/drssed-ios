@@ -19,9 +19,27 @@ class DefaultAvatarPickerController: UIViewController {
         UIImage(named: name)!
     }
     
-    init(delegate: UIDefaultAvatarPickerDelegate) {
+    var selectedAvatarName: String? = nil
+    var selectedAvatar: UIImage? = nil
+    
+    init(delegate: UIDefaultAvatarPickerDelegate? = nil, preselected: String = "") {
         self.delegate = delegate
+        
         super.init(nibName: nil, bundle: nil)
+        
+        guard let avatarIndex = defaultAvatarsNamed.firstIndex(of: preselected) else {
+            guard let randomIndex = defaultAvatarsNamed.indices.randomElement() else {
+                assertionFailure("default avatars array is empty")
+                return
+            }
+            
+            self.selectedAvatarName = defaultAvatarsNamed[randomIndex]
+            self.selectedAvatar = defaultAvatars[randomIndex]
+            return
+        }
+        
+        self.selectedAvatarName = defaultAvatarsNamed[avatarIndex]
+        self.selectedAvatar = defaultAvatars[avatarIndex]
     }
     
     required init?(coder: NSCoder) {

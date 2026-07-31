@@ -11,19 +11,23 @@ import CropViewController
 
 class AccountUpgradeController: UIViewController {
     
+    init () {
+        super.init(nibName: nil, bundle: nil)
+        
+        self.defaultAvatarPicker.delegate = self
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
         configureViewComponents()
     }
     
-    var changedPicture: Bool = false
-    var defaultAvatar: String = "default_" + ["hat", "scarf", "tshirt", "cap", "sweater"].randomElement()! + "_profilepicture" {
-        didSet {
-            changedPicture = false
-            profilePictureImageView.image = UIImage(named: defaultAvatar)
-        }
-    }
+    let defaultAvatarPicker: DefaultAvatarPickerController = DefaultAvatarPickerController()
     
     // MARK: -- Profile picture
     
@@ -32,7 +36,7 @@ class AccountUpgradeController: UIViewController {
         iv.translatesAutoresizingMaskIntoConstraints = false
         iv.contentMode = .scaleAspectFit
         
-        iv.image = UIImage(named: defaultAvatar)
+        iv.image = defaultAvatarPicker.selectedAvatar
         iv.layer.cornerRadius = 10
         iv.clipsToBounds = true
         iv.isUserInteractionEnabled = true
@@ -121,9 +125,12 @@ class AccountUpgradeController: UIViewController {
         signUpButton.backgroundColor = .accent.withAlphaComponent(0.3)
         signUpButton.isEnabled = false
         
+        guard let passwordInput = passwordField.fieldInput.text else { return }
+        guard let selectedAvatarName = defaultAvatarPicker.selectedAvatarName else { return }
+        
         Task {
             do {
-                _ = try await AuthenticationManager.shared.upgradeAccount(email: emailField.fieldInput.text, password: passwordField.fieldInput.text ?? "", profilePicture: String(defaultAvatar.split(separator: "_")[1]))
+                _ = try await AuthenticationManager.shared.upgradeAccount(email: emailField.fieldInput.text, password: passwordInput, profilePicture: String(selectedAvatarName.split(separator: "_")[1]))
                 self.dismissModal()
             } catch {
                 ErrorHandler.handle(error)
@@ -264,7 +271,7 @@ extension AccountUpgradeController: UITextFieldDelegate {
 
 extension AccountUpgradeController: UIDefaultAvatarPickerDelegate {
     func defaultAvatarPicker(_ image: UIImage, _ named: String) {
-        self.defaultAvatar = named
+        self.profilePictureImageView.image = image
     }
 }
 
