@@ -72,15 +72,38 @@ class SignInController: UIViewController {
     lazy var signUpTextButton: UIButton = {
         var bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
-        var title = NSMutableAttributedString(string: String(localized: "auth.signin.signup.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
-        title.append(NSAttributedString(string: String(localized: "auth.signin.signup.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
-        bt.setAttributedTitle(title, for: .normal)
+        switch AuthenticationManager.shared.authState {
+        case .guest, .authenticated:
+            var title = NSMutableAttributedString(string: String(localized: "auth.signin.upgrade.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
+            title.append(NSAttributedString(string: String(localized: "auth.signin.upgrade.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
+            
+            bt.addTarget(self, action: #selector(pushUpgrade), for: .touchUpInside)
+            
+            bt.setAttributedTitle(title, for: .normal)
+        case .unauthenticated, .unknown:
+            var title = NSMutableAttributedString(string: String(localized: "auth.signin.signup.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
+            title.append(NSAttributedString(string: String(localized: "auth.signin.signup.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
+            
+            bt.addTarget(self, action: #selector(pushSignUp), for: .touchUpInside)
+            
+            bt.setAttributedTitle(title, for: .normal)
+        }
+        
+        
         bt.titleLabel?.textAlignment = .center
-        bt.addTarget(self, action: #selector(pushSignUp), for: .touchUpInside)
         return bt
     }()
     
     // MARK: -- Functions
+    
+    @objc
+    func pushUpgrade() {
+        guard let nav = navigationController else { return }
+        let accountUpgradeController = AccountUpgradeController()
+        var stack = nav.viewControllers
+        stack[stack.count - 1] = accountUpgradeController
+        nav.setViewControllers(stack, animated: true)
+    }
     
     @objc
     func pushSignUp() {

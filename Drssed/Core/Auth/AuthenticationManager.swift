@@ -120,6 +120,24 @@ class AuthenticationManager {
         }
     }
     
+    func registerAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws {
+        do {
+            let tokenResponse = try await APIClient.shared.authHandler.registerAccount(username: username, email: email, password: password, profilePicture: profilePicture)
+            
+            let keychainModel = try TokenKeychainModel(from: tokenResponse)
+            await TokenManager.shared.setTokens(keychainModel)
+            
+            await SyncManager.shared.clearSyncState()
+            await SyncManager.shared.syncWithServer(forceFull: true)
+            
+            setAuthState(.authenticated)
+            await AppRepository.shared.userRepository.refreshCurrentUser()
+        } catch {
+            setAuthState(.unauthenticated)
+            throw error
+        }
+    }
+    
     func sendVerificationEmail() async throws {
         try await APIClient.shared.authHandler.sendVerificationEmail()
     }

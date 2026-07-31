@@ -1,16 +1,15 @@
 //
-//  SignUpController.swift
+//  AccountUpgradeController.swift
 //  Drssed
 //
-//  Created by David Riegel on 31.07.26.
+//  Created by David Riegel on 09.08.24.
 //
-
 
 import UIKit
 import PhotosUI
 import CropViewController
 
-class SignUpController: UIViewController {
+class AccountUpgradeController: UIViewController {
     
     init () {
         super.init(nibName: nil, bundle: nil)
@@ -67,7 +66,7 @@ class SignUpController: UIViewController {
     // MARK: -- Password
     
     lazy var passwordField: CustomTextFieldInput = {
-        let view = CustomTextFieldInput(fieldTitle: String(localized: "common.password"), placeholder: String(localized: "auth.signup.password.placeholder"))
+        let view = CustomTextFieldInput(fieldTitle: String(localized: "common.password"), placeholder: String(localized: "auth.upgrade.password.placeholder"))
         view.fieldInput.autocapitalizationType = .none
         view.fieldInput.isSecureTextEntry = true
         view.fieldInput.delegate = self
@@ -97,8 +96,8 @@ class SignUpController: UIViewController {
     lazy var signInTextButton: UIButton = {
         var bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
-        var title = NSMutableAttributedString(string: String(localized: "auth.signup.signin.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
-        title.append(NSAttributedString(string: String(localized: "auth.signup.signin.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
+        var title = NSMutableAttributedString(string: String(localized: "auth.upgrade.signin.cta1") + " ", attributes: [NSAttributedString.Key.foregroundColor : UIColor.label, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .bold)])
+        title.append(NSAttributedString(string: String(localized: "auth.upgrade.signin.cta2"), attributes: [NSAttributedString.Key.foregroundColor : UIColor.accent, NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14, weight: .black)]))
         bt.setAttributedTitle(title, for: .normal)
         bt.titleLabel?.textAlignment = .center
         bt.addTarget(self, action: #selector(pushSignIn), for: .touchUpInside)
@@ -131,7 +130,7 @@ class SignUpController: UIViewController {
         
         Task {
             do {
-                _ = try await AuthenticationManager.shared.registerAccount(email: emailField.fieldInput.text, password: passwordInput, profilePicture: String(selectedAvatarName.split(separator: "_")[1]))
+                _ = try await AuthenticationManager.shared.upgradeAccount(email: emailField.fieldInput.text, password: passwordInput, profilePicture: String(selectedAvatarName.split(separator: "_")[1]))
                 self.dismissModal()
             } catch {
                 ErrorHandler.handle(error)
@@ -187,7 +186,7 @@ class SignUpController: UIViewController {
     
     func configureViewComponents() {
         view.backgroundColor = .background
-        title = String(localized: "auth.signup.title")
+        title = String(localized: "auth.upgrade.title")
         
         let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: UIFont.systemFontSize, weight: .black)]
         navigationController?.navigationBar.titleTextAttributes = titleAttributes
@@ -248,7 +247,7 @@ class SignUpController: UIViewController {
     }
 }
 
-extension SignUpController: UITextFieldDelegate {
+extension AccountUpgradeController: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         return true
     }
@@ -270,13 +269,13 @@ extension SignUpController: UITextFieldDelegate {
     }
 }
 
-extension SignUpController: UIDefaultAvatarPickerDelegate {
+extension AccountUpgradeController: UIDefaultAvatarPickerDelegate {
     func defaultAvatarPicker(_ image: UIImage, _ named: String) {
         self.profilePictureImageView.image = image
     }
 }
 
-extension SignUpController: PHPickerViewControllerDelegate {
+extension AccountUpgradeController: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         
@@ -301,7 +300,7 @@ extension SignUpController: PHPickerViewControllerDelegate {
     }
 }
 
-extension SignUpController: CropViewControllerDelegate {
+extension AccountUpgradeController: CropViewControllerDelegate {
     func cropViewController(_ cropViewController: CropViewController, didCropToImage image: UIImage, withRect cropRect: CGRect, angle: Int) {
         Task {
             cropViewController.dismiss(animated: true)
