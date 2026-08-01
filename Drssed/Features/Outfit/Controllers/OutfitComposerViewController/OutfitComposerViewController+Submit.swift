@@ -93,13 +93,6 @@ class OutfitComposerViewController_Submit: UIViewController {
         let view = CustomSwitchInput(fieldTitle: String(localized: "common.favorite.title"))
         return view
     }()
-    
-    // MARK: -- Public
-    
-    lazy var outfitPublicField: CustomSwitchInput = {
-        let view = CustomSwitchInput(fieldTitle: String(localized: "common.public.title"))
-        return view
-    }()
   
     // MARK: -- Seasons
     
@@ -263,13 +256,8 @@ class OutfitComposerViewController_Submit: UIViewController {
             outfitSeasonsSelection.bottomAnchor.constraint(equalTo: outfitSeasonsField.fieldBackground.bottomAnchor),
         ])
 
-        // MARK: Tags / Favorite / Public row
+        // MARK: Tags / Favorite
         let sv = UIStackView(arrangedSubviews: [outfitTagsField, outfitFavoriteField])
-
-        //Task {
-            //let isAuthenticated = AuthenticationManager.shared.authState == .authenticated
-            //if isAuthenticated { sv.addArrangedSubview(self.outfitPublicField) }
-        //}
 
         sv.axis = .horizontal
         sv.alignment = .center
@@ -303,23 +291,27 @@ class OutfitComposerViewController_Submit: UIViewController {
 
         finishButton.addAction(UIAction(handler: { _ in
             Task {
+                self.finishButton.isEnabled = false
+                
                 let outfit = Outfit(
                     name: self.outfitNameField.fieldInput.text ?? "",
-                    isPublic: self.outfitPublicField.fieldInput.isOn,
+                    isPublic: false,
                     isFavorite: self.outfitFavoriteField.fieldInput.isOn,
                     seasons: self.selectedSeasonsArray,
                     tags: self.selectedTagsArray,
                     scene: self.outfitScene,
                 )
 
-                await self.outfitRepo.addOrUpdateOutfit(from: outfit)
+                let success = await self.outfitRepo.addOrUpdateOutfit(from: outfit)
+                
+                guard success else {
+                    self.finishButton.isEnabled = true
+                    return
+                }
+                
+                ToastPresenter.success(String(localized: "outfitcomposer.alert.success"))
 
-                let alert = UIAlertController(title: nil, message: String(localized: "outfitcomposer.alert.success"), preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
-                    self.returnToLookbook()
-                }))
-
-                return self.present(alert, animated: true)
+                self.returnToLookbook()
             }
         }), for: .primaryActionTriggered)
 

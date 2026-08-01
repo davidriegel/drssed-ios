@@ -331,6 +331,8 @@ class UploadController: UIViewController {
     
     @objc
     func uploadClothing() {
+        finishButton.isEnabled = false
+        
         let errorAlert = UIAlertController(title: String(localized: "common.error.title"), message: nil, preferredStyle: .alert)
         errorAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
         
@@ -371,16 +373,17 @@ class UploadController: UIViewController {
         let domainModel = Clothing(name: name, imageID: imageID, category: subCategory.category, subCategory: subCategory, color: colorPickerView.selectedColor, seasons: selectedSeasonsArray, tags: selectedTagsArray, warmth: selectedWarmth)
         
         Task {
-            await clothingRepo.addOrUpdateClothing(from: domainModel)
+            let success = await clothingRepo.addOrUpdateClothing(from: domainModel)
+            
+            guard success else {
+                finishButton.isEnabled = true
+                return
+            }
+            
             delegate?.didUploadClothing(domainModel)
-        }
-                
-        let alert = UIAlertController(title: nil, message: String(localized: "clothingupload.alert.success"), preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
+            ToastPresenter.success(String(localized: "clothingupload.alert.success"))
             self.cancelTapped()
-        }))
-                
-        return present(alert, animated: true)
+        }
     }
     
     @objc
