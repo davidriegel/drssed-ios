@@ -101,22 +101,10 @@ final class AuthHandler {
     // MARK: -- GET ACCESS TOKEN
     
     public func getAndRenewAccessToken() async throws -> String {
-        guard let tokens = await TokenManager.shared.currentTokens() else { throw AuthenticationError.userNotSignedIn }
-        var accessToken = tokens.accessToken
-        
-        if tokens.willExpireSoon {
-            let tokenResponse = try await performTokenRefresh(refreshToken: tokens.refreshToken)
-            
-            let keychainModel = try TokenKeychainModel(from: tokenResponse)
-            await TokenManager.shared.setTokens(keychainModel)
-            
-            accessToken = tokenResponse.access_token
-        }
-        
-        return accessToken
+        try await TokenManager.shared.validAccessToken()
     }
-    
-    private func performTokenRefresh(refreshToken: String) async throws -> TokenAPIResponse {
+
+    func performTokenRefresh(refreshToken: String) async throws -> TokenAPIResponse {
         let uploadData = try JSONEncoder().encode(["refresh_token": refreshToken])
         let request = try await APIClient.shared.createRequest(endpoint: "/auth/refresh", method: .POST, body: uploadData, authentication: false)
         

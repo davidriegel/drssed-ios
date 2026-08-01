@@ -40,7 +40,7 @@ public struct TokenKeychainModel: Codable {
         
         self.accessToken = response.access_token
         self.refreshToken = response.refresh_token
-        self.expiryDate = Date().addingTimeInterval(TimeInterval(response.expires_in))
+        self.expiryDate = jwt.expiresAt ?? Date().addingTimeInterval(TimeInterval(response.expires_in))
         self.isGuest = isGuest
         self.userID = userID
     }
