@@ -16,13 +16,13 @@ final class SyncManager {
     
     private init() {}
     
-    func syncWithServer(forceFull: Bool = false) async {
-        guard NetworkManager.shared.isReachable else { return }
+    func syncWithServer(forceFull: Bool = false) async -> Bool {
+        guard NetworkManager.shared.isReachable else { return false }
         
         if forceFull || shouldPerformFullSync(){
-            await performFullSync()
+            return await performFullSync()
         } else {
-            await performIncrementalSync()
+            return await performIncrementalSync()
         }
     }
     
@@ -52,7 +52,7 @@ final class SyncManager {
         await wearRepo.deleteAllLocal()
     }
     
-    private func performFullSync() async {
+    private func performFullSync() async -> Bool {
         do {
             let clothingSyncResponse = try await APIClient.shared.clothingHandler.syncClothes(updatedSince: nil)
             await self.clothesRepo.syncWithServerModels(clothingSyncResponse.updated)
@@ -65,15 +65,18 @@ final class SyncManager {
             let wearSyncResponse = try await APIClient.shared.wearHandler.syncWears(updatedSince: nil)
             await self.wearRepo.syncWithServerModels(wearSyncResponse.updated)
             SyncCursors.set(.wear, to: wearSyncResponse.serverTime)
-
+            
+            return true
         } catch let error as AuthenticationError {
             ErrorHandler.handleSilently(error)
         } catch {
             ErrorHandler.handle(error)
         }
+        
+        return false
     }
     
-    private func performIncrementalSync() async {
+    private func performIncrementalSync() async -> Bool {
         do {
             let clothingLastSync = SyncCursors.get(.clothing)
             let clothingSyncResponse = try await APIClient.shared.clothingHandler.syncClothes(updatedSince: clothingLastSync)
@@ -90,10 +93,13 @@ final class SyncManager {
             await self.wearRepo.applyServerSync(updated: wearSyncResponse.updated, deleted: wearSyncResponse.deleted)
             SyncCursors.set(.wear, to: wearSyncResponse.serverTime)
 
+            return true
         } catch let error as AuthenticationError {
             ErrorHandler.handleSilently(error)
         } catch {
             ErrorHandler.handle(error)
         }
+        
+        return false
     }
 }
