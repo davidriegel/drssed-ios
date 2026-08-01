@@ -303,6 +303,8 @@ class OutfitComposerViewController_Submit: UIViewController {
 
         finishButton.addAction(UIAction(handler: { _ in
             Task {
+                self.finishButton.isEnabled = false
+                
                 let outfit = Outfit(
                     name: self.outfitNameField.fieldInput.text ?? "",
                     isPublic: self.outfitPublicField.fieldInput.isOn,
@@ -312,14 +314,16 @@ class OutfitComposerViewController_Submit: UIViewController {
                     scene: self.outfitScene,
                 )
 
-                await self.outfitRepo.addOrUpdateOutfit(from: outfit)
+                let success = await self.outfitRepo.addOrUpdateOutfit(from: outfit)
+                
+                guard success else {
+                    self.finishButton.isEnabled = true
+                    return
+                }
+                
+                ToastPresenter.success(String(localized: "outfitcomposer.alert.success"))
 
-                let alert = UIAlertController(title: nil, message: String(localized: "outfitcomposer.alert.success"), preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default, handler: { _ in
-                    self.returnToLookbook()
-                }))
-
-                return self.present(alert, animated: true)
+                self.returnToLookbook()
             }
         }), for: .primaryActionTriggered)
 
