@@ -163,6 +163,10 @@ final public class APIClient {
             do {
                 try handleHTTPResponse(response as? HTTPURLResponse, data: data)
             } catch let error as APIError {
+                if error == .unauthorized {
+                    await AuthenticationManager.shared.signOut()
+                }
+                
                 if !ignoreError.contains(error) {
                     throw error
                 }
