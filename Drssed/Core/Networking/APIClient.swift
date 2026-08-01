@@ -153,25 +153,56 @@ final public class APIClient {
     // MARK: -- Execute request
     
     public func executeRequest(request: URLRequest, ignoreError: [APIError] = []) async throws -> (Data, HTTPURLResponse?) {
+        try await executeRequest(request: request, ignoreError: ignoreError, isRetry: false)
+    }
+
+    private func executeRequest(request: URLRequest, ignoreError: [APIError], isRetry: Bool) async throws -> (Data, HTTPURLResponse?) {
         guard NetworkManager.shared.isReachable else {
             throw APIError.offline
         }
-        
+
         do {
             let (data, response) = try await session.data(for: request)
-            
+
             do {
                 try handleHTTPResponse(response as? HTTPURLResponse, data: data)
             } catch let error as APIError {
+                if error == .unauthorized, !isRetry, !ignoreError.contains(error),
+                   let retried = await renewedRequest(from: request) {
+                    return try await executeRequest(request: retried, ignoreError: ignoreError, isRetry: true)
+                }
+
                 if !ignoreError.contains(error) {
                     throw error
                 }
             }
-            
+
             return (data, response as? HTTPURLResponse)
         } catch let error as URLError {
             throw mapURLError(error)
         }
+    }
+    
+    private func renewedRequest(from request: URLRequest) async -> URLRequest? {
+        guard request.value(forHTTPHeaderField: "Authorization") != nil else { return nil }
+
+        let accessToken: String
+
+        do {
+            accessToken = try await TokenManager.shared.validAccessToken(forceRefresh: true)
+        } catch let error as APIError where error.isNetworkRelated() || error.isServerRelated() {
+            ErrorHandler.handleSilently(error)
+            return nil
+        } catch {
+            ErrorHandler.handleSilently(error)
+            await AuthenticationManager.shared.signOut()
+            return nil
+        }
+
+        var renewed = request
+        renewed.setValue("Bearer " + accessToken, forHTTPHeaderField: "Authorization")
+
+        return renewed
     }
     
     public func executeRequestAndDecode<T: Decodable>(request: URLRequest, ignoreError: [APIError] = []) async throws -> T {
