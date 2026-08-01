@@ -18,6 +18,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     /// which is let straight in as a guest, from a user who signed out or deleted theirs and
     /// should get the choice instead of a silent new guest account.
     private static let hasHadAccountKey = "hasHadAccount"
+    private static let lastSyncedVersionKey = "lastFullSyncAppVersion"
+
+        private var currentAppVersion: String {
+            let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+            return "\(short) (\(build))"
+        }
 
     private var hasHadAccount: Bool {
         get { UserDefaults.standard.bool(forKey: Self.hasHadAccountKey) }
@@ -48,10 +55,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             await handleUnauthenticatedState()
         case .guest:
             hasHadAccount = true
-            await showMainApp(asGuest: true)
+            await showMainApp()
         case .authenticated:
             hasHadAccount = true
-            await showMainApp(asGuest: false)
+            await showMainApp()
         }
 
         await observeAuthState()
@@ -77,7 +84,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             try await AuthenticationManager.shared.registerAsGuest()
 
             hasHadAccount = true
-            await showMainApp(asGuest: true)
+            await showMainApp()
         } catch {
             await MainActor.run {
                 self.window?.rootViewController = ErrorViewController(
@@ -118,10 +125,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                         Task { await self.showAuthLanding() }
                     case .guest where isShowingLanding:
                         self.hasHadAccount = true
-                        Task { await self.showMainApp(asGuest: true) }
+                        Task { await self.showMainApp() }
                     case .authenticated where isShowingLanding:
                         self.hasHadAccount = true
-                        Task { await self.showMainApp(asGuest: false) }
+                        Task { await self.showMainApp() }
                     default:
                         break
                     }
@@ -129,23 +136,22 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
     }
     
-    private func showMainApp(asGuest: Bool) async {
+    private func showMainApp() async {
         await MainActor.run {
             let tabBar = TabBarController()
-            // setup specifically for guest or signed in user
             self.window?.rootViewController = tabBar
             
             Task {
                 await NetworkManager.shared.checkServerReachable()
-                if NetworkManager.shared.isReachable {
-                    let migrationKey = "migrateToOutfitIDfromImageID"
-                    
-                    if !UserDefaults.standard.bool(forKey: migrationKey) {
-                        await SyncManager.shared.syncWithServer(forceFull: true)
-                        UserDefaults.standard.set(true, forKey: migrationKey)
-                    } else {
-                        await SyncManager.shared.syncWithServer()
-                    }
+                guard NetworkManager.shared.isReachable else { return }
+                
+                let version = self.currentAppVersion
+                let isFirstRunOfVersion = UserDefaults.standard.string(forKey: Self.lastSyncedVersionKey) != version
+
+                let didSync = await SyncManager.shared.syncWithServer(forceFull: isFirstRunOfVersion)
+
+                if isFirstRunOfVersion, didSync {
+                    UserDefaults.standard.set(version, forKey: Self.lastSyncedVersionKey)
                 }
             }
         }
