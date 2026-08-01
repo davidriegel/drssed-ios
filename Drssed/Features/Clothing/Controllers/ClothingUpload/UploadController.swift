@@ -673,8 +673,12 @@ extension UploadController: TOCropViewControllerDelegate {
                 colorPickerView.selectedColor = clothingColor
                 clothingColorPickerButton.backgroundColor = clothingColor
                 selectedSubCategory = clothingSubCategory
-                clothingCategorySelection.text = clothingSubCategory.localizedName
-                clothingCategorySelection.textColor = .label
+                
+                if clothingSubCategory != .UNKNOWN {
+                    selectedSubCategory = clothingSubCategory
+                    clothingCategorySelection.text = clothingSubCategory.localizedName
+                    clothingCategorySelection.textColor = .label
+                }
 
                 itemImageView.sd_setImage(with: clothingURL)
                 itemImageView.hideSkeleton()

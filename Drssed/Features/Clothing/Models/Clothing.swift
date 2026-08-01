@@ -42,8 +42,8 @@ public struct Clothing: Identifiable, Hashable, Sendable {
     init(from local: ClothingLocal) {
         self.id = local.id
         self.name = local.name
-        self.category = ClothingCategories(rawValue: local.category)!
-        self.subCategory = ClothingSubCategories(rawValue: local.subCategory)!
+        self.category = ClothingCategories(rawValue: local.category) ?? .UNKNOWN
+        self.subCategory = ClothingSubCategories(rawValue: local.subCategory) ?? .UNKNOWN
         self.color = UIColor(hex: local.color) ?? .white
         self.imageID = local.imageID
         self.isPublic = local.isPublic

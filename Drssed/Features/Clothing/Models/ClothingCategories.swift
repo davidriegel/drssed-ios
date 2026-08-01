@@ -10,6 +10,12 @@ public enum ClothingCategories: String, Codable, CaseIterable, Hashable, Sendabl
     case TOP
     case BOTTOM
     case ONE_PIECE
+    case UNKNOWN
+    
+    public init(from decoder: any Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        self = ClothingCategories(rawValue: rawValue.uppercased()) ?? .UNKNOWN
+    }
     
     var localizedName: String {
         let key = String.LocalizationValue("category_" + self.rawValue.lowercased())

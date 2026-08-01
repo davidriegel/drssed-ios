@@ -48,6 +48,13 @@ public enum ClothingSubCategories: String, Codable, CaseIterable, Hashable, Send
     case JUMPSUIT
     case OVERALL
     case SUIT
+    
+    case UNKNOWN
+    
+    public init(from decoder: any Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        self = ClothingSubCategories(rawValue: rawValue.uppercased()) ?? .UNKNOWN
+    }
 
     var localizedName: String {
         let normalized = self.rawValue.lowercased().replacingOccurrences(of: "-", with: "_")
@@ -65,12 +72,16 @@ public enum ClothingSubCategories: String, Codable, CaseIterable, Hashable, Send
             return .JACKET
         case .DRESS, .JUMPSUIT, .OVERALL, .SUIT:
             return .ONE_PIECE
+        case .UNKNOWN:
+            return .UNKNOWN
         }
     }
 }
 
 extension ClothingCategories {
     var subCategories: [ClothingSubCategories] {
-        ClothingSubCategories.allCases.filter { $0.category == self }
+        guard self != .UNKNOWN else { return [] }
+        
+        return ClothingSubCategories.allCases.filter { $0.category == self }
     }
 }
