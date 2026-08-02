@@ -27,12 +27,7 @@ public final class WearRepository {
     // MARK: - Server Sync (Soft sync)
     public func applyServerSync(updated: [OutfitWearAPI], deleted: [String]) async {
         do {
-            let models = updated.map(OutfitWear.init(from:))
-
-            for item in models {
-                try await localDataSource.upsert(item: item)
-            }
-
+            try await localDataSource.upsert(items: updated.map(OutfitWear.init(from:)))
             try await localDataSource.delete(ids: deleted)
 
         } catch {

@@ -88,7 +88,29 @@ public final class ClothingLocalDataSource {
             try ctx.saveIfNeeded()
         }
     }
-    
+
+    public func upsert(items: [Clothing]) async throws {
+        guard !items.isEmpty else { return }
+
+        try await self.ctx.perform { [ctx = self.ctx] in
+            let req: NSFetchRequest<ClothingLocal> = ClothingLocal.fetchRequestTyped()
+            req.predicate = NSPredicate(format: "id IN %@", items.map(\.id))
+
+            var existing: [String: ClothingLocal] = [:]
+
+            for row in try ctx.fetch(req) {
+                existing[row.id] = row
+            }
+
+            for item in items {
+                let mo = existing[item.id] ?? ClothingLocal(context: ctx)
+                mo.update(from: item)
+            }
+
+            try ctx.saveIfNeeded()
+        }
+    }
+
     public func delete(ids: [String]) async throws {
         try await self.ctx.perform { [ctx = self.ctx] in
             guard !ids.isEmpty else { return }
@@ -120,11 +142,17 @@ public final class ClothingLocalDataSource {
                 NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [ctx])
             }
 
+            let req: NSFetchRequest<ClothingLocal> = ClothingLocal.fetchRequestTyped()
+            req.predicate = NSPredicate(format: "id IN %@", ids)
+
+            var existing: [String: ClothingLocal] = [:]
+
+            for row in try ctx.fetch(req) {
+                existing[row.id] = row
+            }
+
             for item in incoming {
-                let req: NSFetchRequest<ClothingLocal> = ClothingLocal.fetchRequestTyped()
-                req.predicate = NSPredicate(format: "id == %@", item.id)
-                req.fetchLimit = 1
-                let mo = try ctx.fetch(req).first ?? ClothingLocal(context: ctx)
+                let mo = existing[item.id] ?? ClothingLocal(context: ctx)
                 mo.update(from: item)
             }
 
