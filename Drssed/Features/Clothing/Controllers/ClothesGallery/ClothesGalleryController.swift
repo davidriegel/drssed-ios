@@ -266,6 +266,11 @@ class ClothesGalleryController: UIViewController {
         }
     }
     
+    private func clothing(at indexPath: IndexPath) -> Clothing? {
+        guard let id = diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
+        return dataSourceByID[id]
+    }
+
     func showClothingDetails(of clothing: Clothing) {
         let detailsController = ClothingDetailsController(clothing)
         detailsController.delegate = self
@@ -712,7 +717,9 @@ extension ClothesGalleryController: UICollectionViewDelegate, UICollectionViewDe
             return
         }
 
-        showClothingDetails(of: isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item])
+        guard let clothing = clothing(at: indexPath) else { return }
+
+        showClothingDetails(of: clothing)
     }
     
     func didUploadClothing(_ clothing: Clothing) {
