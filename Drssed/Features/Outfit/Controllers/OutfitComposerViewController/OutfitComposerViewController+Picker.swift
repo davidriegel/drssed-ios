@@ -15,7 +15,7 @@ protocol OutfitComposerViewController_PickerDelegate: AnyObject {
 class OutfitComposerViewController_Picker: UIViewController {
     
     private var delegate: OutfitComposerViewController_PickerDelegate
-    private let clothingRepo: ClothingRepository = ClothingRepository()
+    private let clothingRepo: ClothingRepository = AppRepository.shared.clothingRepository
     
     private var selectedClothingIDs: Set<Clothing.ID> = []
     

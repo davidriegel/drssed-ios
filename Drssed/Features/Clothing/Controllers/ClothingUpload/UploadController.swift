@@ -16,7 +16,7 @@ protocol UploadControllerDelegate: AnyObject {
 
 class UploadController: UIViewController {
     weak var delegate: UploadControllerDelegate?
-    private let clothingRepo: ClothingRepository = ClothingRepository()
+    private let clothingRepo: ClothingRepository = AppRepository.shared.clothingRepository
 
     var fileExtension: String = ""
 
