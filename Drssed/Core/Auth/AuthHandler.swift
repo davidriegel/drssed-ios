@@ -89,6 +89,15 @@ final class AuthHandler {
         return tokenResponse
     }
     
+    // MARK: - Request password reset
+
+    public func requestPasswordReset(email: String) async throws {
+        let uploadData = try JSONEncoder().encode(["email": email])
+        let request = try await APIClient.shared.createRequest(endpoint: "/auth/password/forgot", method: .POST, body: uploadData, authentication: false)
+
+        _ = try await APIClient.shared.executeRequest(request: request)
+    }
+
     // MARK: -- POST SEND VERIFICATION EMAIL
     
     public func sendVerificationEmail() async throws {
