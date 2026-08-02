@@ -175,8 +175,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground.
-        // Use this method to undo the changes made on entering the background.
+        guard window?.rootViewController is TabBarController else { return }
+
+        Task {
+            await NetworkManager.shared.checkServerReachable()
+            await SyncManager.shared.syncIfStale()
+        }
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
