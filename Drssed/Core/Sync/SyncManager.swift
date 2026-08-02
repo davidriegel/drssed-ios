@@ -34,6 +34,10 @@ final class SyncManager {
 
         if didSync {
             lastSuccessfulSync = Date()
+
+            await MainActor.run {
+                NotificationCenter.default.post(name: .syncDidFinish, object: nil)
+            }
         }
 
         return didSync
@@ -129,4 +133,8 @@ final class SyncManager {
         
         return false
     }
+}
+
+extension Notification.Name {
+    static let syncDidFinish = Notification.Name("syncDidFinish")
 }
