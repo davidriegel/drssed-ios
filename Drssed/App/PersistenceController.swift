@@ -12,22 +12,28 @@ struct PersistenceController {
     static let shared = PersistenceController()
     
     let container: NSPersistentContainer
-    
+    let backgroundContext: NSManagedObjectContext
+
     init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "LocalData")
-        
+
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
         }
-        
+
         else {
             let description = container.persistentStoreDescriptions.first
             description?.shouldMigrateStoreAutomatically = true
             description?.shouldInferMappingModelAutomatically = true
         }
-        
+
+        backgroundContext = container.newBackgroundContext()
+
         loadStores(recoveryAttempted: false)
+
+        backgroundContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        container.viewContext.automaticallyMergesChangesFromParent = true
     }
     
     private func loadStores(recoveryAttempted: Bool) {

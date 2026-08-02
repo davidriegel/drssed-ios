@@ -13,7 +13,7 @@ public final class ClothingRepository {
     private let context: NSManagedObjectContext
     private lazy var localDataSource = ClothingLocalDataSource(context: context)
 
-    init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+    init(context: NSManagedObjectContext = PersistenceController.shared.backgroundContext) {
         self.context = context
     }
 

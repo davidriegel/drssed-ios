@@ -166,10 +166,12 @@ public final class WearLocalDataSource {
     }
 
     func deleteAll() async throws {
-        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = OutfitWearLocal.fetchRequest()
-        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        try await self.ctx.perform { [ctx = self.ctx] in
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = OutfitWearLocal.fetchRequest()
+            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
 
-        try ctx.execute(deleteRequest)
-        try ctx.saveIfNeeded()
+            try ctx.execute(deleteRequest)
+            try ctx.saveIfNeeded()
+        }
     }
 }

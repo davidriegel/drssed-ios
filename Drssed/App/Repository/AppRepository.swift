@@ -22,6 +22,6 @@ final public class AppRepository {
     }
 
     private convenience init() {
-        self.init(context: PersistenceController.shared.container.viewContext)
+        self.init(context: PersistenceController.shared.backgroundContext)
     }
 }

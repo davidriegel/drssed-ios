@@ -11,7 +11,7 @@ public final class WearRepository {
     private let context: NSManagedObjectContext
     private lazy var localDataSource = WearLocalDataSource(context: context)
 
-    init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+    init(context: NSManagedObjectContext = PersistenceController.shared.backgroundContext) {
         self.context = context
     }
 
