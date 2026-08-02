@@ -85,6 +85,7 @@ class SignInController: UIViewController {
         )
         bt.setTitleColor(.secondaryLabel, for: .normal)
         return bt
+    }()
 
     // MARK: -- Guest notice
 
@@ -256,10 +257,11 @@ class SignInController: UIViewController {
         NSLayoutConstraint.activate([
             forgotPasswordButton.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 8),
             forgotPasswordButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
         
         view.addSubview(guestNoticeLabel)
         NSLayoutConstraint.activate([
-            guestNoticeLabel.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 16),
+            guestNoticeLabel.topAnchor.constraint(equalTo: forgotPasswordButton.bottomAnchor, constant: 16),
             guestNoticeLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 30),
             guestNoticeLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -30)
         ])
