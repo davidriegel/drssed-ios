@@ -103,11 +103,6 @@ class AuthenticationManager {
     func upgradeAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws -> User {
         do {
             let upgradeAccountResponse = try await APIClient.shared.authHandler.upgradeAccount(username: username, email: email, password: password, profilePicture: profilePicture)
-        
-            if email != nil {
-                try await sendVerificationEmail()
-            }
-            
             let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
             await TokenManager.shared.setTokens(keychainModel)
             
@@ -140,6 +135,10 @@ class AuthenticationManager {
     
     func sendVerificationEmail() async throws {
         try await APIClient.shared.authHandler.sendVerificationEmail()
+    }
+
+    func requestPasswordReset(email: String) async throws {
+        try await APIClient.shared.authHandler.requestPasswordReset(email: email)
     }
     
     /// Signing out and deleting leave the app without an account on purpose: minting a

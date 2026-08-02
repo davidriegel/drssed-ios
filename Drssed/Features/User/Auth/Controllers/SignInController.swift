@@ -69,6 +69,23 @@ class SignInController: UIViewController {
         return button
     }()
     
+    // MARK: -- Forgot Password
+
+    lazy var forgotPasswordButton: UIButton = {
+        let bt = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.pushPasswordReset()
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setAttributedTitle(
+            NSAttributedString(
+                string: String(localized: "auth.signin.forgotPassword"),
+                attributes: [.font: UIFont.systemFont(ofSize: 14, weight: .bold)]
+            ),
+            for: .normal
+        )
+        bt.setTitleColor(.secondaryLabel, for: .normal)
+        return bt
+
     // MARK: -- Guest notice
 
     lazy var guestNoticeLabel: UILabel = {
@@ -130,6 +147,11 @@ class SignInController: UIViewController {
         nav.setViewControllers(stack, animated: true)
     }
     
+    func pushPasswordReset() {
+        let resetController = PasswordResetController(prefilledEmail: emailField.fieldInput.text)
+        navigationController?.pushViewController(resetController, animated: true)
+    }
+
     @objc
     func dismissModal() {
         self.dismiss(animated: true, completion: nil)
@@ -229,6 +251,11 @@ class SignInController: UIViewController {
             signInButton.heightAnchor.constraint(equalToConstant: 45),
             signInButton.widthAnchor.constraint(equalToConstant: self.view.frame.width / 2)
         ])
+
+        view.addSubview(forgotPasswordButton)
+        NSLayoutConstraint.activate([
+            forgotPasswordButton.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 8),
+            forgotPasswordButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         
         view.addSubview(guestNoticeLabel)
         NSLayoutConstraint.activate([
