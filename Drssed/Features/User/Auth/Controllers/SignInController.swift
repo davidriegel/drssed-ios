@@ -11,8 +11,10 @@ class SignInController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         configureViewComponents()
+
+        Task { await updateGuestNotice() }
     }
     
     // MARK: -- Logo
@@ -83,10 +85,23 @@ class SignInController: UIViewController {
         )
         bt.setTitleColor(.secondaryLabel, for: .normal)
         return bt
+
+    // MARK: -- Guest notice
+
+    lazy var guestNoticeLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = String(localized: "auth.signin.guest.notice")
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.isHidden = true
+        return label
     }()
 
     // MARK: -- Sign In Button
-    
+
     lazy var signUpTextButton: UIButton = {
         var bt = UIButton()
         bt.translatesAutoresizingMaskIntoConstraints = false
@@ -159,6 +174,19 @@ class SignInController: UIViewController {
         }
     }
     
+    private func updateGuestNotice() async {
+        guard AuthenticationManager.shared.authState == .guest else { return }
+
+        async let clothingCount = AppRepository.shared.clothingRepository.fetchClothes().count
+        async let outfitCount = AppRepository.shared.outfitRepository.fetchOutfits().count
+
+        let (clothes, outfits) = await (clothingCount, outfitCount)
+
+        guard clothes > 0 || outfits > 0 else { return }
+
+        guestNoticeLabel.isHidden = false
+    }
+
     @objc
     func checkTextFieldInputs() {
         guard let email = emailField.fieldInput.text, let password = passwordField.fieldInput.text else {
@@ -228,6 +256,12 @@ class SignInController: UIViewController {
         NSLayoutConstraint.activate([
             forgotPasswordButton.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 8),
             forgotPasswordButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        
+        view.addSubview(guestNoticeLabel)
+        NSLayoutConstraint.activate([
+            guestNoticeLabel.topAnchor.constraint(equalTo: signInButton.bottomAnchor, constant: 16),
+            guestNoticeLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 30),
+            guestNoticeLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -30)
         ])
 
         view.addSubview(signUpTextButton)

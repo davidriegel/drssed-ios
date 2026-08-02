@@ -194,16 +194,22 @@
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passwort vergessen?"
-          }
+          "stringUnit" : { "state" : "translated", "value" : "Passwort vergessen?" }
         },
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forgot your password?"
-          }
+          "stringUnit" : { "state" : "translated", "value" : "Forgot your password?" }
+        }
+      }
+    },
+    "auth.signin.guest.notice" : {
+      "comment" : "Shown on the sign in screen when a guest with local data is about to sign in to a different account.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : { "state" : "translated", "value" : "Du bist als Gast unterwegs: Wenn du dich bei einem bestehenden Konto anmeldest, gehen deine Kleidungsstücke und Outfits verloren. Mit einem Account-Upgrade nimmst du sie mit." }
+        },
+        "en" : {
+          "stringUnit" : { "state" : "translated", "value" : "You're here as a guest: signing in to an existing account discards your clothes and outfits. Upgrading your account keeps them." }
         }
       }
     },
