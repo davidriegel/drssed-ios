@@ -86,24 +86,6 @@ final class OutfitHandler {
         return outfitAPIWrapper.outfit
     }
     
-    // MARK: -- GET MY OUTFITS
-    
-    func getMyOutfits(limit: Int = 20, offset: Int = 0) async throws -> PaginatedResponse<SimpleOutfitAPI> {
-        let request = try await APIClient.shared.createRequest(endpoint: "/users/me/outfits?limit=\(limit)&offset=\(offset)", method: .GET)
-        let outfitsWrapper: PaginatedResponse<SimpleOutfitAPI> = try await APIClient.shared.executeRequestAndDecode(request: request)
-        
-        return outfitsWrapper
-    }
-    
-    // MARK: -- GET OUTFITS BY USER ID
-    
-    func getOutfitsByUserID(userID: String, limit: Int = 20, offset: Int = 0) async throws -> PaginatedResponse<OutfitAPI> {
-        let request = try await APIClient.shared.createRequest(endpoint: "/users/\(userID)/outfits?limit=\(limit)&offset=\(offset)", method: .GET)
-        let outfitsWrapper: PaginatedResponse<OutfitAPI> = try await APIClient.shared.executeRequestAndDecode(request: request)
-        
-        return outfitsWrapper
-    }
-    
     // MARK: -- DELETE OUTFIT BY ID
     
     func deleteOutfitByID(outfitID: String) async throws -> Void {

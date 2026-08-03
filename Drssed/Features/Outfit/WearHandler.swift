@@ -106,15 +106,6 @@ final class WearHandler {
         return wearWrapper.wear
     }
 
-    // MARK: -- GET WEARS OF AN OUTFIT
-
-    func getWears(outfitID: String, limit: Int = 50, offset: Int = 0) async throws -> PaginatedResponse<OutfitWearAPI> {
-        let request = try await APIClient.shared.createRequest(endpoint: "/outfits/\(outfitID)/wears?limit=\(limit)&offset=\(offset)", method: .GET)
-        let wearsWrapper: PaginatedResponse<OutfitWearAPI> = try await APIClient.shared.executeRequestAndDecode(request: request)
-
-        return wearsWrapper
-    }
-
     // MARK: -- DELETE WEAR BY ID
 
     func deleteWearByID(wearID: String) async throws -> Void {
