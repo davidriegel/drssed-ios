@@ -587,13 +587,13 @@ extension UploadController: TOCropViewControllerDelegate {
                 itemImageView.hideSkeleton()
             } catch APIError.payloadTooLarge {
                 self.imageID = ""
-                self.itemImageView.image = UIImage(named: "upload_placeholder")
+                self.itemImageView.image = UIImage(named: "placeholder.upload")
                 self.itemImageView.hideSkeleton()
                 
                 ErrorHandler.handle(APIError.payloadTooLarge(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
             } catch APIError.unprocessableContent {
                 self.imageID = ""
-                self.itemImageView.image = UIImage(named: "upload_placeholder")
+                self.itemImageView.image = UIImage(named: "placeholder.upload")
                 self.itemImageView.hideSkeleton()
                 
                 

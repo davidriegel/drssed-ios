@@ -436,7 +436,7 @@ class OutfitsGalleryViewController: UIViewController {
     }
     
     func filterFavoriteOutfits(source: [Outfit]) -> [Outfit] {
-        let tempFilteredDataSource: [Outfit] = dataSource
+        let tempFilteredDataSource: [Outfit] = source
         
         
         return tempFilteredDataSource.filter { outfit in
