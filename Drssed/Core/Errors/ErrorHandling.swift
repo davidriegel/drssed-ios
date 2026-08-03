@@ -242,9 +242,7 @@ public enum ErrorHandler {
 
 private enum AlertAction {
     case dismiss
-    case retry
-    case login
-    
+
     var uiAlertAction: UIAlertAction {
         switch self {
         case .dismiss:
@@ -252,22 +250,6 @@ private enum AlertAction {
                 title: String(localized: "common.ok"),
                 style: .default
             )
-            
-        case .retry:
-            return UIAlertAction(
-                title: String(localized: "error.action.retry"),
-                style: .default
-            ) { _ in
-                // TODO: Implement retry logic
-            }
-            
-        case .login:
-            return UIAlertAction(
-                title: String(localized: "error.action.login"),
-                style: .default
-            ) { _ in
-                // TODO: Navigate to login screen
-            }
         }
     }
 }

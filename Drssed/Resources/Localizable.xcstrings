@@ -1665,23 +1665,6 @@
         }
       }
     },
-    "error.action.login" : {
-      "comment" : "Navigate to login",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Login"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log In"
-          }
-        }
-      }
-    },
     "error.action.retry" : {
       "comment" : "Retry failed action",
       "localizations" : {
