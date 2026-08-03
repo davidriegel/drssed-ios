@@ -35,7 +35,6 @@
         <attribute name="note" optional="YES" attributeType="String"/>
         <attribute name="occasion" optional="YES" attributeType="String"/>
         <attribute name="outfitID" attributeType="String"/>
-        <attribute name="outfitName" optional="YES" attributeType="String"/>
         <attribute name="rating" optional="YES" attributeType="Integer 16" usesScalarValueType="NO"/>
         <attribute name="temperature" optional="YES" attributeType="Double" usesScalarValueType="NO"/>
         <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>

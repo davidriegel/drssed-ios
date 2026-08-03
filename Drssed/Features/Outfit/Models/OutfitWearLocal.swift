@@ -16,7 +16,6 @@ class OutfitWearLocal: NSManagedObject {
     @NSManaged var id: String
     @NSManaged var userID: String
     @NSManaged var outfitID: String
-    @NSManaged var outfitName: String?
     @NSManaged var wornOn: Date
     @NSManaged var createdAt: Date
     @NSManaged var updatedAt: Date
@@ -42,7 +41,6 @@ extension OutfitWearLocal {
         self.id = domainModel.id
         self.userID = domainModel.userID
         self.outfitID = domainModel.outfitID
-        self.outfitName = domainModel.outfitName
         self.wornOn = domainModel.wornOn
         self.createdAt = domainModel.createdAt
         self.updatedAt = domainModel.updatedAt

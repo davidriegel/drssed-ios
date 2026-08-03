@@ -85,6 +85,17 @@ public final class OutfitRepository {
         }
     }
 
+    public func fetchOutfits(ids: [String]) async -> [Outfit] {
+        guard !ids.isEmpty else { return [] }
+
+        do {
+            return try await localDataSource.fetch(ids: ids)
+        } catch let error as NSError {
+            ErrorHandler.handleSilently(AppError.coreData(.fetchFailed(error.localizedDescription)))
+            return []
+        }
+    }
+
     public func getOutfit(with id: String) async -> Outfit? {
         do {
             return try await localDataSource.get(id: id)
