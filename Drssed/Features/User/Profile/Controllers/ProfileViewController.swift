@@ -658,12 +658,6 @@ class ProfileViewController: UIViewController {
         Task { await loadGenericData() }
     }
     
-    private func wipMessage() {
-        let infoAlert = UIAlertController(title: "🤫", message: String(localized: "workinprogress.message"), preferredStyle: .alert)
-        infoAlert.addAction(UIAlertAction(title: String(localized: "common.ok"), style: .default))
-        UIApplication.shared.topMostViewController()!.present(infoAlert, animated: true)
-    }
-    
     // MARK: -- Layout
     
     func configureViewComponents() {

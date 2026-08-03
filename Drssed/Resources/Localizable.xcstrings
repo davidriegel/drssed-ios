@@ -5460,23 +5460,6 @@
           }
         }
       }
-    },
-    "workinprogress.message" : {
-      "comment" : "🤫 as title for alert",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pshhth! Du hast eine Funktion gefunden an der ich gerade noch arbeite…"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pshhht! You've found a feature that is still work in progress..."
-          }
-        }
-      }
     }
   },
   "version" : "1.1"
