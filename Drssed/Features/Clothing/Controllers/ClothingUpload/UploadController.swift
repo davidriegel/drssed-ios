@@ -72,7 +72,6 @@ class UploadController: UIViewController {
     }
     
     override func viewDidLayoutSubviews() {
-        descriptionBackgroundView.layer.cornerRadius = CornerStyle.medium.radius(for: descriptionBackgroundView)
         clothingColorPickerButton.layer.cornerRadius = CornerStyle.medium.radius(for: clothingColorPickerButton)
         
         finishButton.layer.cornerRadius = CornerStyle.medium.radius(for: finishButton)
@@ -156,52 +155,6 @@ class UploadController: UIViewController {
         let view = WarmthPickerView(delegate: self, preselected: selectedWarmth)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
-    }()
-    
-    // MARK: -- Description
-    
-    lazy var descriptionLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.numberOfLines = 1
-        label.textColor = .label
-        label.textAlignment = .left
-        label.font = .systemFont(ofSize: 12, weight: .black)
-        label.text = String(localized: "clothingupload.description.title")
-        return label
-    }()
-    
-    lazy var descriptionCountLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.numberOfLines = 1
-        label.textColor = .secondaryLabel
-        label.textAlignment = .right
-        label.font = .systemFont(ofSize: 10, weight: .regular)
-        label.text = "0/155"
-        return label
-    }()
-    
-    lazy var descriptionBackgroundView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .secondarySystemBackground
-        view.heightAnchor.constraint(equalToConstant: self.view.frame.width / 5).isActive = true
-        return view
-    }()
-    
-    lazy var descriptionTextView: UITextView = {
-        let tv = UITextView()
-        tv.translatesAutoresizingMaskIntoConstraints = false
-        tv.delegate = self
-        tv.backgroundColor = .clear
-        tv.text = String(localized: "clothingupload.description.placeholder")
-        tv.textColor = .placeholderText
-        tv.textAlignment = .left
-        tv.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4.5).isActive = true
-        tv.font = .systemFont(ofSize: 13, weight: .heavy)
-        tv.returnKeyType = .done
-        return tv
     }()
     
     // MARK: -- Tags
@@ -500,29 +453,10 @@ class UploadController: UIViewController {
             warmthPickerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20)
         ])
 
-        view.addSubview(descriptionLabel)
-        descriptionLabel.topAnchor.constraint(equalTo: warmthPickerView.bottomAnchor, constant: 15).isActive = true
-        descriptionLabel.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-        descriptionLabel.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        
-        view.addSubview(descriptionBackgroundView)
-        descriptionBackgroundView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 5).isActive = true
-        descriptionBackgroundView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 20).isActive = true
-        descriptionBackgroundView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20).isActive = true
-        
-        descriptionBackgroundView.addSubview(descriptionCountLabel)
-        descriptionCountLabel.bottomAnchor.constraint(equalTo: descriptionBackgroundView.bottomAnchor, constant: -5).isActive = true
-        descriptionCountLabel.rightAnchor.constraint(equalTo: descriptionBackgroundView.rightAnchor, constant: -10).isActive = true
-        
-        descriptionBackgroundView.addSubview(descriptionTextView)
-        descriptionTextView.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 5).isActive = true
-        descriptionTextView.leftAnchor.constraint(equalTo: descriptionBackgroundView.leftAnchor, constant: 5).isActive = true
-        descriptionTextView.rightAnchor.constraint(equalTo: descriptionBackgroundView.rightAnchor, constant: -5).isActive = true
-        
         view.addSubview(clothingTagsField)
         clothingTagsField.addSubview(clothingTagsSelection)
         NSLayoutConstraint.activate([
-            clothingTagsField.topAnchor.constraint(equalTo: descriptionBackgroundView.bottomAnchor, constant: 10),
+            clothingTagsField.topAnchor.constraint(equalTo: warmthPickerView.bottomAnchor, constant: 15),
             clothingTagsField.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
             clothingTagsField.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.6),
             clothingTagsField.heightAnchor.constraint(greaterThanOrEqualToConstant: 65),
@@ -536,7 +470,7 @@ class UploadController: UIViewController {
         view.addSubview(clothingColorBackground)
         clothingColorBackground.addSubview(clothingColorPickerButton)
         NSLayoutConstraint.activate([
-            clothingColorBackground.topAnchor.constraint(equalTo: descriptionBackgroundView.bottomAnchor, constant: 10),
+            clothingColorBackground.topAnchor.constraint(equalTo: warmthPickerView.bottomAnchor, constant: 15),
             clothingColorBackground.leftAnchor.constraint(equalTo: clothingTagsField.rightAnchor, constant: 5),
             clothingColorBackground.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -20),
             
@@ -566,40 +500,6 @@ class UploadController: UIViewController {
         tagsPickerView.heightAnchor.constraint(equalToConstant: self.view.frame.width / 4).isActive = true
         tagsPickerView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8).isActive = true
         tagsPickerView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor).isActive = true
-    }
-}
-
-extension UploadController: UITextViewDelegate {
-    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
-        guard descriptionTextView.textColor == UIColor.placeholderText else { return true }
-        
-        descriptionTextView.text = ""
-        descriptionTextView.textColor = UIColor.label
-        return true
-    }
-    
-    func textViewDidEndEditing(_ textView: UITextView) {
-        guard descriptionTextView.text.count == 0 else { return }
-        
-        descriptionTextView.text = String(localized: "clothingupload.description.placeholder")
-        descriptionTextView.textColor = UIColor.placeholderText
-    }
-    
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        guard text != "\n" else {
-            textView.resignFirstResponder()
-            return false
-        }
-        
-        guard text != "" else {
-            descriptionCountLabel.text = "\((descriptionTextView.text?.count ?? 0) - 1)/155"
-            return true
-        }
-        
-        guard descriptionTextView.text?.count ?? 0 < 155 else { return false }
-        
-        descriptionCountLabel.text = "\((descriptionTextView.text?.count ?? 0) + 1)/155"
-        return true
     }
 }
 
