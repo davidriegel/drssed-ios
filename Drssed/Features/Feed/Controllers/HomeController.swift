@@ -166,17 +166,6 @@ public class HomeController: UIViewController {
         return label
     }()
 
-    private lazy var rerollButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.didTapReroll()
-        })
-        bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.setImage(UIImage(systemName: "arrow.triangle.2.circlepath", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
-        bt.tintColor = .accent
-        bt.accessibilityLabel = String(localized: "home.recommendations.reroll")
-        return bt
-    }()
-
     /// Apple requires the trademark and a link to the legal page wherever WeatherKit data shows up.
     private lazy var weatherAttributionButton: UIButton = {
         let bt = UIButton(type: .system, primaryAction: UIAction { _ in
@@ -331,8 +320,7 @@ public class HomeController: UIViewController {
 
     /// Fetches the suggestions for the current weather.
     ///
-    /// Errors stay quiet here because this also runs unprompted when the screen opens – a
-    /// reroll the user asked for reports them (see `didTapReroll`).
+    /// Errors stay quiet here because this also runs unprompted when the screen opens.
     private func reloadRecommendations() async {
         let snapshot = await WeatherProvider.shared.currentWeather()
 
@@ -375,35 +363,6 @@ public class HomeController: UIViewController {
             await MainActor.run {
                 self.recommendationGap = isReachable ? .noMatch : .offline
                 self.recommendations = []
-            }
-        }
-    }
-
-    private func didTapReroll() {
-        rerollButton.isEnabled = false
-        recommendationSpinner.startAnimating()
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
-        Task { @MainActor in
-            defer {
-                self.rerollButton.isEnabled = true
-                self.recommendationSpinner.stopAnimating()
-            }
-
-            // The weather may have moved on since the screen was opened.
-            let snapshot = await WeatherProvider.shared.currentWeather()
-            self.weather = snapshot
-
-            guard let snapshot else {
-                self.recommendations = []
-                return
-            }
-
-            do {
-                self.recommendations = try await self.recommendationSession.nextPage(feelsLike: snapshot.feelsLike)
-                self.lastRecommendationLoad = Date()
-            } catch {
-                ErrorHandler.handle(error)
             }
         }
     }
@@ -683,7 +642,7 @@ public class HomeController: UIViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [recommendationTitleLabel, recommendationWeatherLabel, rerollButton, weatherAttributionButton, recommendationSpinner, recommendationCollectionView, recommendationEmptyStack, historyTitleLabel, monthSummaryLabel, previousMonthButton, nextMonthButton, weekdayStack, calendarCollectionView].forEach { contentView.addSubview($0) }
+        [recommendationTitleLabel, recommendationWeatherLabel, weatherAttributionButton, recommendationSpinner, recommendationCollectionView, recommendationEmptyStack, historyTitleLabel, monthSummaryLabel, previousMonthButton, nextMonthButton, weekdayStack, calendarCollectionView].forEach { contentView.addSubview($0) }
 
         let recommendationHeight = recommendationCollectionView.heightAnchor.constraint(equalToConstant: recommendationCellHeight)
         recommendationHeightConstraint = recommendationHeight
@@ -706,13 +665,9 @@ public class HomeController: UIViewController {
             recommendationTitleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
             recommendationTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
 
-            rerollButton.centerYAnchor.constraint(equalTo: recommendationTitleLabel.centerYAnchor),
-            rerollButton.leadingAnchor.constraint(greaterThanOrEqualTo: recommendationTitleLabel.trailingAnchor, constant: 10),
-            rerollButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            rerollButton.widthAnchor.constraint(equalToConstant: 44),
-
             recommendationSpinner.centerYAnchor.constraint(equalTo: recommendationTitleLabel.centerYAnchor),
-            recommendationSpinner.trailingAnchor.constraint(equalTo: rerollButton.leadingAnchor, constant: -6),
+            recommendationSpinner.leadingAnchor.constraint(greaterThanOrEqualTo: recommendationTitleLabel.trailingAnchor, constant: 10),
+            recommendationSpinner.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
 
             recommendationWeatherLabel.topAnchor.constraint(equalTo: recommendationTitleLabel.bottomAnchor, constant: 2),
             recommendationWeatherLabel.leadingAnchor.constraint(equalTo: recommendationTitleLabel.leadingAnchor),
