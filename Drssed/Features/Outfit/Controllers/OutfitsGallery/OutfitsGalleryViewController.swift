@@ -67,12 +67,12 @@ class OutfitsGalleryViewController: UIViewController {
     
     private lazy var diffableDataSource: UICollectionViewDiffableDataSource<Section, String> = UICollectionViewDiffableDataSource<Section, String>(
         collectionView: self.outfitCollectionView,
-        cellProvider: { (collectionView: UICollectionView, indexPath: IndexPath, item: String) -> UICollectionViewCell? in
+        cellProvider: { [weak self] (collectionView: UICollectionView, indexPath: IndexPath, item: String) -> UICollectionViewCell? in
             let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: OutfitsGallery_ViewCell.identifier,
                 for: indexPath
             ) as! OutfitsGallery_ViewCell
-            guard let outfit = self.dataSourceByID[item] else { return cell }
+            guard let self, let outfit = self.dataSourceByID[item] else { return cell }
             cell.configure(with: outfit, title: outfit.name)
             return cell
         }
@@ -144,8 +144,8 @@ class OutfitsGalleryViewController: UIViewController {
     // MARK: --
     
     lazy var navHeartButton: UIBarButtonItem = {
-        let button = UIBarButtonItem(image: UIImage(systemName: "heart", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), primaryAction: UIAction {_ in
-            self.heartButtonTapped()
+        let button = UIBarButtonItem(image: UIImage(systemName: "heart", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal), primaryAction: UIAction { [weak self] _ in
+            self?.heartButtonTapped()
         })
         return button
     }()
@@ -187,7 +187,9 @@ class OutfitsGalleryViewController: UIViewController {
     lazy var outfitRefreshControll: UIRefreshControl = {
         let rc = UIRefreshControl()
     
-        rc.addAction(UIAction(handler: { _ in
+        rc.addAction(UIAction(handler: { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 await SyncManager.shared.syncWithServer()
                 
@@ -237,27 +239,31 @@ class OutfitsGalleryViewController: UIViewController {
         var items: [UIAction] = []
 
         if let wear = todaysWear {
-            items.append(UIAction(title: String(localized: "wear.action.edit"), image: UIImage(systemName: "square.and.pencil"), handler: { _ in
-                self.presentWearEditor(mode: .edit(wear))
+            items.append(UIAction(title: String(localized: "wear.action.edit"), image: UIImage(systemName: "square.and.pencil"), handler: { [weak self] _ in
+                self?.presentWearEditor(mode: .edit(wear))
             }))
 
-            items.append(UIAction(title: String(localized: "wear.action.remove"), image: UIImage(systemName: "trash"), attributes: .destructive, handler: { _ in
+            items.append(UIAction(title: String(localized: "wear.action.remove"), image: UIImage(systemName: "trash"), attributes: .destructive, handler: { [weak self] _ in
+                guard let self else { return }
+
                 Task {
                     guard await self.wearRepo.deleteWear(with: wear.id) else { return }
                     await MainActor.run { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
                 }
             }))
 
-            items.append(UIAction(title: String(localized: "wear.action.log"), image: UIImage(systemName: "calendar.badge.plus"), handler: { _ in
-                self.presentWearEditor(mode: .create(outfitID: outfit.id))
+            items.append(UIAction(title: String(localized: "wear.action.log"), image: UIImage(systemName: "calendar.badge.plus"), handler: { [weak self] _ in
+                self?.presentWearEditor(mode: .create(outfitID: outfit.id))
             }))
         } else {
-            items.append(UIAction(title: String(localized: "wear.action.today"), image: UIImage(systemName: "checkmark.circle"), handler: { _ in
-                self.presentWearEditor(mode: .create(outfitID: outfit.id))
+            items.append(UIAction(title: String(localized: "wear.action.today"), image: UIImage(systemName: "checkmark.circle"), handler: { [weak self] _ in
+                self?.presentWearEditor(mode: .create(outfitID: outfit.id))
             }))
 
             // Shortcut for everyone who does not want to fill in the sheet.
-            items.append(UIAction(title: String(localized: "wear.action.todayQuick"), image: UIImage(systemName: "bolt"), handler: { _ in
+            items.append(UIAction(title: String(localized: "wear.action.todayQuick"), image: UIImage(systemName: "bolt"), handler: { [weak self] _ in
+                guard let self else { return }
+
                 Task {
                     guard await self.wearRepo.logWearNow(outfitID: outfit.id) != nil else { return }
                     await MainActor.run { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
@@ -298,9 +304,9 @@ class OutfitsGalleryViewController: UIViewController {
     
     func generateSortMenu() -> UIMenu {
         let menuItems: [UIAction] = [
-            UIAction(title: String(localized: "common.sort.name"), image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: outfitSortSelected == .Name ? .on : .mixed, handler: { (_) in self.sortBy(.Name) }),
-            UIAction(title: String(localized: "common.sort.date"), image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: outfitSortSelected == .Date ? .on : .mixed, handler: { (_) in self.sortBy(.Date) }),
-            UIAction(title: String(localized: "common.sort.edit"), image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: outfitSortSelected == .Edit ? .on : .mixed, handler: { (_) in self.sortBy(.Edit) })
+            UIAction(title: String(localized: "common.sort.name"), image: UIImage(systemName: "tshirt.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), identifier: nil, discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: outfitSortSelected == .Name ? .on : .mixed, handler: { [weak self] (_) in self?.sortBy(.Name) }),
+            UIAction(title: String(localized: "common.sort.date"), image: UIImage(systemName: "plus.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: outfitSortSelected == .Date ? .on : .mixed, handler: { [weak self] (_) in self?.sortBy(.Date) }),
+            UIAction(title: String(localized: "common.sort.edit"), image: UIImage(systemName: "pencil.circle", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), discoverabilityTitle: nil, attributes: .keepsMenuPresented, state: outfitSortSelected == .Edit ? .on : .mixed, handler: { [weak self] (_) in self?.sortBy(.Edit) })
         ]
         
         let menu = UIMenu(title: String(localized: "common.sort.menu"), image: nil, identifier: nil, options: [], children: menuItems)
@@ -379,15 +385,21 @@ class OutfitsGalleryViewController: UIViewController {
     
     func generateScaleMenu() -> UIMenu {
         let scaleMenuItems: [UIAction] = [
-            UIAction(title: String(localized: "common.scale.small"), attributes: .keepsMenuPresented, state: selectedViewMode == .SMALL ? .on : .mixed, handler: { _ in
+            UIAction(title: String(localized: "common.scale.small"), attributes: .keepsMenuPresented, state: selectedViewMode == .SMALL ? .on : .mixed, handler: { [weak self] _ in
+                guard let self else { return }
+
                 self.selectedViewMode = .SMALL
                 self.navigationItem.leftBarButtonItem?.menu = self.generateScaleMenu()
             }),
-            UIAction(title: String(localized: "common.scale.medium"), attributes: .keepsMenuPresented, state: selectedViewMode == .MEDIUM ? .on : .mixed, handler: { _ in
+            UIAction(title: String(localized: "common.scale.medium"), attributes: .keepsMenuPresented, state: selectedViewMode == .MEDIUM ? .on : .mixed, handler: { [weak self] _ in
+                guard let self else { return }
+
                 self.selectedViewMode = .MEDIUM
                 self.navigationItem.leftBarButtonItem?.menu = self.generateScaleMenu()
             }),
-            UIAction(title: String(localized: "common.scale.large"), attributes: .keepsMenuPresented, state: selectedViewMode == .LARGE ? .on : .mixed, handler: { _ in
+            UIAction(title: String(localized: "common.scale.large"), attributes: .keepsMenuPresented, state: selectedViewMode == .LARGE ? .on : .mixed, handler: { [weak self] _ in
+                guard let self else { return }
+
                 self.selectedViewMode = .LARGE
                 self.navigationItem.leftBarButtonItem?.menu = self.generateScaleMenu()
             })
@@ -398,17 +410,17 @@ class OutfitsGalleryViewController: UIViewController {
     
     func generateFilterMenu() -> UIMenu {
         let tagsMenuItems: [UIAction] = [
-            UIAction(title: "🌱 " + Seasons.SPRING.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.SPRING) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SPRING) }),
-            UIAction(title: "☀️ " + Seasons.SUMMER.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.SUMMER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.SUMMER) }),
-            UIAction(title: "🍂 " + Seasons.AUTUMN.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.AUTUMN) ? .on : .mixed, handler: { (_) in self.filterBySeason(.AUTUMN) }),
-            UIAction(title: "❄️ " + Seasons.WINTER.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.WINTER) ? .on : .mixed, handler: { (_) in self.filterBySeason(.WINTER) })
+            UIAction(title: "🌱 " + Seasons.SPRING.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.SPRING) ? .on : .mixed, handler: { [weak self] (_) in self?.filterBySeason(.SPRING) }),
+            UIAction(title: "☀️ " + Seasons.SUMMER.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.SUMMER) ? .on : .mixed, handler: { [weak self] (_) in self?.filterBySeason(.SUMMER) }),
+            UIAction(title: "🍂 " + Seasons.AUTUMN.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.AUTUMN) ? .on : .mixed, handler: { [weak self] (_) in self?.filterBySeason(.AUTUMN) }),
+            UIAction(title: "❄️ " + Seasons.WINTER.localizedName, attributes: .keepsMenuPresented, state: outfitSeasonsSelected.contains(.WINTER) ? .on : .mixed, handler: { [weak self] (_) in self?.filterBySeason(.WINTER) })
         ]
         
         let seasonsMenuItems: [UIAction] = [
-            UIAction(title: "🧍🏻 " + Tags.CASUAL.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.CASUAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.CASUAL) }),
-            UIAction(title: "🕴🏻 " + Tags.FORMAL.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.FORMAL) ? .on : .mixed, handler: { (_) in self.filterByTags(.FORMAL) }),
-            UIAction(title: "⛹🏻 " + Tags.SPORTS.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.SPORTS) ? .on : .mixed, handler: { (_) in self.filterByTags(.SPORTS) }),
-            UIAction(title: "🧳 " + Tags.VINTAGE.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.VINTAGE) ? .on : .mixed, handler: { (_) in self.filterByTags(.VINTAGE) })
+            UIAction(title: "🧍🏻 " + Tags.CASUAL.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.CASUAL) ? .on : .mixed, handler: { [weak self] (_) in self?.filterByTags(.CASUAL) }),
+            UIAction(title: "🕴🏻 " + Tags.FORMAL.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.FORMAL) ? .on : .mixed, handler: { [weak self] (_) in self?.filterByTags(.FORMAL) }),
+            UIAction(title: "⛹🏻 " + Tags.SPORTS.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.SPORTS) ? .on : .mixed, handler: { [weak self] (_) in self?.filterByTags(.SPORTS) }),
+            UIAction(title: "🧳 " + Tags.VINTAGE.localizedName, attributes: .keepsMenuPresented, state: outfitTagsSelected.contains(.VINTAGE) ? .on : .mixed, handler: { [weak self] (_) in self?.filterByTags(.VINTAGE) })
         ]
         
         var totalItems: [UIMenuElement] = []
