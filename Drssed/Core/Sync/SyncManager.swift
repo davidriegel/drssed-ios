@@ -21,6 +21,7 @@ final class SyncManager {
 
     private init() {}
 
+    @discardableResult
     func syncWithServer(forceFull: Bool = false) async -> Bool {
         guard NetworkManager.shared.isReachable else { return false }
 

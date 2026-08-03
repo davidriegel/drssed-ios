@@ -670,7 +670,7 @@ extension UploadController: TOCropViewControllerDelegate {
             cropViewController.dismiss(animated: true)
             
             do {
-                let (imageID, clothingURL, clothingColor, clothingCategory, clothingSubCategory) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
+                let (imageID, clothingURL, clothingColor, _, clothingSubCategory) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
                 
                 self.imageID = imageID
                 colorPickerView.selectedColor = clothingColor
