@@ -26,7 +26,8 @@ public class HomeController: UIViewController {
 
     private var days: [WearCalendarDay] = [] {
         didSet {
-            // A month spans five or six rows, which changes how tall a row may be.
+            // A month spans five or six rows, which changes how tall the grid is.
+            calendarHeightConstraint?.constant = calendarHeight
             calendarCollectionView.collectionViewLayout.invalidateLayout()
             calendarCollectionView.reloadData()
             updateMonthLabels()
@@ -68,8 +69,7 @@ public class HomeController: UIViewController {
 
     private var recommendationHeightConstraint: NSLayoutConstraint?
 
-    /// The row height the grid was last laid out with, so that recomputing it cannot loop.
-    private var appliedDayCellHeight: CGFloat = 0
+    private var calendarHeightConstraint: NSLayoutConstraint?
 
     public init() {
         super.init(nibName: nil, bundle: nil)
@@ -116,14 +116,38 @@ public class HomeController: UIViewController {
             centerRecommendations()
         }
 
-        // The row height follows the space left over for the grid, which is only known now.
-        if appliedDayCellHeight != dayCellHeight {
-            appliedDayCellHeight = dayCellHeight
+        // The rows scale with the width of the screen, so the grid is only measurable now.
+        if calendarHeightConstraint?.constant != calendarHeight {
+            calendarHeightConstraint?.constant = calendarHeight
             calendarCollectionView.collectionViewLayout.invalidateLayout()
         }
     }
 
     // MARK: - UI Elements -
+
+    private lazy var refreshControl: UIRefreshControl = {
+        let rc = UIRefreshControl()
+        rc.addAction(UIAction { [weak self] _ in
+            self?.handleRefresh()
+        }, for: .valueChanged)
+        return rc
+    }()
+
+    private lazy var scrollView: UIScrollView = {
+        let sv = UIScrollView()
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        sv.alwaysBounceVertical = true
+        sv.showsVerticalScrollIndicator = true
+        sv.backgroundColor = .background
+        sv.refreshControl = refreshControl
+        return sv
+    }()
+
+    private lazy var contentView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
 
     private lazy var recommendationTitleLabel: UILabel = {
         let label = UILabel()
@@ -140,17 +164,6 @@ public class HomeController: UIViewController {
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .secondaryLabel
         return label
-    }()
-
-    private lazy var rerollButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.didTapReroll()
-        })
-        bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.setImage(UIImage(systemName: "arrow.triangle.2.circlepath", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
-        bt.tintColor = .accent
-        bt.accessibilityLabel = String(localized: "home.recommendations.reroll")
-        return bt
     }()
 
     /// Apple requires the trademark and a link to the legal page wherever WeatherKit data shows up.
@@ -307,8 +320,7 @@ public class HomeController: UIViewController {
 
     /// Fetches the suggestions for the current weather.
     ///
-    /// Errors stay quiet here because this also runs unprompted when the screen opens – a
-    /// reroll the user asked for reports them (see `didTapReroll`).
+    /// Errors stay quiet here because this also runs unprompted when the screen opens.
     private func reloadRecommendations() async {
         let snapshot = await WeatherProvider.shared.currentWeather()
 
@@ -355,32 +367,15 @@ public class HomeController: UIViewController {
         }
     }
 
-    private func didTapReroll() {
-        rerollButton.isEnabled = false
-        recommendationSpinner.startAnimating()
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    /// Pull to refresh brings the whole screen up to date: the log from the server and a
+    /// fresh set of suggestions, rather than only what happens to be stale.
+    private func handleRefresh() {
+        Task {
+            await SyncManager.shared.syncWithServer()
+            await reloadMonth()
+            await reloadRecommendations()
 
-        Task { @MainActor in
-            defer {
-                self.rerollButton.isEnabled = true
-                self.recommendationSpinner.stopAnimating()
-            }
-
-            // The weather may have moved on since the screen was opened.
-            let snapshot = await WeatherProvider.shared.currentWeather()
-            self.weather = snapshot
-
-            guard let snapshot else {
-                self.recommendations = []
-                return
-            }
-
-            do {
-                self.recommendations = try await self.recommendationSession.nextPage(feelsLike: snapshot.feelsLike)
-                self.lastRecommendationLoad = Date()
-            } catch {
-                ErrorHandler.handle(error)
-            }
+            refreshControl.endRefreshing()
         }
     }
 
@@ -589,17 +584,14 @@ public class HomeController: UIViewController {
         return (view.bounds.width - 2 * Self.gridMargin) / 7
     }
 
-    /// Rows are 4:3 where there is room for it, and shrink to fit when a month spans six
-    /// rows instead of five. Sizing them from the space the grid actually got keeps the
-    /// section headings above it from being squeezed away.
     private var dayCellHeight: CGFloat {
-        let preferred = dayCellWidth * 4.0 / 3.0
-        let rows = CGFloat(max(1, days.count / 7))
-        let available = calendarCollectionView.bounds.height
+        return dayCellWidth * 4.0 / 3.0
+    }
 
-        guard available > 0 else { return preferred }
-
-        return min(preferred, available / rows)
+    /// The grid does not scroll on its own – it is as tall as its rows need, and the screen
+    /// around it scrolls instead.
+    private var calendarHeight: CGFloat {
+        return CGFloat(max(1, days.count / 7)) * dayCellHeight
     }
 
     /// The grid sits closer to the edges than the rest of the screen: every point of width
@@ -647,44 +639,57 @@ public class HomeController: UIViewController {
         navigationItem.largeTitleDisplayMode = .never
         navigationItem.rightBarButtonItem = todayButton
 
-        [recommendationTitleLabel, recommendationWeatherLabel, rerollButton, weatherAttributionButton, recommendationSpinner, recommendationCollectionView, recommendationEmptyStack, historyTitleLabel, monthSummaryLabel, previousMonthButton, nextMonthButton, weekdayStack, calendarCollectionView].forEach { view.addSubview($0) }
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+
+        [recommendationTitleLabel, recommendationWeatherLabel, weatherAttributionButton, recommendationSpinner, recommendationCollectionView, recommendationEmptyStack, historyTitleLabel, monthSummaryLabel, previousMonthButton, nextMonthButton, weekdayStack, calendarCollectionView].forEach { contentView.addSubview($0) }
 
         let recommendationHeight = recommendationCollectionView.heightAnchor.constraint(equalToConstant: recommendationCellHeight)
         recommendationHeightConstraint = recommendationHeight
 
-        NSLayoutConstraint.activate([
-            recommendationTitleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
-            recommendationTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+        let calendarHeight = calendarCollectionView.heightAnchor.constraint(equalToConstant: self.calendarHeight)
+        calendarHeightConstraint = calendarHeight
 
-            rerollButton.centerYAnchor.constraint(equalTo: recommendationTitleLabel.centerYAnchor),
-            rerollButton.leadingAnchor.constraint(greaterThanOrEqualTo: recommendationTitleLabel.trailingAnchor, constant: 10),
-            rerollButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            rerollButton.widthAnchor.constraint(equalToConstant: 44),
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+
+            recommendationTitleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
+            recommendationTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
 
             recommendationSpinner.centerYAnchor.constraint(equalTo: recommendationTitleLabel.centerYAnchor),
-            recommendationSpinner.trailingAnchor.constraint(equalTo: rerollButton.leadingAnchor, constant: -6),
+            recommendationSpinner.leadingAnchor.constraint(greaterThanOrEqualTo: recommendationTitleLabel.trailingAnchor, constant: 10),
+            recommendationSpinner.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
 
             recommendationWeatherLabel.topAnchor.constraint(equalTo: recommendationTitleLabel.bottomAnchor, constant: 2),
             recommendationWeatherLabel.leadingAnchor.constraint(equalTo: recommendationTitleLabel.leadingAnchor),
 
             weatherAttributionButton.centerYAnchor.constraint(equalTo: recommendationWeatherLabel.centerYAnchor),
             weatherAttributionButton.leadingAnchor.constraint(greaterThanOrEqualTo: recommendationWeatherLabel.trailingAnchor, constant: 10),
-            weatherAttributionButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            weatherAttributionButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
 
             recommendationCollectionView.topAnchor.constraint(equalTo: recommendationWeatherLabel.bottomAnchor, constant: 8),
-            recommendationCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            recommendationCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            recommendationCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            recommendationCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             recommendationHeight,
 
             recommendationEmptyStack.topAnchor.constraint(equalTo: recommendationCollectionView.topAnchor, constant: 10),
-            recommendationEmptyStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            recommendationEmptyStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            recommendationEmptyStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            recommendationEmptyStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
 
             historyTitleLabel.topAnchor.constraint(equalTo: recommendationCollectionView.bottomAnchor, constant: 18),
-            historyTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            historyTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
 
             nextMonthButton.centerYAnchor.constraint(equalTo: historyTitleLabel.centerYAnchor),
-            nextMonthButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            nextMonthButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             nextMonthButton.widthAnchor.constraint(equalToConstant: 44),
 
             previousMonthButton.centerYAnchor.constraint(equalTo: historyTitleLabel.centerYAnchor),
@@ -696,15 +701,14 @@ public class HomeController: UIViewController {
             monthSummaryLabel.trailingAnchor.constraint(lessThanOrEqualTo: previousMonthButton.leadingAnchor, constant: -10),
 
             weekdayStack.topAnchor.constraint(equalTo: monthSummaryLabel.bottomAnchor, constant: 12),
-            weekdayStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Self.gridMargin),
-            weekdayStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Self.gridMargin),
+            weekdayStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Self.gridMargin),
+            weekdayStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Self.gridMargin),
 
-            // The grid takes whatever is left below the headings instead of demanding a
-            // fixed height – its rows adapt, the text above it does not have to.
             calendarCollectionView.topAnchor.constraint(equalTo: weekdayStack.bottomAnchor, constant: 6),
-            calendarCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Self.gridMargin),
-            calendarCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Self.gridMargin),
-            calendarCollectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            calendarCollectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Self.gridMargin),
+            calendarCollectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Self.gridMargin),
+            calendarHeight,
+            calendarCollectionView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
 
         addMonthSwipeGestures()
@@ -713,12 +717,17 @@ public class HomeController: UIViewController {
     }
 
     /// Swiping the grid moves to the previous or next month.
+    ///
+    /// The swipes share the touch with the scroll view, which would otherwise claim it and
+    /// let the gesture fail. They only fire sideways, so the two never mean the same thing.
     private func addMonthSwipeGestures() {
         let left = UISwipeGestureRecognizer(target: self, action: #selector(swipedLeft))
         left.direction = .left
+        left.delegate = self
 
         let right = UISwipeGestureRecognizer(target: self, action: #selector(swipedRight))
         right.direction = .right
+        right.delegate = self
 
         calendarCollectionView.addGestureRecognizer(left)
         calendarCollectionView.addGestureRecognizer(right)
@@ -732,6 +741,12 @@ public class HomeController: UIViewController {
     @objc
     private func swipedRight() {
         moveMonth(by: -1)
+    }
+}
+
+extension HomeController: UIGestureRecognizerDelegate {
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
     }
 }
 
