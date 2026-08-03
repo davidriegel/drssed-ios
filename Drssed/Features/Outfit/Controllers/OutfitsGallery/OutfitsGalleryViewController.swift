@@ -665,8 +665,10 @@ extension OutfitsGalleryViewController: UICollectionViewDelegate, UICollectionVi
 
         return UIContextMenuConfiguration(identifier: outfit.id as NSString, previewProvider: nil) { _ in
             // Today's wear is only known after a Core Data lookup, so the entries load in place.
-            let wearElements = UIDeferredMenuElement.uncached { completion in
+            let wearElements = UIDeferredMenuElement.uncached { [weak self] completion in
                 Task { @MainActor in
+                    guard let self else { return completion([]) }
+
                     let todaysWear = await self.wearRepo.getWear(forOutfit: outfit.id)
                     completion(self.wearMenuElements(for: outfit, todaysWear: todaysWear))
                 }

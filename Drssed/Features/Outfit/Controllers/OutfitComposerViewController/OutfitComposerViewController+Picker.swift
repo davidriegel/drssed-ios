@@ -14,7 +14,7 @@ protocol OutfitComposerViewController_PickerDelegate: AnyObject {
 
 class OutfitComposerViewController_Picker: UIViewController {
     
-    private var delegate: OutfitComposerViewController_PickerDelegate
+    private weak var delegate: OutfitComposerViewController_PickerDelegate?
     private let clothingRepo: ClothingRepository = AppRepository.shared.clothingRepository
     
     private var selectedClothingIDs: Set<Clothing.ID> = []
@@ -356,7 +356,7 @@ extension OutfitComposerViewController_Picker: UICollectionViewDelegate, UIColle
         let clothing = isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item]
         
         selectedClothingIDs.insert(clothing.id)
-        delegate.didSelectClothing(clothing)
+        delegate?.didSelectClothing(clothing)
         
         /*
         self.sheetPresentationController?.animateChanges {
@@ -367,7 +367,7 @@ extension OutfitComposerViewController_Picker: UICollectionViewDelegate, UIColle
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         let clothing = isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item]
         selectedClothingIDs.remove(clothing.id)
-        delegate.didDeselectClothing(clothing)
+        delegate?.didDeselectClothing(clothing)
         
         /*
         self.sheetPresentationController?.animateChanges {

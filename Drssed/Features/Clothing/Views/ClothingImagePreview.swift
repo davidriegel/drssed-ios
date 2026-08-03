@@ -15,7 +15,7 @@ protocol ClothingImagePreviewDelegate: AnyObject {
 
 class ClothingImagePreview: UIView {
     private(set) var clothing: Clothing? = nil
-    public var delegate: ClothingImagePreviewDelegate?
+    public weak var delegate: ClothingImagePreviewDelegate?
     
     private lazy var clothingImageView: UIImageView = {
         let view = UIImageView()

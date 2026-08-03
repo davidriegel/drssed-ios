@@ -13,7 +13,7 @@ protocol SeasonsPickerViewDelegate: AnyObject {
 }
 
 class SeasonsPickerView: UIView {
-    private var delegate: SeasonsPickerViewDelegate!
+    private weak var delegate: SeasonsPickerViewDelegate?
     
     lazy var pickerButtonPress: UIAction = {
         let ac = UIAction { [weak self] action in
@@ -26,13 +26,13 @@ class SeasonsPickerView: UIView {
             
             switch button.tag {
             case 1:
-                self.delegate.seasonSelected(.SPRING)
+                self.delegate?.seasonSelected(.SPRING)
             case 2:
-                self.delegate.seasonSelected(.SUMMER)
+                self.delegate?.seasonSelected(.SUMMER)
             case 3:
-                self.delegate.seasonSelected(.AUTUMN)
+                self.delegate?.seasonSelected(.AUTUMN)
             case 4:
-                self.delegate.seasonSelected(.WINTER)
+                self.delegate?.seasonSelected(.WINTER)
             default:
                 return
             }
@@ -44,7 +44,7 @@ class SeasonsPickerView: UIView {
         let ac = UIAction { [weak self] _ in
             guard let self else { return }
 
-            self.delegate.seasonsDoneButtonPressed()
+            self.delegate?.seasonsDoneButtonPressed()
         }
         
         return ac
