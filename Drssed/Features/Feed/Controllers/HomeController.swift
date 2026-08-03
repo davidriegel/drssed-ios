@@ -143,8 +143,8 @@ public class HomeController: UIViewController {
     }()
 
     private lazy var rerollButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.didTapReroll()
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.didTapReroll()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setImage(UIImage(systemName: "arrow.triangle.2.circlepath", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
@@ -203,8 +203,8 @@ public class HomeController: UIViewController {
 
     /// Shown only for the gaps the user can actually close.
     private lazy var recommendationActionButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.didTapRecommendationAction()
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.didTapRecommendationAction()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.titleLabel?.font = .systemFont(ofSize: 13, weight: .heavy)
@@ -240,8 +240,8 @@ public class HomeController: UIViewController {
     }()
 
     private lazy var previousMonthButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.moveMonth(by: -1)
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.moveMonth(by: -1)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setImage(UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
@@ -251,8 +251,8 @@ public class HomeController: UIViewController {
     }()
 
     private lazy var nextMonthButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.moveMonth(by: 1)
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.moveMonth(by: 1)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setImage(UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
@@ -262,8 +262,8 @@ public class HomeController: UIViewController {
     }()
 
     private lazy var todayButton: UIBarButtonItem = {
-        UIBarButtonItem(title: String(localized: "calendar.today"), primaryAction: UIAction { _ in
-            self.anchorDate = Date()
+        UIBarButtonItem(title: String(localized: "calendar.today"), primaryAction: UIAction { [weak self] _ in
+            self?.anchorDate = Date()
         })
     }()
 

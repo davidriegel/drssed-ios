@@ -156,7 +156,9 @@ class OutfitComposerViewController_Picker: UIViewController {
     lazy var clothingRefreshControll: UIRefreshControl = {
         let rc = UIRefreshControl()
     
-        rc.addAction(UIAction(handler: { _ in
+        rc.addAction(UIAction(handler: { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 await SyncManager.shared.syncWithServer()
                 
@@ -207,7 +209,9 @@ class OutfitComposerViewController_Picker: UIViewController {
             //categorySegmentControl.heightAnchor.constraint(equalToConstant: 32)
         ])
         
-        categorySegmentControl.addAction(UIAction { _ in
+        categorySegmentControl.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
             switch self.categorySegmentControl.selectedSegmentIndex {
             case 1:
                 self.filterClothingCategory = .JACKET
