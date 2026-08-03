@@ -78,8 +78,8 @@ class AccountUpgradeController: UIViewController {
     // MARK: -- Sign Up Button
     
     lazy var signUpButton: UIButton = {
-        let button = UIButton(primaryAction: UIAction { _ in
-            self.handleSignUp()
+        let button = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.handleSignUp()
         })
         button.translatesAutoresizingMaskIntoConstraints = false
         button.configuration = .prominentGlass()
