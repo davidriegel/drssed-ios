@@ -13,10 +13,12 @@ protocol TagsPickerViewDelegate: AnyObject {
 }
 
 class TagsPickerView: UIView {
-    private var delegate: TagsPickerViewDelegate!
+    private weak var delegate: TagsPickerViewDelegate?
     
     lazy var pickerButtonPress: UIAction = {
-        let ac = UIAction { action in
+        let ac = UIAction { [weak self] action in
+            guard let self else { return }
+
             guard let button = action.sender as? UIButton else { return }
             
             button.isSelected.toggle()
@@ -24,13 +26,13 @@ class TagsPickerView: UIView {
             
             switch button.tag {
             case 1:
-                self.delegate.tagSelected(.CASUAL)
+                self.delegate?.tagSelected(.CASUAL)
             case 2:
-                self.delegate.tagSelected(.FORMAL)
+                self.delegate?.tagSelected(.FORMAL)
             case 3:
-                self.delegate.tagSelected(.SPORTS)
+                self.delegate?.tagSelected(.SPORTS)
             case 4:
-                self.delegate.tagSelected(.VINTAGE)
+                self.delegate?.tagSelected(.VINTAGE)
             default:
                 return
             }
@@ -39,8 +41,10 @@ class TagsPickerView: UIView {
     }()
     
     lazy var doneButtonPress: UIAction = {
-        let ac = UIAction { _ in
-            self.delegate.tagsDoneButtonPressed()
+        let ac = UIAction { [weak self] _ in
+            guard let self else { return }
+
+            self.delegate?.tagsDoneButtonPressed()
         }
         
         return ac

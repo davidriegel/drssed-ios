@@ -3005,22 +3005,6 @@
         }
       }
     },
-    "home.recommendations.reroll" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neue Vorschläge"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New suggestions"
-          }
-        }
-      }
-    },
     "home.recommendations.title" : {
       "localizations" : {
         "de" : {

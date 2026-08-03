@@ -811,7 +811,7 @@ class ProfileViewController: UIViewController {
             emailSeparator.topAnchor.constraint(equalTo: changeEmailRow.bottomAnchor),
             emailSeparator.leadingAnchor.constraint(equalTo: accountSectionContainer.leadingAnchor, constant: 52),
             emailSeparator.trailingAnchor.constraint(equalTo: accountSectionContainer.trailingAnchor),
-            emailSeparator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+            emailSeparator.heightAnchor.constraint(equalToConstant: hairlineWidth)
         ])
         
         accountSectionContainer.addSubview(changePasswordRow)
@@ -826,7 +826,7 @@ class ProfileViewController: UIViewController {
             passwordSeparator.topAnchor.constraint(equalTo: changePasswordRow.bottomAnchor),
             passwordSeparator.leadingAnchor.constraint(equalTo: accountSectionContainer.leadingAnchor, constant: 52),
             passwordSeparator.trailingAnchor.constraint(equalTo: accountSectionContainer.trailingAnchor),
-            passwordSeparator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+            passwordSeparator.heightAnchor.constraint(equalToConstant: hairlineWidth)
         ])
         
         accountSectionContainer.addSubview(deleteAccountRow)
@@ -862,7 +862,7 @@ class ProfileViewController: UIViewController {
         NSLayoutConstraint.activate([
             statsDivider.centerXAnchor.constraint(equalTo: statsCard.centerXAnchor),
             statsDivider.centerYAnchor.constraint(equalTo: statsCard.centerYAnchor),
-            statsDivider.widthAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+            statsDivider.widthAnchor.constraint(equalToConstant: hairlineWidth),
             statsDivider.heightAnchor.constraint(equalTo: statsCard.heightAnchor, multiplier: 0.5)
         ])
         
@@ -917,7 +917,7 @@ class ProfileViewController: UIViewController {
             aboutSeparator.topAnchor.constraint(equalTo: aboutRow.bottomAnchor),
             aboutSeparator.leadingAnchor.constraint(equalTo: appSectionContainer.leadingAnchor, constant: 52),
             aboutSeparator.trailingAnchor.constraint(equalTo: appSectionContainer.trailingAnchor),
-            aboutSeparator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+            aboutSeparator.heightAnchor.constraint(equalToConstant: hairlineWidth)
         ])
         
         appSectionContainer.addSubview(privacyRow)
@@ -932,7 +932,7 @@ class ProfileViewController: UIViewController {
             privacySeparator.topAnchor.constraint(equalTo: privacyRow.bottomAnchor),
             privacySeparator.leadingAnchor.constraint(equalTo: appSectionContainer.leadingAnchor, constant: 52),
             privacySeparator.trailingAnchor.constraint(equalTo: appSectionContainer.trailingAnchor),
-            privacySeparator.heightAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale)
+            privacySeparator.heightAnchor.constraint(equalToConstant: hairlineWidth)
         ])
         
         appSectionContainer.addSubview(versionRow)

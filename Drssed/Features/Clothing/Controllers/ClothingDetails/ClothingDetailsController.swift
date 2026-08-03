@@ -329,7 +329,9 @@ final class ClothingDetailsController: UIViewController {
     /// Done UI
     
     lazy var itemDoneButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction {_ in
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 await self.saveItemChanges()
             }
@@ -345,7 +347,9 @@ final class ClothingDetailsController: UIViewController {
     }()
     
     lazy var itemDeleteButton: UIButton = {
-        let bt = UIButton(primaryAction: UIAction {_ in
+        let bt = UIButton(primaryAction: UIAction { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 await self.deleteItem()
             }
@@ -415,7 +419,11 @@ final class ClothingDetailsController: UIViewController {
         button.layer.borderWidth = 2
         button.layer.borderColor = UIColor.secondaryLabel.cgColor
         button.layer.cornerRadius = (self.view.frame.height / 20) / 4.16
-        button.addAction(UIAction {_ in self.present(self.colorPickerView, animated: true)}, for: .primaryActionTriggered)
+        button.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
+            self.present(self.colorPickerView, animated: true)
+        }, for: .primaryActionTriggered)
         button.isUserInteractionEnabled = false
         return button
     }()
@@ -426,7 +434,7 @@ final class ClothingDetailsController: UIViewController {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.season.title"))
         view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in self.itemSeasonsPickerView.showSeasonsPickerView()}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction { [weak self] _ in self?.itemSeasonsPickerView.showSeasonsPickerView()}, for: .primaryActionTriggered)
         return view
     }()
     
@@ -457,7 +465,7 @@ final class ClothingDetailsController: UIViewController {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.tag.title"))
         view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in self.itemTagsPickerView.showTagsPickerView()}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction { [weak self] _ in self?.itemTagsPickerView.showTagsPickerView()}, for: .primaryActionTriggered)
         return view
     }()
     
@@ -537,7 +545,9 @@ final class ClothingDetailsController: UIViewController {
             segmentController.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
 
-        segmentController.addAction(UIAction { _ in
+        segmentController.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
             self.segmentController.selectedSegmentIndex == 0 ? self.disableEditing() : self.enableEditing()
         }, for: .valueChanged)
 
