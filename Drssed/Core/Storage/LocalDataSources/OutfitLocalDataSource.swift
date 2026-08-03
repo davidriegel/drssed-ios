@@ -35,7 +35,7 @@ public final class OutfitLocalDataSource {
                 predicates.append(NSPredicate(format: "isPublic == %@", NSNumber(booleanLiteral: isPublic)))
             }
             if let isFavorite {
-                predicates.append(NSPredicate(format: "isPublic == %@", NSNumber(booleanLiteral: isFavorite)))
+                predicates.append(NSPredicate(format: "isFavorite == %@", NSNumber(booleanLiteral: isFavorite)))
             }
 
             if !predicates.isEmpty {
