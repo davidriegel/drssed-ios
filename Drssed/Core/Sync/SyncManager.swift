@@ -102,7 +102,7 @@ final class SyncManager {
         } catch let error as AuthenticationError {
             ErrorHandler.handleSilently(error)
         } catch {
-            ErrorHandler.handle(error)
+            ErrorHandler.handleSilently(error)
         }
         
         return false
@@ -129,7 +129,7 @@ final class SyncManager {
         } catch let error as AuthenticationError {
             ErrorHandler.handleSilently(error)
         } catch {
-            ErrorHandler.handle(error)
+            ErrorHandler.handleSilently(error)
         }
         
         return false

@@ -1665,23 +1665,6 @@
         }
       }
     },
-    "error.action.login" : {
-      "comment" : "Navigate to login",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Login"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log In"
-          }
-        }
-      }
-    },
     "error.action.retry" : {
       "comment" : "Retry failed action",
       "localizations" : {
@@ -4761,6 +4744,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Windbreaker"
+          }
+        }
+      }
+    },
+    "sync.failed" : {
+      "comment" : "Toast shown when a pull to refresh could not reach the server.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktualisieren fehlgeschlagen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't refresh"
           }
         }
       }

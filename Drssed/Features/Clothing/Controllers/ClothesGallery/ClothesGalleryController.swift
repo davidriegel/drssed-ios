@@ -188,10 +188,14 @@ class ClothesGalleryController: UIViewController {
             guard let self else { return }
 
             Task {
-                await SyncManager.shared.syncWithServer()
+                let didSync = await SyncManager.shared.syncWithServer()
                 
                 DispatchQueue.main.async {
                     self.reloadDataFromCoreData()
+
+                    if !didSync {
+                        ToastPresenter.error(String(localized: "sync.failed"))
+                    }
                 }
             }
         }), for: .valueChanged)

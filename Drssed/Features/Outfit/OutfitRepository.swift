@@ -20,7 +20,7 @@ public final class OutfitRepository {
         do {
             try await localDataSource.replaceAll(apiModels)
         } catch {
-            ErrorHandler.handle(AppError.coreData(.saveFailed(error.localizedDescription)))
+            ErrorHandler.handleSilently(AppError.coreData(.saveFailed(error.localizedDescription)))
         }
     }
     
@@ -30,7 +30,7 @@ public final class OutfitRepository {
             try await localDataSource.delete(ids: deleted)
             
         } catch {
-            ErrorHandler.handle(AppError.coreData(.saveFailed(error.localizedDescription)))
+            ErrorHandler.handleSilently(AppError.coreData(.saveFailed(error.localizedDescription)))
         }
     }
 
@@ -80,7 +80,7 @@ public final class OutfitRepository {
                 sortBy: sortBy
             )
         } catch let error as NSError {
-            ErrorHandler.handle(AppError.coreData(.fetchFailed(error.localizedDescription)))
+            ErrorHandler.handleSilently(AppError.coreData(.fetchFailed(error.localizedDescription)))
             return []
         }
     }
@@ -89,7 +89,7 @@ public final class OutfitRepository {
         do {
             return try await localDataSource.get(id: id)
         } catch let error as NSError {
-            ErrorHandler.handle(AppError.coreData(.fetchFailed(error.localizedDescription)))
+            ErrorHandler.handleSilently(AppError.coreData(.fetchFailed(error.localizedDescription)))
             return nil
         }
     }
@@ -114,7 +114,7 @@ public final class OutfitRepository {
         do {
             try await localDataSource.deleteAll()
         } catch {
-            ErrorHandler.handle(AppError.coreData(.deleteFailed(error.localizedDescription)))
+            ErrorHandler.handleSilently(AppError.coreData(.deleteFailed(error.localizedDescription)))
         }
     }
     
@@ -152,7 +152,7 @@ public final class OutfitRepository {
         do {
             try await localDataSource.upsert(item: domainModel)
         } catch let error as NSError {
-            ErrorHandler.handle(AppError.coreData(.saveFailed(error.localizedDescription)))
+            ErrorHandler.handleSilently(AppError.coreData(.saveFailed(error.localizedDescription)))
         }
     }
 }
