@@ -190,7 +190,7 @@ final class OutfitRecommendationCell: UICollectionViewCell {
             ? String(localized: "home.recommendations.wornToday")
             : String(localized: "wear.action.todayQuick")
 
-        imageView.sd_setImage(with: URL(string: outfit.id, relativeTo: APIClient.outfitImagesURL))
+        imageView.sd_setImage(with: outfit.imageURL)
 
         accessibilityLabel = outfit.name
     }

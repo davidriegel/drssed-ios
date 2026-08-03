@@ -75,3 +75,9 @@ extension Outfit {
         )
     }
 }
+
+extension Outfit {
+    var imageURL: URL? {
+        URL(string: "\(id)?v=\(Int(updatedAt.timeIntervalSince1970))", relativeTo: APIClient.outfitImagesURL)
+    }
+}

@@ -66,7 +66,7 @@ extension OutfitLocal {
         self.id = domainModel.id
         self.name = domainModel.name
         self.createdAt = domainModel.createdAt
-        self.updatedAt = Date()
+        self.updatedAt = domainModel.updatedAt
         self.isFavorite = domainModel.isFavorite
         self.isPublic = domainModel.isPublic
         self.seasons = domainModel.seasons.map { $0.rawValue }

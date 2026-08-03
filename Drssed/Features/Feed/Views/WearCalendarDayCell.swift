@@ -139,8 +139,8 @@ final class WearCalendarDayCell: UICollectionViewCell {
         countLabel.isHidden = day.wears.count < 2
         countLabel.text = "+\(day.wears.count - 1)"
 
-        if let outfitID = day.wears.first?.outfitID {
-            imageView.sd_setImage(with: URL(string: outfitID, relativeTo: APIClient.outfitImagesURL))
+        if let wear = day.wears.first, let outfit = day.outfit(for: wear) {
+            imageView.sd_setImage(with: outfit.imageURL)
         } else {
             imageView.image = nil
         }
