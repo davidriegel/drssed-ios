@@ -19,7 +19,7 @@ struct WearCalendarDay {
 
         let day = date.formatted(date: .long, time: .omitted)
 
-        guard wears.first != nil else {
+        guard !wears.isEmpty else {
             return "\(day), \(String(localized: "calendar.day.empty"))"
         }
 
