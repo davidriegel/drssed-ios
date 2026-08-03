@@ -63,9 +63,14 @@ final class AuthHandler {
 
         let uploadData = try JSONEncoder().encode(dict)
         let request = try await APIClient.shared.createRequest(endpoint: "/users/me/upgrade", method: .POST, body: uploadData, authentication: true)
-        let upgradeResponse: UpgradeAccountResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
-        
-        return upgradeResponse
+
+        do {
+            let upgradeResponse: UpgradeAccountResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
+
+            return upgradeResponse
+        } catch APIError.conflict(_, let key) {
+            throw AuthenticationError.forConflict(key: key)
+        }
     }
     
     // MARK: - register new account
@@ -84,9 +89,14 @@ final class AuthHandler {
 
         let uploadData = try JSONEncoder().encode(dict)
         let request = try await APIClient.shared.createRequest(endpoint: "/auth/register", method: .POST, body: uploadData, authentication: false)
-        let tokenResponse: TokenAPIResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
-        
-        return tokenResponse
+
+        do {
+            let tokenResponse: TokenAPIResponse = try await APIClient.shared.executeRequestAndDecode(request: request)
+
+            return tokenResponse
+        } catch APIError.conflict(_, let key) {
+            throw AuthenticationError.forConflict(key: key)
+        }
     }
     
     // MARK: - Request password reset
@@ -139,18 +149,5 @@ final class AuthHandler {
         let (_, _) = try await APIClient.shared.executeRequest(request: request)
     }
     
-    // MARK: -- Handler specific functions
-    
-    private func mapConflictsError(data: Data) throws -> AuthenticationError {
-        let fetchError = try JSONDecoder().decode(ConflictResp.self, from: data)
-        switch fetchError.key {
-        case "email":
-            return .emailAlreadyInUse
-        case "username":
-            return .usernameAlreadyInUse
-        default:
-            return .unknown()
-        }
-    }
 }
 

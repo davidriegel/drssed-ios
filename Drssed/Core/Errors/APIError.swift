@@ -24,7 +24,7 @@ public enum APIError: Error {
     case badRequest(message: String? = nil) // 400
     case notFound // 404
     case methodNotAllowed // 405
-    case conflict(message: String? = nil) // 409
+    case conflict(message: String? = nil, key: String? = nil) // 409
     case payloadTooLarge(message: String? = nil, suggestion: String?) // 413
     case unprocessableContent(message: String? = nil, suggestion: String?) // 422
     case tooManyRequests // 429
@@ -54,8 +54,8 @@ extension APIError: Equatable {
         case (.badRequest(let a), .badRequest(let b)):
             return a == b
             
-        case (.conflict(let a), .conflict(let b)):
-            return a == b
+        case (.conflict(let messageA, let keyA), .conflict(let messageB, let keyB)):
+            return messageA == messageB && keyA == keyB
             
         case (.payloadTooLarge(let msgA, let suggA), .payloadTooLarge(let msgB, let suggB)):
             return msgA == msgB && suggA == suggB
@@ -94,7 +94,7 @@ extension APIError: LocalizedError {
             return String(localized: "error.api.notFound.description")
         case .methodNotAllowed:
             return String(localized: "error.api.methodNotAllowed.description")
-        case .conflict(let message):
+        case .conflict(let message, _):
             return message ?? String(localized: "error.api.conflict.description")
         case .payloadTooLarge(let message, _):
             return message ?? String(localized: "error.api.payloadTooLarge.description")

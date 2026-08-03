@@ -79,7 +79,8 @@ final public class APIClient {
         case 405:
             throw APIError.methodNotAllowed
         case 409:
-            throw APIError.conflict(message: errorMessage)
+            let conflictKey = data.flatMap { try? JSONDecoder().decode(ConflictResp.self, from: $0) }?.key
+            throw APIError.conflict(message: errorMessage, key: conflictKey)
         case 413:
             throw APIError.payloadTooLarge(message: errorMessage, suggestion: nil)
         case 422:
