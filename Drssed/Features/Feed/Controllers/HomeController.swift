@@ -151,17 +151,6 @@ public class HomeController: UIViewController {
         return label
     }()
 
-    private lazy var rerollButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
-            self?.didTapReroll()
-        })
-        bt.translatesAutoresizingMaskIntoConstraints = false
-        bt.setImage(UIImage(systemName: "arrow.triangle.2.circlepath", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
-        bt.tintColor = .accent
-        bt.accessibilityLabel = String(localized: "home.recommendations.reroll")
-        return bt
-    }()
-
     /// Apple requires the trademark and a link to the legal page wherever WeatherKit data shows up.
     private lazy var weatherAttributionButton: UIButton = {
         let bt = UIButton(type: .system, primaryAction: UIAction { _ in
@@ -362,11 +351,15 @@ public class HomeController: UIViewController {
 
     private func handleRefresh() {
         Task {
-            await SyncManager.shared.syncWithServer()
+            let didSync = await SyncManager.shared.syncWithServer()
             await reloadMonth()
             await reloadRecommendations()
 
             refreshControl.endRefreshing()
+
+            if !didSync {
+                ToastPresenter.error(String(localized: "sync.failed"))
+            }
         }
     }
 
