@@ -717,12 +717,17 @@ public class HomeController: UIViewController {
     }
 
     /// Swiping the grid moves to the previous or next month.
+    ///
+    /// The swipes share the touch with the scroll view, which would otherwise claim it and
+    /// let the gesture fail. They only fire sideways, so the two never mean the same thing.
     private func addMonthSwipeGestures() {
         let left = UISwipeGestureRecognizer(target: self, action: #selector(swipedLeft))
         left.direction = .left
+        left.delegate = self
 
         let right = UISwipeGestureRecognizer(target: self, action: #selector(swipedRight))
         right.direction = .right
+        right.delegate = self
 
         calendarCollectionView.addGestureRecognizer(left)
         calendarCollectionView.addGestureRecognizer(right)
@@ -736,6 +741,12 @@ public class HomeController: UIViewController {
     @objc
     private func swipedRight() {
         moveMonth(by: -1)
+    }
+}
+
+extension HomeController: UIGestureRecognizerDelegate {
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
     }
 }
 
