@@ -13,19 +13,50 @@ final class SyncManager {
     private let wearRepo = AppRepository.shared.wearRepository
     
     public static let shared = SyncManager()
-    
+
+    private var lastSuccessfulSync: Date?
+    private var isSyncing: Bool = false
+
+    private static let minimumSyncInterval: TimeInterval = 5 * 60
+
     private init() {}
-    
+
     func syncWithServer(forceFull: Bool = false) async -> Bool {
         guard NetworkManager.shared.isReachable else { return false }
-        
+
+        let didSync: Bool
+
         if forceFull || shouldPerformFullSync(){
-            return await performFullSync()
+            didSync = await performFullSync()
         } else {
-            return await performIncrementalSync()
+            didSync = await performIncrementalSync()
         }
+
+        if didSync {
+            lastSuccessfulSync = Date()
+
+            await MainActor.run {
+                NotificationCenter.default.post(name: .syncDidFinish, object: nil)
+            }
+        }
+
+        return didSync
     }
-    
+
+    @discardableResult
+    func syncIfStale() async -> Bool {
+        guard !isSyncing else { return false }
+
+        if let lastSuccessfulSync, Date().timeIntervalSince(lastSuccessfulSync) < Self.minimumSyncInterval {
+            return false
+        }
+
+        isSyncing = true
+        defer { isSyncing = false }
+
+        return await syncWithServer()
+    }
+
     private func shouldPerformFullSync() -> Bool {
         let clothingLastSync = SyncCursors.get(.clothing)
         let outfitLastSync = SyncCursors.get(.outfit)
@@ -102,4 +133,8 @@ final class SyncManager {
         
         return false
     }
+}
+
+extension Notification.Name {
+    static let syncDidFinish = Notification.Name("syncDidFinish")
 }

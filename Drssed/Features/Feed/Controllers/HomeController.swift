@@ -86,6 +86,8 @@ public class HomeController: UIViewController {
 
         Task { await reloadMonth() }
         Task { await reloadRecommendations() }
+
+        NotificationCenter.default.addObserver(self, selector: #selector(onWearsChanged), name: .syncDidFinish, object: nil)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -543,6 +545,13 @@ public class HomeController: UIViewController {
         let days = WearCalendarDay.month(for: anchorDate, wears: wears, calendar: calendar)
 
         await MainActor.run { self.days = days }
+    }
+
+    @objc private func onWearsChanged() {
+        Task {
+            await reloadMonth()
+            await refreshWornToday()
+        }
     }
 
     private func moveMonth(by months: Int) {

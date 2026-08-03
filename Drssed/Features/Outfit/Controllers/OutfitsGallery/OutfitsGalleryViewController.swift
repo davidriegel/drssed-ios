@@ -32,8 +32,10 @@ class OutfitsGalleryViewController: UIViewController {
         
         configureViewComponents()
         reloadDataFromCoreData()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(onOutfitsChanged), name: .syncDidFinish, object: nil)
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         reloadDataFromCoreData()
@@ -512,6 +514,10 @@ class OutfitsGalleryViewController: UIViewController {
     func pushToOutfitCreation() {
         let vc = OutfitComposerViewController()
         navigationController?.pushViewController(vc, animated: true)
+    }
+
+    @objc private func onOutfitsChanged() {
+        reloadDataFromCoreData()
     }
     
     // MARK: --

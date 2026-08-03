@@ -55,8 +55,14 @@ public final class NetworkManager {
             do {
                 try await pingServer()
                 stopServerReachablitityCheckTimer()
-                await MainActor.run {
+                let wasReachable = await MainActor.run { () -> Bool in
+                    let previous = self.isReachable
                     self.isReachable = true
+                    return previous
+                }
+
+                if !wasReachable {
+                    await SyncManager.shared.syncIfStale()
                 }
             } catch {
                 await MainActor.run {
