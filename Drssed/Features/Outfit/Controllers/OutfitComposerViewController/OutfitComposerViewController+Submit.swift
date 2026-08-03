@@ -289,7 +289,9 @@ class OutfitComposerViewController_Submit: UIViewController {
             finishButton.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 0.5)
         ])
 
-        finishButton.addAction(UIAction(handler: { _ in
+        finishButton.addAction(UIAction(handler: { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 self.finishButton.isEnabled = false
                 

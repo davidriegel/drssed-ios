@@ -56,8 +56,8 @@ class SignInController: UIViewController {
     // MARK: -- Sign In Button
     
     lazy var signInButton: UIButton = {
-        let button = UIButton(primaryAction: UIAction { _ in
-            self.handleSignIn()
+        let button = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.handleSignIn()
         })
         button.translatesAutoresizingMaskIntoConstraints = false
         button.configuration = .prominentGlass()

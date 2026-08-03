@@ -14,7 +14,7 @@ protocol OutfitComposerViewController_PickerDelegate: AnyObject {
 
 class OutfitComposerViewController_Picker: UIViewController {
     
-    private var delegate: OutfitComposerViewController_PickerDelegate
+    private weak var delegate: OutfitComposerViewController_PickerDelegate?
     private let clothingRepo: ClothingRepository = AppRepository.shared.clothingRepository
     
     private var selectedClothingIDs: Set<Clothing.ID> = []
@@ -156,7 +156,9 @@ class OutfitComposerViewController_Picker: UIViewController {
     lazy var clothingRefreshControll: UIRefreshControl = {
         let rc = UIRefreshControl()
     
-        rc.addAction(UIAction(handler: { _ in
+        rc.addAction(UIAction(handler: { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 await SyncManager.shared.syncWithServer()
                 
@@ -207,7 +209,9 @@ class OutfitComposerViewController_Picker: UIViewController {
             //categorySegmentControl.heightAnchor.constraint(equalToConstant: 32)
         ])
         
-        categorySegmentControl.addAction(UIAction { _ in
+        categorySegmentControl.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
             switch self.categorySegmentControl.selectedSegmentIndex {
             case 1:
                 self.filterClothingCategory = .JACKET
@@ -352,7 +356,7 @@ extension OutfitComposerViewController_Picker: UICollectionViewDelegate, UIColle
         let clothing = isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item]
         
         selectedClothingIDs.insert(clothing.id)
-        delegate.didSelectClothing(clothing)
+        delegate?.didSelectClothing(clothing)
         
         /*
         self.sheetPresentationController?.animateChanges {
@@ -363,7 +367,7 @@ extension OutfitComposerViewController_Picker: UICollectionViewDelegate, UIColle
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         let clothing = isSearching ? searchDataSource[indexPath.item] : sortedAndFilteredDataSource[indexPath.item]
         selectedClothingIDs.remove(clothing.id)
-        delegate.didDeselectClothing(clothing)
+        delegate?.didDeselectClothing(clothing)
         
         /*
         self.sheetPresentationController?.animateChanges {

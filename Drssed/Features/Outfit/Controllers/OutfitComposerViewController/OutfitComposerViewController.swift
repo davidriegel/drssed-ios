@@ -117,7 +117,9 @@ class OutfitComposerViewController: UIViewController {
         config.imagePlacement = .top
         config.imagePadding = 2
         config.attributedTitle = AttributedString(String(localized: "common.add"), attributes: AttributeContainer([.font: UIFont.systemFont(ofSize: UIFont.systemFontSize - 2, weight: .semibold)]))
-        let bt = UIButton(configuration: config, primaryAction: UIAction { _ in
+        let bt = UIButton(configuration: config, primaryAction: UIAction { [weak self] _ in
+            guard let self else { return }
+
             self.navigationController?.present(self.clothingPickerNavController, animated: true)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
@@ -215,7 +217,9 @@ class OutfitComposerViewController: UIViewController {
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: "chevron.backward", withConfiguration: UIImage.SymbolConfiguration(weight: .bold))?.withTintColor(.accent, renderingMode: .alwaysOriginal),
-            primaryAction: UIAction { _ in
+            primaryAction: UIAction { [weak self] _ in
+                guard let self else { return }
+
                 self.clothingPickerNavController.dismiss(animated: true)
                 self.navigationController?.popViewController(animated: true)
                 self.tabBarController?.tabBar.isHidden = false
@@ -245,7 +249,9 @@ class OutfitComposerViewController: UIViewController {
         toolbarView.addArrangedSubview(randomButton)
         toolbarView.addArrangedSubview(addButton)
 
-        submitButton.addAction(UIAction { _ in
+        submitButton.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
             self.clothingPickerNavController.dismiss(animated: true)
 
             guard self.pickedClothing.count > 1 else {

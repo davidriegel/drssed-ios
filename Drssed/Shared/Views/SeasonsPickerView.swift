@@ -13,10 +13,12 @@ protocol SeasonsPickerViewDelegate: AnyObject {
 }
 
 class SeasonsPickerView: UIView {
-    private var delegate: SeasonsPickerViewDelegate!
+    private weak var delegate: SeasonsPickerViewDelegate?
     
     lazy var pickerButtonPress: UIAction = {
-        let ac = UIAction { action in
+        let ac = UIAction { [weak self] action in
+            guard let self else { return }
+
             guard let button = action.sender as? UIButton else { return }
             
             button.isSelected.toggle()
@@ -24,13 +26,13 @@ class SeasonsPickerView: UIView {
             
             switch button.tag {
             case 1:
-                self.delegate.seasonSelected(.SPRING)
+                self.delegate?.seasonSelected(.SPRING)
             case 2:
-                self.delegate.seasonSelected(.SUMMER)
+                self.delegate?.seasonSelected(.SUMMER)
             case 3:
-                self.delegate.seasonSelected(.AUTUMN)
+                self.delegate?.seasonSelected(.AUTUMN)
             case 4:
-                self.delegate.seasonSelected(.WINTER)
+                self.delegate?.seasonSelected(.WINTER)
             default:
                 return
             }
@@ -39,8 +41,10 @@ class SeasonsPickerView: UIView {
     }()
     
     lazy var doneButtonPress: UIAction = {
-        let ac = UIAction { _ in
-            self.delegate.seasonsDoneButtonPressed()
+        let ac = UIAction { [weak self] _ in
+            guard let self else { return }
+
+            self.delegate?.seasonsDoneButtonPressed()
         }
         
         return ac

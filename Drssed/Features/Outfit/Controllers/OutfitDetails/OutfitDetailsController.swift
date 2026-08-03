@@ -141,7 +141,9 @@ final class OutfitDetailsController: UIViewController {
     // Done Button
     
     lazy var itemDoneButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction {_ in
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 await self.saveItemChanges()
             }
@@ -159,7 +161,9 @@ final class OutfitDetailsController: UIViewController {
     // Delete button
     
     lazy var itemDeleteButton: UIButton = {
-        let bt = UIButton(primaryAction: UIAction {_ in
+        let bt = UIButton(primaryAction: UIAction { [weak self] _ in
+            guard let self else { return }
+
             Task {
                 await self.deleteItem()
             }
@@ -173,8 +177,8 @@ final class OutfitDetailsController: UIViewController {
     // Wear button
 
     lazy var itemWearButton: UIButton = {
-        let bt = UIButton(primaryAction: UIAction { _ in
-            self.wearButtonTapped()
+        let bt = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.wearButtonTapped()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.tintColor = .accent
@@ -204,7 +208,11 @@ final class OutfitDetailsController: UIViewController {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.season.title"))
         view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in self.showInteractionBlocker(); self.view.bringSubviewToFront(self.itemSeasonsPickerView); self.itemSeasonsPickerView.showSeasonsPickerView()}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
+            self.showInteractionBlocker(); self.view.bringSubviewToFront(self.itemSeasonsPickerView); self.itemSeasonsPickerView.showSeasonsPickerView()
+        }, for: .primaryActionTriggered)
         return view
     }()
     
@@ -244,7 +252,11 @@ final class OutfitDetailsController: UIViewController {
         let view = CustomButtonInput(fieldTitle: String(localized: "common.tag.title"))
         view.fieldInput.isUserInteractionEnabled = false
         view.indicatorImageView.isHidden = true
-        view.fieldInput.addAction(UIAction {_ in self.showInteractionBlocker(); self.view.bringSubviewToFront(self.itemTagsPickerView); self.itemTagsPickerView.showTagsPickerView()}, for: .primaryActionTriggered)
+        view.fieldInput.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
+            self.showInteractionBlocker(); self.view.bringSubviewToFront(self.itemTagsPickerView); self.itemTagsPickerView.showTagsPickerView()
+        }, for: .primaryActionTriggered)
         return view
     }()
     
@@ -430,24 +442,30 @@ final class OutfitDetailsController: UIViewController {
         var items: [UIAction] = []
 
         if let wear = todaysWear {
-            items.append(UIAction(title: String(localized: "wear.action.edit"), image: UIImage(systemName: "square.and.pencil"), handler: { _ in
-                self.presentWearEditor(mode: .edit(wear))
+            items.append(UIAction(title: String(localized: "wear.action.edit"), image: UIImage(systemName: "square.and.pencil"), handler: { [weak self] _ in
+                self?.presentWearEditor(mode: .edit(wear))
             }))
 
-            items.append(UIAction(title: String(localized: "wear.action.remove"), image: UIImage(systemName: "trash"), attributes: .destructive, handler: { _ in
-                self.promptRemoveWear(wear)
+            items.append(UIAction(title: String(localized: "wear.action.remove"), image: UIImage(systemName: "trash"), attributes: .destructive, handler: { [weak self] _ in
+                self?.promptRemoveWear(wear)
             }))
 
-            items.append(UIAction(title: String(localized: "wear.action.log"), image: UIImage(systemName: "calendar.badge.plus"), handler: { _ in
+            items.append(UIAction(title: String(localized: "wear.action.log"), image: UIImage(systemName: "calendar.badge.plus"), handler: { [weak self] _ in
+                guard let self else { return }
+
                 self.presentWearEditor(mode: .create(outfitID: self.item.id))
             }))
         } else {
-            items.append(UIAction(title: String(localized: "wear.action.today"), image: UIImage(systemName: "checkmark.circle"), handler: { _ in
+            items.append(UIAction(title: String(localized: "wear.action.today"), image: UIImage(systemName: "checkmark.circle"), handler: { [weak self] _ in
+                guard let self else { return }
+
                 self.presentWearEditor(mode: .create(outfitID: self.item.id))
             }))
 
             // Shortcut for everyone who does not want to fill in the sheet.
-            items.append(UIAction(title: String(localized: "wear.action.todayQuick"), image: UIImage(systemName: "bolt"), handler: { _ in
+            items.append(UIAction(title: String(localized: "wear.action.todayQuick"), image: UIImage(systemName: "bolt"), handler: { [weak self] _ in
+                guard let self else { return }
+
                 Task { await self.logWearToday() }
             }))
         }
@@ -553,8 +571,8 @@ final class OutfitDetailsController: UIViewController {
             segmentController.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
 
-        segmentController.addAction(UIAction { _ in
-            self.toggleEditing()
+        segmentController.addAction(UIAction { [weak self] _ in
+            self?.toggleEditing()
         }, for: .valueChanged)
 
         NSLayoutConstraint.activate([

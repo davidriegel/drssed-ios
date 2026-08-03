@@ -7,11 +7,6 @@
 
 import UIKit
 
-/// Home screen of the app: the outfits that suit today's weather on top, below them the
-/// month grid of everything that was worn.
-///
-/// The grid is a log that only ever grows – entries appear by wearing an outfit and are
-/// not edited or removed from here, which is why a day opens read-only.
 public class HomeController: UIViewController {
     private let wearRepo: WearRepository = AppRepository.shared.wearRepository
     private let outfitRepo: OutfitRepository = AppRepository.shared.outfitRepository
@@ -41,16 +36,12 @@ public class HomeController: UIViewController {
         }
     }
 
-    /// Outfits that already carry an entry for today, so the shortcut cannot log them twice.
     private var wornTodayOutfitIDs: Set<String> = []
 
-    /// The weather the current recommendations are based on.
     private var weather: WeatherSnapshot? {
         didSet { updateWeatherLabel() }
     }
 
-    /// Why there is nothing to suggest – each case needs its own wording, and some of them
-    /// a way out.
     private enum RecommendationGap {
         case offline
         case locationDenied
@@ -61,8 +52,6 @@ public class HomeController: UIViewController {
 
     private var recommendationGap: RecommendationGap = .noMatch
 
-    /// When the suggestions last came in, so that they do not keep describing this morning's
-    /// weather after the app has been in the background all day.
     private var lastRecommendationLoad: Date?
 
     private static let recommendationStaleAfter: TimeInterval = 30 * 60
@@ -97,8 +86,6 @@ public class HomeController: UIViewController {
 
         Task { await reloadMonth() }
 
-        // The suggestions stay put while they are still current; once they describe weather
-        // from hours ago they are fetched again rather than quietly going stale.
         if let lastLoad = lastRecommendationLoad, Date().timeIntervalSince(lastLoad) < Self.recommendationStaleAfter {
             Task { await refreshWornToday() }
         } else {
@@ -109,14 +96,12 @@ public class HomeController: UIViewController {
     public override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
 
-        // The cards scale with the width of the screen, which is only final once laid out.
         if recommendationHeightConstraint?.constant != recommendationSectionHeight {
             recommendationHeightConstraint?.constant = recommendationSectionHeight
             recommendationCollectionView.collectionViewLayout.invalidateLayout()
             centerRecommendations()
         }
 
-        // The rows scale with the width of the screen, so the grid is only measurable now.
         if calendarHeightConstraint?.constant != calendarHeight {
             calendarHeightConstraint?.constant = calendarHeight
             calendarCollectionView.collectionViewLayout.invalidateLayout()
@@ -164,6 +149,17 @@ public class HomeController: UIViewController {
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .secondaryLabel
         return label
+    }()
+
+    private lazy var rerollButton: UIButton = {
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.didTapReroll()
+        })
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setImage(UIImage(systemName: "arrow.triangle.2.circlepath", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
+        bt.tintColor = .accent
+        bt.accessibilityLabel = String(localized: "home.recommendations.reroll")
+        return bt
     }()
 
     /// Apple requires the trademark and a link to the legal page wherever WeatherKit data shows up.
@@ -216,8 +212,8 @@ public class HomeController: UIViewController {
 
     /// Shown only for the gaps the user can actually close.
     private lazy var recommendationActionButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.didTapRecommendationAction()
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.didTapRecommendationAction()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.titleLabel?.font = .systemFont(ofSize: 13, weight: .heavy)
@@ -253,8 +249,8 @@ public class HomeController: UIViewController {
     }()
 
     private lazy var previousMonthButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.moveMonth(by: -1)
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.moveMonth(by: -1)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setImage(UIImage(systemName: "chevron.left", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
@@ -264,8 +260,8 @@ public class HomeController: UIViewController {
     }()
 
     private lazy var nextMonthButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.moveMonth(by: 1)
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.moveMonth(by: 1)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setImage(UIImage(systemName: "chevron.right", withConfiguration: UIImage.SymbolConfiguration(weight: .bold)), for: .normal)
@@ -275,8 +271,8 @@ public class HomeController: UIViewController {
     }()
 
     private lazy var todayButton: UIBarButtonItem = {
-        UIBarButtonItem(title: String(localized: "calendar.today"), primaryAction: UIAction { _ in
-            self.anchorDate = Date()
+        UIBarButtonItem(title: String(localized: "calendar.today"), primaryAction: UIAction { [weak self] _ in
+            self?.anchorDate = Date()
         })
     }()
 
@@ -318,9 +314,6 @@ public class HomeController: UIViewController {
 
     // MARK: - Recommendations -
 
-    /// Fetches the suggestions for the current weather.
-    ///
-    /// Errors stay quiet here because this also runs unprompted when the screen opens.
     private func reloadRecommendations() async {
         let snapshot = await WeatherProvider.shared.currentWeather()
 
@@ -367,8 +360,6 @@ public class HomeController: UIViewController {
         }
     }
 
-    /// Pull to refresh brings the whole screen up to date: the log from the server and a
-    /// fresh set of suggestions, rather than only what happens to be stale.
     private func handleRefresh() {
         Task {
             await SyncManager.shared.syncWithServer()
@@ -395,7 +386,6 @@ public class HomeController: UIViewController {
         }
     }
 
-    /// Logs a suggestion as worn right now, weather included, without asking for details.
     private func wearRecommendation(_ outfit: Outfit) async {
         guard let logged = await wearRepo.logWearNow(outfitID: outfit.id) else { return }
 
@@ -417,8 +407,6 @@ public class HomeController: UIViewController {
         }
     }
 
-    /// Lets the user pick which of the day's outfits to look at. Wearing more than one
-    /// outfit a day is rare, so this stays a sheet instead of a permanent list.
     private func presentWearPicker(for day: WearCalendarDay) {
         let sheet = UIAlertController(
             title: day.date?.formatted(date: .long, time: .omitted),
@@ -498,8 +486,6 @@ public class HomeController: UIViewController {
         }
     }
 
-    /// Keeps the row centred when it does not fill the width, instead of letting a lone
-    /// card cling to the left edge.
     private func centerRecommendations() {
         guard !recommendations.isEmpty else {
             recommendationCollectionView.contentInset = .zero
@@ -562,11 +548,6 @@ public class HomeController: UIViewController {
         monthSummaryLabel.text = "\(month) · \(entriesText)"
     }
 
-    /// The navigation title greets by time of day, so the screen reads as a home rather than
-    /// as a calendar.
-    ///
-    /// This sets `navigationItem.title` rather than `title`, which would also relabel the
-    /// tab bar item – the tabs carry icons only.
     private func updateGreeting() {
         let key: String.LocalizationValue
 
@@ -594,15 +575,10 @@ public class HomeController: UIViewController {
         return CGFloat(max(1, days.count / 7)) * dayCellHeight
     }
 
-    /// The grid sits closer to the edges than the rest of the screen: every point of width
-    /// goes into the outfit thumbnails, which are what makes a day recognisable.
     private static let gridMargin: CGFloat = 10
 
     private static let recommendationSpacing: CGFloat = 4
 
-    /// Fewer than three suggestions share the row between them instead of leaving the rest
-    /// of the width blank. A single one keeps the width of two, so it stays a card rather
-    /// than turning into a banner.
     private var recommendationColumns: CGFloat {
         return CGFloat(min(3, max(2, recommendations.count)))
     }
@@ -612,14 +588,10 @@ public class HomeController: UIViewController {
         return available / recommendationColumns
     }
 
-    /// Capped so that a wider card does not push the month grid past the bottom of the screen.
     private var recommendationCellHeight: CGFloat {
         return min(recommendationCellWidth * 1.2, 152)
     }
 
-    /// While there is nothing to suggest the strip collapses to the height of its notice,
-    /// so that the log moves up instead of leaving a hole. A notice that offers a way out
-    /// needs the extra line for its button.
     private var recommendationSectionHeight: CGFloat {
         guard recommendations.isEmpty else { return recommendationCellHeight }
 
@@ -716,10 +688,6 @@ public class HomeController: UIViewController {
         updateRecommendationState()
     }
 
-    /// Swiping the grid moves to the previous or next month.
-    ///
-    /// The swipes share the touch with the scroll view, which would otherwise claim it and
-    /// let the gesture fail. They only fire sideways, so the two never mean the same thing.
     private func addMonthSwipeGestures() {
         let left = UISwipeGestureRecognizer(target: self, action: #selector(swipedLeft))
         left.direction = .left

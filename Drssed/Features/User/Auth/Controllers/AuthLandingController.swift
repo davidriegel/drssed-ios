@@ -53,8 +53,8 @@ final class AuthLandingController: UIViewController {
     }()
 
     private lazy var signUpButton: UIButton = {
-        let bt = UIButton(primaryAction: UIAction { _ in
-            self.presentModally(SignUpController())
+        let bt = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.presentModally(SignUpController())
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.configuration = .prominentGlass()
@@ -72,8 +72,8 @@ final class AuthLandingController: UIViewController {
     }()
 
     private lazy var signInButton: UIButton = {
-        let bt = UIButton(primaryAction: UIAction { _ in
-            self.presentModally(SignInController())
+        let bt = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.presentModally(SignInController())
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setAttributedTitle(
@@ -88,8 +88,8 @@ final class AuthLandingController: UIViewController {
     }()
 
     private lazy var guestButton: UIButton = {
-        let bt = UIButton(primaryAction: UIAction { _ in
-            self.continueAsGuest()
+        let bt = UIButton(primaryAction: UIAction { [weak self] _ in
+            self?.continueAsGuest()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setAttributedTitle(

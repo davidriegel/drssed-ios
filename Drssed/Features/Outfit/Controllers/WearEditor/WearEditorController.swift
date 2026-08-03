@@ -99,8 +99,8 @@ final class WearEditorController: UIViewController {
     }()
 
     private lazy var cancelButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.dismiss(animated: true)
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.dismiss(animated: true)
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setTitle(String(localized: "common.cancel"), for: .normal)
@@ -110,7 +110,9 @@ final class WearEditorController: UIViewController {
     }()
 
     private lazy var saveButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            guard let self else { return }
+
             Task { await self.save() }
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
@@ -156,7 +158,9 @@ final class WearEditorController: UIViewController {
         picker.preferredDatePickerStyle = .compact
         picker.maximumDate = Date()
         picker.tintColor = .accent
-        picker.addAction(UIAction { _ in
+        picker.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+
             self.wornOn = self.wornOnPicker.date
         }, for: .valueChanged)
         return picker
@@ -220,7 +224,9 @@ final class WearEditorController: UIViewController {
     }()
 
     private lazy var ratingButtons: [UIButton] = (1...5).map { value in
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            guard let self else { return }
+
             // Tapping the active star again clears the rating.
             self.rating = (self.rating == value) ? nil : value
         })
@@ -271,8 +277,8 @@ final class WearEditorController: UIViewController {
     // Delete
 
     private lazy var deleteButton: UIButton = {
-        let bt = UIButton(type: .system, primaryAction: UIAction { _ in
-            self.promptDelete()
+        let bt = UIButton(type: .system, primaryAction: UIAction { [weak self] _ in
+            self?.promptDelete()
         })
         bt.translatesAutoresizingMaskIntoConstraints = false
         bt.setTitle(String(localized: "wear.action.remove"), for: .normal)
@@ -472,7 +478,9 @@ final class WearEditorController: UIViewController {
 
     private func weatherMenu() -> UIMenu {
         var items: [UIAction] = [
-            UIAction(title: String(localized: "common.none"), state: weather == nil ? .on : .off, handler: { _ in
+            UIAction(title: String(localized: "common.none"), state: weather == nil ? .on : .off, handler: { [weak self] _ in
+                guard let self else { return }
+
                 self.weather = nil
             })
         ]
@@ -482,7 +490,7 @@ final class WearEditorController: UIViewController {
                 title: condition.localizedName,
                 image: UIImage(systemName: condition.symbolName),
                 state: weather == condition ? .on : .off,
-                handler: { _ in self.weather = condition }
+                handler: { [weak self] _ in self?.weather = condition }
             )
         }
 
@@ -491,7 +499,9 @@ final class WearEditorController: UIViewController {
 
     private func occasionMenu() -> UIMenu {
         var items: [UIAction] = [
-            UIAction(title: String(localized: "common.none"), state: occasion == nil ? .on : .off, handler: { _ in
+            UIAction(title: String(localized: "common.none"), state: occasion == nil ? .on : .off, handler: { [weak self] _ in
+                guard let self else { return }
+
                 self.occasion = nil
             })
         ]
@@ -501,7 +511,7 @@ final class WearEditorController: UIViewController {
                 title: wearOccasion.localizedName,
                 image: UIImage(systemName: wearOccasion.symbolName),
                 state: occasion == wearOccasion ? .on : .off,
-                handler: { _ in self.occasion = wearOccasion }
+                handler: { [weak self] _ in self?.occasion = wearOccasion }
             )
         }
 
