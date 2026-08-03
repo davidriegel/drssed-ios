@@ -178,24 +178,6 @@ public enum CornerStyle {
     }
 }
 
-extension UIView {
-    func renderAsTransparentImage() -> UIImage? {
-        let originalBackground = backgroundColor
-        backgroundColor = .clear
-        
-        let format = UIGraphicsImageRendererFormat()
-        format.opaque = false
-
-        let renderer = UIGraphicsImageRenderer(size: bounds.size, format: format)
-        let image = renderer.image { ctx in
-            layer.render(in: ctx.cgContext)
-        }
-        
-        backgroundColor = originalBackground
-        return image
-    }
-}
-
 extension String {
     var isValidEmail: Bool {
         let pattern = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"

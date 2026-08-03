@@ -24,12 +24,6 @@ public struct ClothingAPI: Codable, Hashable {
     }
 }
 
-public struct ClothingsWrapper: Decodable {
-    let clothing: [ClothingAPI]
-    let limit: Int
-    let offset: Int
-}
-
 public struct ClothingWrapper: Decodable {
     let clothing: ClothingAPI
 }

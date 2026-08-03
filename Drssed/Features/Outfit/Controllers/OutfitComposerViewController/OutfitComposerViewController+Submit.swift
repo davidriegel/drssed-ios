@@ -51,7 +51,7 @@ class OutfitComposerViewController_Submit: UIViewController {
         }
     }
     
-    init(_ outfitScene: [CanvasPlacement], previewImage: UIImage) {
+    init(_ outfitScene: [CanvasPlacement]) {
         self.outfitScene = outfitScene
         super.init(nibName: nil, bundle: nil)
     }

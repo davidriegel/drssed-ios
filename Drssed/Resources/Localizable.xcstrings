@@ -720,38 +720,6 @@
         }
       }
     },
-    "clothingupload.description.placeholder" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kurze optionale Beschreibung"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Short optional description"
-          }
-        }
-      }
-    },
-    "clothingupload.description.title" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beschreibung"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Description"
-          }
-        }
-      }
-    },
     "clothingupload.error.missing.category" : {
       "localizations" : {
         "de" : {

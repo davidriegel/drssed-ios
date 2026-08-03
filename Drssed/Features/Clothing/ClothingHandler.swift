@@ -83,68 +83,7 @@ final class ClothingHandler {
         return clothingWrapper.clothing
     }
     
-    // MARK: -- GET MY CLOTHING
-    
-    public func getMyClothing(limit: Int = 20, offset: Int = 0, category: ClothingCategories? = nil) async throws -> ClothingsWrapper {
-        guard let userID = UserDefaults.standard.string(forKey: "user_id") else { throw AuthenticationError.userNotSignedIn }
-        
-        return try await getClothingList(userID: userID, limit: limit, offset: offset, category: category)
-    }
-    
-    // MARK: -- GET CLOTHING BY USER ID
-    
-    public func getClothingList(userID: String, limit: Int = 20, offset: Int = 0, category: ClothingCategories? = nil) async throws -> ClothingsWrapper {
-        var endpoint = "/users/\(userID)/clothing?limit=\(limit)&offset=\(offset)"
-        
-        if let category = category {
-            endpoint += "&category=\(category)"
-        }
-        
-        let request = try await APIClient.shared.createRequest(endpoint: endpoint, method: .GET, authentication: true)
-        let clothingList: ClothingsWrapper = try await APIClient.shared.executeRequestAndDecode(request: request)
-    
-        return clothingList
-    }
-    
     // MARK: -- PATCH EDIT CLOTHING
-    
-    public func patchEditClothing(oldClothing: ClothingAPI, name: String?, description: String?, category: String?, tags: [String]?, seasons: [String]?, color: UIColor?, image_id: String?) async throws -> ClothingAPI {
-        var uploadDict: [String:Any] = [:]
-        
-        if let name = name {
-            uploadDict["name"] = name
-        }
-        
-        if let description = description {
-            uploadDict["description"] = description
-        }
-        
-        if let category = category {
-            uploadDict["category"] = category
-        }
-        
-        if let tags = tags {
-            uploadDict["tags"] = tags
-        }
-        
-        if let seasons = seasons {
-            uploadDict["seasons"] = seasons
-        }
-        
-        if let color = color {
-            uploadDict["color"] = color.hexString
-        }
-        
-        if let image_id = image_id {
-            uploadDict["image_id"] = image_id
-        }
-        
-        let uploadData = try JSONSerialization.data(withJSONObject: uploadDict, options: [])
-        let request = try await APIClient.shared.createRequest(endpoint: "/clothing/\(oldClothing.clothing_id)", method: .PATCH, body: uploadData)
-        let clothingWrapper: ClothingWrapper = try await APIClient.shared.executeRequestAndDecode(request: request)
-        
-        return clothingWrapper.clothing
-    }
     
     public func patchEditClothing(oldClothing: Clothing, newClothing: Clothing) async throws -> ClothingAPI {
         var uploadDict: [String:Any] = [:]
