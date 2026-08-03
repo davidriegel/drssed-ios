@@ -16,7 +16,9 @@ class TagsPickerView: UIView {
     private var delegate: TagsPickerViewDelegate!
     
     lazy var pickerButtonPress: UIAction = {
-        let ac = UIAction { action in
+        let ac = UIAction { [weak self] action in
+            guard let self else { return }
+
             guard let button = action.sender as? UIButton else { return }
             
             button.isSelected.toggle()
@@ -39,7 +41,9 @@ class TagsPickerView: UIView {
     }()
     
     lazy var doneButtonPress: UIAction = {
-        let ac = UIAction { _ in
+        let ac = UIAction { [weak self] _ in
+            guard let self else { return }
+
             self.delegate.tagsDoneButtonPressed()
         }
         
