@@ -263,8 +263,7 @@ class OutfitComposerViewController: UIViewController {
                 return
             }
 
-            guard let previewImage = self.canvasView.renderAsTransparentImage() else { return }
-            let vc = OutfitComposerViewController_Submit(self.canvasView.getItemCanvasPositions(), previewImage: previewImage)
+            let vc = OutfitComposerViewController_Submit(self.canvasView.getItemCanvasPositions())
             self.navigationController?.pushViewController(vc, animated: true)
         }, for: .primaryActionTriggered)
     }
