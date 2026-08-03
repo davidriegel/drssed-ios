@@ -39,7 +39,7 @@ final public class APIClient {
     
     private init() {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .drssedISO8601
         self.decoder = decoder
         
         let config = URLSessionConfiguration.default
