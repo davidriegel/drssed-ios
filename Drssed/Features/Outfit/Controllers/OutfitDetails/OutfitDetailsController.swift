@@ -34,7 +34,7 @@ final class OutfitDetailsController: UIViewController {
     /// A read-only sheet only shows the outfit – editing, deleting and wearing stay out of it.
     let isReadOnly: Bool
 
-    let clothingRepo = ClothingRepository()
+    let clothingRepo: ClothingRepository = AppRepository.shared.clothingRepository
     let wearRepo: WearRepository = AppRepository.shared.wearRepository
 
     /// The wear entry of this outfit for today, if it was already worn.

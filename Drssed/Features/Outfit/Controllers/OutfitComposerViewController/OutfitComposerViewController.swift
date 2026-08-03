@@ -9,7 +9,7 @@ import UIKit
 import Toast
 
 class OutfitComposerViewController: UIViewController {
-    private let clothingRepo: ClothingRepository = ClothingRepository()
+    private let clothingRepo: ClothingRepository = AppRepository.shared.clothingRepository
     
     private lazy var suggestionSession = OutfitSuggestionSession()
     

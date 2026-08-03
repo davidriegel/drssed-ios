@@ -13,7 +13,7 @@ public final class ClothingRepository {
     private let context: NSManagedObjectContext
     private lazy var localDataSource = ClothingLocalDataSource(context: context)
 
-    init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+    init(context: NSManagedObjectContext) {
         self.context = context
     }
 
@@ -30,12 +30,7 @@ public final class ClothingRepository {
     
     public func applyServerSync(updated: [ClothingAPI], deleted: [String]) async {
         do {
-            let models = updated.map(Clothing.init(from:))
-            
-            for item in models {
-                try await localDataSource.upsert(item: item)
-            }
-            
+            try await localDataSource.upsert(items: updated.map(Clothing.init(from:)))
             try await localDataSource.delete(ids: deleted)
             
         } catch {

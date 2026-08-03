@@ -120,6 +120,28 @@ public final class WearLocalDataSource {
         }
     }
 
+    public func upsert(items: [OutfitWear]) async throws {
+        guard !items.isEmpty else { return }
+
+        try await self.ctx.perform { [ctx = self.ctx] in
+            let req: NSFetchRequest<OutfitWearLocal> = OutfitWearLocal.fetchRequestTyped()
+            req.predicate = NSPredicate(format: "id IN %@", items.map(\.id))
+
+            var existing: [String: OutfitWearLocal] = [:]
+
+            for row in try ctx.fetch(req) {
+                existing[row.id] = row
+            }
+
+            for item in items {
+                let mo = existing[item.id] ?? OutfitWearLocal(context: ctx)
+                mo.update(from: item)
+            }
+
+            try ctx.saveIfNeeded()
+        }
+    }
+
     public func delete(ids: [String]) async throws {
         try await self.ctx.perform { [ctx = self.ctx] in
             guard !ids.isEmpty else { return }
@@ -153,11 +175,17 @@ public final class WearLocalDataSource {
                 NSManagedObjectContext.mergeChanges(fromRemoteContextSave: changes, into: [ctx])
             }
 
+            let req: NSFetchRequest<OutfitWearLocal> = OutfitWearLocal.fetchRequestTyped()
+            req.predicate = NSPredicate(format: "id IN %@", ids)
+
+            var existing: [String: OutfitWearLocal] = [:]
+
+            for row in try ctx.fetch(req) {
+                existing[row.id] = row
+            }
+
             for item in incoming {
-                let req: NSFetchRequest<OutfitWearLocal> = OutfitWearLocal.fetchRequestTyped()
-                req.predicate = NSPredicate(format: "id == %@", item.id)
-                req.fetchLimit = 1
-                let mo = try ctx.fetch(req).first ?? OutfitWearLocal(context: ctx)
+                let mo = existing[item.id] ?? OutfitWearLocal(context: ctx)
                 mo.update(from: item)
             }
 
@@ -166,10 +194,12 @@ public final class WearLocalDataSource {
     }
 
     func deleteAll() async throws {
-        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = OutfitWearLocal.fetchRequest()
-        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        try await self.ctx.perform { [ctx = self.ctx] in
+            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = OutfitWearLocal.fetchRequest()
+            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
 
-        try ctx.execute(deleteRequest)
-        try ctx.saveIfNeeded()
+            try ctx.execute(deleteRequest)
+            try ctx.saveIfNeeded()
+        }
     }
 }

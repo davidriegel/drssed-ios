@@ -11,7 +11,7 @@ public final class OutfitRepository {
     private let context: NSManagedObjectContext
     private lazy var localDataSource = OutfitLocalDataSource(context: context)
 
-    init(context: NSManagedObjectContext = PersistenceController.shared.container.viewContext) {
+    init(context: NSManagedObjectContext) {
         self.context = context
     }
 
@@ -26,12 +26,7 @@ public final class OutfitRepository {
     
     public func applyServerSync(updated: [OutfitAPI], deleted: [String]) async {
         do {
-            let models = updated.map(Outfit.init(from:))
-            
-            for item in models {
-                try await localDataSource.upsert(item: item)
-            }
-            
+            try await localDataSource.upsert(items: updated.map(Outfit.init(from:)))
             try await localDataSource.delete(ids: deleted)
             
         } catch {

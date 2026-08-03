@@ -9,8 +9,8 @@ import UIKit
 import Combine
 
 class ProfileViewController: UIViewController {
-    private let clothingRepository: ClothingRepository = ClothingRepository()
-    private let outfitRepository: OutfitRepository = OutfitRepository()
+    private let clothingRepository: ClothingRepository = AppRepository.shared.clothingRepository
+    private let outfitRepository: OutfitRepository = AppRepository.shared.outfitRepository
     
     private var cancellables = Set<AnyCancellable>()
     
