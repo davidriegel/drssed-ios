@@ -203,6 +203,13 @@ extension String {
     }
 }
 
+extension UITraitEnvironment {
+    var hairlineWidth: CGFloat {
+        let scale = traitCollection.displayScale
+        return scale > 0 ? 1 / scale : 1
+    }
+}
+
 extension NSManagedObjectContext {
     func saveIfNeeded() throws { if hasChanges { try save() } }
 }
