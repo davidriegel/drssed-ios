@@ -39,17 +39,19 @@ public final class UserRepository {
     
     @discardableResult
     public func refreshCurrentUser() async -> User? {
-        if let existing = refreshTask { return try? await existing.value }
+        if let refreshTask { return try? await refreshTask.value }
+
         let task = Task<User, Error> {
-            defer { refreshTask = nil }
             let userAPI = try await APIClient.shared.userHandler.fetchCurrentUser()
             let user = userAPI.toDomain()
             try store.save(user)
             currentUserSubject.send(user)
             return user
         }
+
         refreshTask = task
-        
+        defer { refreshTask = nil }
+
         do {
             return try await task.value
         } catch {
