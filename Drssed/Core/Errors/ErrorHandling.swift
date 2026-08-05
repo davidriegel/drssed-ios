@@ -7,6 +7,7 @@
 
 import UIKit
 import Foundation
+import os
 
 public enum ErrorHandler {
     
@@ -220,8 +221,11 @@ public enum ErrorHandler {
         _ function: String,
         _ line: Int
     ) {
-        #if DEBUG
         let fileName = (file as NSString).lastPathComponent
+
+        Logger.errors.error("\(fileName, privacy: .public):\(line, privacy: .public) \(function, privacy: .public) - \(String(describing: error), privacy: .public)")
+
+        #if DEBUG
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         print("🔴 ERROR OCCURRED")
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
