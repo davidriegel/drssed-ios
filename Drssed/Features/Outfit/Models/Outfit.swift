@@ -20,7 +20,7 @@ public struct Outfit: Identifiable, Hashable, Sendable {
     var tags: [Tags]
     let userID: String
     
-    init(name: String, isPublic: Bool = true, isFavorite: Bool = false, seasons: [Seasons], tags: [Tags], scene: [CanvasPlacement]) {
+    init(name: String, isPublic: Bool = false, isFavorite: Bool = false, seasons: [Seasons], tags: [Tags], scene: [CanvasPlacement]) {
         self.id = UUID().uuidString
         self.name = name
         self.createdAt = Date()

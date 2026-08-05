@@ -80,7 +80,7 @@ extension ClothingLocal {
         self.subCategory = domainModel.subCategory.rawValue
         self.color = domainModel.color.hexString
         self.createdAt = domainModel.createdAt
-        self.updatedAt = Date()
+        self.updatedAt = domainModel.updatedAt
         self.isPublic = domainModel.isPublic
         self.seasons = domainModel.seasons.map { $0.rawValue }
         self.userID = domainModel.userID

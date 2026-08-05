@@ -12,6 +12,7 @@ public struct ClothingAPI: Codable, Hashable {
     let sub_category: ClothingSubCategories
     let clothing_id, color: String
     let created_at: Date
+    let updated_at: Date
     let image_id: String
     let is_public: Bool
     let name: String
