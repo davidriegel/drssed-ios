@@ -23,7 +23,7 @@ public struct Clothing: Identifiable, Hashable, Sendable {
     var warmth: Warmth
     let userID: String
 
-    init(name: String, imageID: String, category: ClothingCategories, subCategory: ClothingSubCategories, color: UIColor, isPublic: Bool = true, seasons: [Seasons], tags: [Tags], warmth: Warmth) {
+    init(name: String, imageID: String, category: ClothingCategories, subCategory: ClothingSubCategories, color: UIColor, isPublic: Bool = false, seasons: [Seasons], tags: [Tags], warmth: Warmth) {
         self.id = UUID().uuidString
         self.name = name
         self.imageID = imageID
