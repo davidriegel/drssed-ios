@@ -120,13 +120,15 @@ class AccountUpgradeController: UIViewController {
     
     @objc
     func handleSignUp() {
-        signUpButton.backgroundColor = .accent.withAlphaComponent(0.3)
-        signUpButton.isEnabled = false
-        
         guard let passwordInput = passwordField.fieldInput.text else { return }
         guard let selectedAvatarName = defaultAvatarPicker.selectedAvatarName else { return }
-        
+
+        signUpButton.backgroundColor = .accent.withAlphaComponent(0.3)
+        signUpButton.isEnabled = false
+
         Task {
+            defer { checkTextFieldInputs() }
+
             do {
                 _ = try await AuthenticationManager.shared.upgradeAccount(email: emailField.fieldInput.text, password: passwordInput, profilePicture: String(selectedAvatarName.split(separator: "_")[1]))
                 self.dismissModal()
