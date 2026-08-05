@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class SyncManager {
+actor SyncManager {
     private let clothesRepo = AppRepository.shared.clothingRepository
     private let outfitRepo = AppRepository.shared.outfitRepository
     private let wearRepo = AppRepository.shared.wearRepository
@@ -15,19 +15,49 @@ final class SyncManager {
     public static let shared = SyncManager()
 
     private var lastSuccessfulSync: Date?
-    private var isSyncing: Bool = false
+    private var runningSync: Task<Bool, Never>?
 
     private static let minimumSyncInterval: TimeInterval = 5 * 60
 
     private init() {}
 
+    /// Runs of the same kind share one request, and a full sync queues behind whatever is
+    /// already in flight instead of writing its cursors over it.
     @discardableResult
     func syncWithServer(forceFull: Bool = false) async -> Bool {
+        let previous = runningSync
+
+        if let previous, !forceFull {
+            return await previous.value
+        }
+
         guard NetworkManager.shared.isReachable else { return false }
 
+        let task = Task<Bool, Never> {
+            _ = await previous?.value
+
+            return await performSync(forceFull: forceFull)
+        }
+
+        runningSync = task
+        defer { if runningSync == task { runningSync = nil } }
+
+        return await task.value
+    }
+
+    @discardableResult
+    func syncIfStale() async -> Bool {
+        if let lastSuccessfulSync, Date().timeIntervalSince(lastSuccessfulSync) < Self.minimumSyncInterval {
+            return false
+        }
+
+        return await syncWithServer()
+    }
+
+    private func performSync(forceFull: Bool) async -> Bool {
         let didSync: Bool
 
-        if forceFull || shouldPerformFullSync(){
+        if forceFull || shouldPerformFullSync() {
             didSync = await performFullSync()
         } else {
             didSync = await performIncrementalSync()
@@ -42,20 +72,6 @@ final class SyncManager {
         }
 
         return didSync
-    }
-
-    @discardableResult
-    func syncIfStale() async -> Bool {
-        guard !isSyncing else { return false }
-
-        if let lastSuccessfulSync, Date().timeIntervalSince(lastSuccessfulSync) < Self.minimumSyncInterval {
-            return false
-        }
-
-        isSyncing = true
-        defer { isSyncing = false }
-
-        return await syncWithServer()
     }
 
     private func shouldPerformFullSync() -> Bool {
@@ -77,6 +93,8 @@ final class SyncManager {
     }
     
     func clearSyncState() async {
+        _ = await runningSync?.value
+
         SyncCursors.resetAll()
         
         await clothesRepo.deleteAllLocal()
