@@ -7,14 +7,18 @@
 
 import Network
 import Foundation
+import os
 
 public final class NetworkManager {
     static let shared = NetworkManager()
     private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue(label: "NetworkMonitorQueue")
     private var timer: Timer?
+    private let reachability = OSAllocatedUnfairLock(initialState: true)
     
-    var isReachable: Bool = true
+    var isReachable: Bool {
+        get { reachability.withLock { $0 } }
+        set { reachability.withLock { $0 = newValue } }
+    }
     
     private init() {
         startMonitoring()
