@@ -71,7 +71,7 @@ class AuthenticationManager {
         let tokenResponse = try await APIClient.shared.authHandler.registerAsGuest()
         
         let keychainModel = try TokenKeychainModel(from: tokenResponse)
-        await TokenManager.shared.setTokens(keychainModel)
+        try await TokenManager.shared.setTokens(keychainModel)
         
         setAuthState(.guest)
         await AppRepository.shared.userRepository.refreshCurrentUser()
@@ -81,7 +81,7 @@ class AuthenticationManager {
         let tokenResponse = try await APIClient.shared.authHandler.signInWith(username: username, email: email, password: password)
         
         let keychainModel = try TokenKeychainModel(from: tokenResponse)
-        await TokenManager.shared.setTokens(keychainModel)
+        try await TokenManager.shared.setTokens(keychainModel)
         
         await SyncManager.shared.clearSyncState()
         await SyncManager.shared.syncWithServer(forceFull: true)
@@ -93,7 +93,7 @@ class AuthenticationManager {
     func upgradeAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws -> User {
         let upgradeAccountResponse = try await APIClient.shared.authHandler.upgradeAccount(username: username, email: email, password: password, profilePicture: profilePicture)
         let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
-        await TokenManager.shared.setTokens(keychainModel)
+        try await TokenManager.shared.setTokens(keychainModel)
         
         try AppRepository.shared.userRepository.setCurrentUser(upgradeAccountResponse.user.toDomain())
         setAuthState(.authenticated)
@@ -104,7 +104,7 @@ class AuthenticationManager {
         let tokenResponse = try await APIClient.shared.authHandler.registerAccount(username: username, email: email, password: password, profilePicture: profilePicture)
         
         let keychainModel = try TokenKeychainModel(from: tokenResponse)
-        await TokenManager.shared.setTokens(keychainModel)
+        try await TokenManager.shared.setTokens(keychainModel)
         
         await SyncManager.shared.clearSyncState()
         await SyncManager.shared.syncWithServer(forceFull: true)

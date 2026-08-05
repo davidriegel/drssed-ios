@@ -2656,6 +2656,40 @@
         }
       }
     },
+    "error.keychain.saveFailed.description" : {
+      "comment" : "Keychain write failure",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Sitzung konnte auf diesem Gerät nicht sicher gespeichert werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your session could not be stored securely on this device."
+          }
+        }
+      }
+    },
+    "error.keychain.saveFailed.suggestion" : {
+      "comment" : "Recovery suggestion for keychain write failures",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte starte das Gerät neu und melde dich erneut an."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please restart the device and sign in again."
+          }
+        }
+      }
+    },
     "error.title.api" : {
       "comment" : "Title for API errors",
       "localizations" : {

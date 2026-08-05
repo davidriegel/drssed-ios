@@ -30,11 +30,11 @@ actor TokenManager {
         return try await refresh(using: tokens.refreshToken).accessToken
     }
 
-    func setTokens(_ tokens: TokenKeychainModel) {
+    func setTokens(_ tokens: TokenKeychainModel) throws {
         cachedTokens = tokens
-        if let data = try? JSONEncoder().encode(tokens) {
-            KeychainHelper.save(data, service: service, account: account)
-        }
+
+        let data = try JSONEncoder().encode(tokens)
+        try KeychainHelper.save(data, service: service, account: account)
     }
 
     func clearTokens() {
@@ -55,7 +55,7 @@ actor TokenManager {
 
             try Task.checkCancellation()
 
-            self.setTokens(renewed)
+            try self.setTokens(renewed)
 
             return renewed
         }
