@@ -160,7 +160,12 @@ class SignInController: UIViewController {
     
     @objc
     func handleSignIn() {
+        signInButton.backgroundColor = .accent.withAlphaComponent(0.3)
+        signInButton.isEnabled = false
+
         Task {
+            defer { checkTextFieldInputs() }
+
             do {
                 try await AuthenticationManager.shared.signInWith(email: emailField.fieldInput.text, password: passwordField.fieldInput.text ?? "")
                 self.dismissModal()
@@ -169,9 +174,6 @@ class SignInController: UIViewController {
             } catch {
                 ErrorHandler.handle(error)
             }
-            
-            signInButton.backgroundColor = .accent.withAlphaComponent(0.3)
-            signInButton.isEnabled = false
         }
     }
     
