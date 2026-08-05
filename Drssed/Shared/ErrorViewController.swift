@@ -118,6 +118,8 @@ final class ErrorViewController: UIViewController {
             messageLabel.text = getMessageForAPIError(apiError)
         } else if let authError = error as? AuthenticationError {
             messageLabel.text = getMessageForAuthError(authError)
+        } else if let coreDataError = error as? CoreDataError {
+            messageLabel.text = coreDataError.recoverySuggestion
         } else {
             messageLabel.text = String(localized: "error.api.generic.suggestion")
         }
