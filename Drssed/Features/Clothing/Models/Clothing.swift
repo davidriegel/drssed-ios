@@ -67,7 +67,7 @@ public struct Clothing: Identifiable, Hashable, Sendable {
         self.seasons = api.seasons.compactMap { Seasons(rawValue: $0.uppercased()) }
         self.warmth = api.warmth_level.flatMap(Warmth.init(rawValue:)) ?? .MILD
         self.createdAt = api.created_at
-        self.updatedAt = Date()
+        self.updatedAt = api.updated_at
         self.userID = api.user_id
     }
 }
