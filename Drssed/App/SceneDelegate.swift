@@ -47,6 +47,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     private func initializeApp() async {
+        guard PersistenceController.shared.loadStoresIfNeeded() else {
+            await showStoreFailure()
+            return
+        }
+
         let authState = await AuthenticationManager.shared.determineCurrentAuthState()
         await AppRepository.shared.userRepository.refreshCurrentUser()
         
@@ -96,6 +101,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                     }
                 )
             }
+        }
+    }
+
+    /// Without a store nothing can be read or written, so the app stops here instead of
+    /// pretending to be an empty wardrobe.
+    private func showStoreFailure() async {
+        await MainActor.run {
+            self.window?.rootViewController = ErrorViewController(
+                error: CoreDataError.contextNotAvailable,
+                retryAction: { [weak self] in
+                    Task {
+                        await self?.initializeApp()
+                    }
+                }
+            )
         }
     }
 

@@ -14,6 +14,10 @@ struct PersistenceController {
     let container: NSPersistentContainer
     let backgroundContext: NSManagedObjectContext
 
+    var isStoreLoaded: Bool {
+        !container.persistentStoreCoordinator.persistentStores.isEmpty
+    }
+
     init(inMemory: Bool = false) {
         container = NSPersistentContainer(name: "LocalData")
 
@@ -34,6 +38,15 @@ struct PersistenceController {
         backgroundContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
         container.viewContext.automaticallyMergesChangesFromParent = true
+    }
+    
+    @discardableResult
+    func loadStoresIfNeeded() -> Bool {
+        guard !isStoreLoaded else { return true }
+
+        loadStores(recoveryAttempted: false)
+
+        return isStoreLoaded
     }
     
     private func loadStores(recoveryAttempted: Bool) {
