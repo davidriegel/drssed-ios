@@ -43,6 +43,10 @@ final class OutfitSuggestionSession {
             try await fetchBatch(anchor: currentAnchor)
         }
 
+        guard !pendingSuggestions.isEmpty else {
+            throw APIError.unprocessableContent(message: nil, suggestion: nil)
+        }
+
         let next = pendingSuggestions.removeFirst()
 
         if pendingSuggestions.count <= prefetchThreshold {
