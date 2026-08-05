@@ -6,8 +6,6 @@
 //
 
 import UIKit
-import PhotosUI
-import CropViewController
 
 class AccountUpgradeController: UIViewController {
     
@@ -169,19 +167,6 @@ class AccountUpgradeController: UIViewController {
         self.present(navigationController, animated: true)
     }
     
-    private func presentCropView(with image: UIImage) {
-        let cropViewController = CropViewController(image: image)
-        cropViewController.delegate = self
-        cropViewController.aspectRatioLockEnabled = true
-        cropViewController.aspectRatioPreset = CGSize(width: 1, height: 1)
-        cropViewController.aspectRatioPickerButtonHidden = true
-        cropViewController.cancelButtonColor = .systemRed
-        cropViewController.rotateButtonsHidden = true
-        cropViewController.resetButtonHidden = true
-        cropViewController.doneButtonColor = .accent
-        self.present(cropViewController, animated: true, completion: nil)
-    }
-    
     // MARK: - Configure View
     
     func configureViewComponents() {
@@ -272,45 +257,5 @@ extension AccountUpgradeController: UITextFieldDelegate {
 extension AccountUpgradeController: UIDefaultAvatarPickerDelegate {
     func defaultAvatarPicker(_ image: UIImage, _ named: String) {
         self.profilePictureImageView.image = image
-    }
-}
-
-extension AccountUpgradeController: PHPickerViewControllerDelegate {
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-        picker.dismiss(animated: true)
-        
-        guard let result = results.first else { return }
-        
-        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                DispatchQueue.main.async {
-                    ErrorHandler.handle(error)
-                }
-                return
-            }
-            
-            guard let image = object as? UIImage else { return }
-            
-            DispatchQueue.main.async {
-                self.presentCropView(with: image)
-            }
-        }
-    }
-}
-
-extension AccountUpgradeController: CropViewControllerDelegate {
-    func cropViewController(_ cropViewController: CropViewController, didCropToImage image: UIImage, withRect cropRect: CGRect, angle: Int) {
-        Task {
-            cropViewController.dismiss(animated: true)
-            
-            profilePictureImageView.image = image
-        }
-    }
-        
-    func cropViewController(_ cropViewController: CropViewController,
-                            didFinishCancelled cancelled: Bool) {
-        cropViewController.dismiss(animated: true, completion: nil)
     }
 }
