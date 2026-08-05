@@ -15,6 +15,8 @@ class ProfileViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     
     private var currentAuthState: AuthState = .unknown
+
+    private static let minimumPasswordLength: Int = 8
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -421,11 +423,21 @@ class ProfileViewController: UIViewController {
             title: String(localized: "common.save"),
             style: .default,
             handler: { [weak alert] _ in
-                let newEmail = alert?.textFields?[0].text ?? ""
+                let newEmail = (alert?.textFields?[0].text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
                 let currentPassword = alert?.textFields?[1].text ?? ""
+
+                guard newEmail.isValidEmail else {
+                    return ErrorHandler.handle(AuthenticationError.invalidEmail)
+                }
+
+                guard !currentPassword.isEmpty else {
+                    return ErrorHandler.handle(CustomError.missingValue(field: String(localized: "profile.account.password.current.placeholder")))
+                }
+
                 Task {
                     do {
                         try await AuthenticationManager.shared.changeEmail(currentPassword: currentPassword, newEmail: newEmail)
+                        ToastPresenter.success(String(localized: "profile.account.email.success"))
                     } catch {
                         ErrorHandler.handle(error)
                     }
@@ -457,6 +469,13 @@ class ProfileViewController: UIViewController {
             textField.autocapitalizationType = .none
         }
 
+        alert.addTextField { textField in
+            textField.placeholder = String(localized: "profile.account.password.confirm.placeholder")
+            textField.textContentType = .newPassword
+            textField.isSecureTextEntry = true
+            textField.autocapitalizationType = .none
+        }
+
         alert.addAction(UIAlertAction(title: String(localized: "common.cancel"), style: .cancel))
 
         alert.addAction(UIAlertAction(
@@ -465,9 +484,24 @@ class ProfileViewController: UIViewController {
             handler: { [weak alert] _ in
                 let currentPassword = alert?.textFields?[0].text ?? ""
                 let newPassword = alert?.textFields?[1].text ?? ""
+                let repeatedPassword = alert?.textFields?[2].text ?? ""
+
+                guard !currentPassword.isEmpty else {
+                    return ErrorHandler.handle(CustomError.missingValue(field: String(localized: "profile.account.password.current.placeholder")))
+                }
+
+                guard newPassword.count >= Self.minimumPasswordLength else {
+                    return ErrorHandler.handle(CustomError.valueTooShort(field: String(localized: "profile.account.password.new.placeholder"), minLength: Self.minimumPasswordLength))
+                }
+
+                guard newPassword == repeatedPassword else {
+                    return ErrorHandler.handle(CustomError.custom(message: String(localized: "profile.account.password.mismatch")))
+                }
+
                 Task {
                     do {
                         try await AuthenticationManager.shared.changePassword(currentPassword: currentPassword, newPassword: newPassword)
+                        ToastPresenter.success(String(localized: "profile.account.password.success"))
                     } catch {
                         ErrorHandler.handle(error)
                     }
