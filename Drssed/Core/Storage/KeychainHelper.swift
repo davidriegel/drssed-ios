@@ -8,20 +8,56 @@
 import Security
 import Foundation
 
+enum KeychainError: Error {
+    case saveFailed(status: OSStatus)
+}
+
+extension KeychainError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .saveFailed:
+            return String(localized: "error.keychain.saveFailed.description")
+        }
+    }
+
+    var recoverySuggestion: String? {
+        switch self {
+        case .saveFailed:
+            return String(localized: "error.keychain.saveFailed.suggestion")
+        }
+    }
+}
+
 enum KeychainHelper {
-    static func save(_ value: Data, service: String, account: String) {
+    static func save(_ value: Data, service: String, account: String) throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
+        ]
+
+        let attributes: [String: Any] = [
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
             kSecValueData as String: value
         ]
-        
-        SecItemDelete(query as CFDictionary)
-        SecItemAdd(query as CFDictionary, nil)
+
+        let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+
+        if updateStatus == errSecSuccess {
+            return
+        }
+
+        guard updateStatus == errSecItemNotFound else {
+            throw KeychainError.saveFailed(status: updateStatus)
+        }
+
+        let addStatus = SecItemAdd(query.merging(attributes) { _, new in new } as CFDictionary, nil)
+
+        guard addStatus == errSecSuccess else {
+            throw KeychainError.saveFailed(status: addStatus)
+        }
     }
-    
+
     static func read(service: String, account: String) -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -30,20 +66,26 @@ enum KeychainHelper {
             kSecMatchLimit as String: kSecMatchLimitOne,
             kSecReturnData as String: true
         ]
-        
+
         var data: AnyObject?
-        SecItemCopyMatching(query as CFDictionary, &data)
-        
+
+        guard SecItemCopyMatching(query as CFDictionary, &data) == errSecSuccess else {
+            return nil
+        }
+
         return data as? Data
     }
-    
-    static func delete(service: String, account: String) {
+
+    @discardableResult
+    static func delete(service: String, account: String) -> Bool {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account
         ]
-        
-        SecItemDelete(query as CFDictionary)
+
+        let status = SecItemDelete(query as CFDictionary)
+
+        return status == errSecSuccess || status == errSecItemNotFound
     }
 }
