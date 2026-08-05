@@ -200,6 +200,7 @@ extension Logger {
     private static let subsystem = Bundle.main.bundleIdentifier!
     static let persistence = Logger(subsystem: subsystem, category: "persistence")
     static let sync = Logger(subsystem: subsystem, category: "sync")
+    static let errors = Logger(subsystem: subsystem, category: "errors")
 }
 
 #if DEBUG
