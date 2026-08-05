@@ -68,69 +68,49 @@ class AuthenticationManager {
     }
     
     func registerAsGuest() async throws {
-        do {
-            let tokenResponse = try await APIClient.shared.authHandler.registerAsGuest()
-            
-            let keychainModel = try TokenKeychainModel(from: tokenResponse)
-            await TokenManager.shared.setTokens(keychainModel)
-            
-            setAuthState(.guest)
-            await AppRepository.shared.userRepository.refreshCurrentUser()
-        } catch {
-            setAuthState(.unauthenticated)
-            throw error
-        }
+        let tokenResponse = try await APIClient.shared.authHandler.registerAsGuest()
+        
+        let keychainModel = try TokenKeychainModel(from: tokenResponse)
+        await TokenManager.shared.setTokens(keychainModel)
+        
+        setAuthState(.guest)
+        await AppRepository.shared.userRepository.refreshCurrentUser()
     }
     
     func signInWith(username: String? = nil, email: String? = nil, password: String) async throws {
-        do {
-            let tokenResponse = try await APIClient.shared.authHandler.signInWith(username: username, email: email, password: password)
-            
-            let keychainModel = try TokenKeychainModel(from: tokenResponse)
-            await TokenManager.shared.setTokens(keychainModel)
-            
-            await SyncManager.shared.clearSyncState()
-            await SyncManager.shared.syncWithServer(forceFull: true)
-            
-            setAuthState(.authenticated)
-            await AppRepository.shared.userRepository.refreshCurrentUser()
-        } catch {
-            setAuthState(.unauthenticated)
-            throw error
-        }
+        let tokenResponse = try await APIClient.shared.authHandler.signInWith(username: username, email: email, password: password)
+        
+        let keychainModel = try TokenKeychainModel(from: tokenResponse)
+        await TokenManager.shared.setTokens(keychainModel)
+        
+        await SyncManager.shared.clearSyncState()
+        await SyncManager.shared.syncWithServer(forceFull: true)
+        
+        setAuthState(.authenticated)
+        await AppRepository.shared.userRepository.refreshCurrentUser()
     }
     
     func upgradeAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws -> User {
-        do {
-            let upgradeAccountResponse = try await APIClient.shared.authHandler.upgradeAccount(username: username, email: email, password: password, profilePicture: profilePicture)
-            let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
-            await TokenManager.shared.setTokens(keychainModel)
-            
-            try AppRepository.shared.userRepository.setCurrentUser(upgradeAccountResponse.user.toDomain())
-            setAuthState(.authenticated)
-            return upgradeAccountResponse.user.toDomain()
-        } catch {
-            setAuthState(.unauthenticated)
-            throw error
-        }
+        let upgradeAccountResponse = try await APIClient.shared.authHandler.upgradeAccount(username: username, email: email, password: password, profilePicture: profilePicture)
+        let keychainModel = try TokenKeychainModel(from: upgradeAccountResponse.token)
+        await TokenManager.shared.setTokens(keychainModel)
+        
+        try AppRepository.shared.userRepository.setCurrentUser(upgradeAccountResponse.user.toDomain())
+        setAuthState(.authenticated)
+        return upgradeAccountResponse.user.toDomain()
     }
     
     func registerAccount(username: String? = nil, email: String? = nil, password: String, profilePicture: String) async throws {
-        do {
-            let tokenResponse = try await APIClient.shared.authHandler.registerAccount(username: username, email: email, password: password, profilePicture: profilePicture)
-            
-            let keychainModel = try TokenKeychainModel(from: tokenResponse)
-            await TokenManager.shared.setTokens(keychainModel)
-            
-            await SyncManager.shared.clearSyncState()
-            await SyncManager.shared.syncWithServer(forceFull: true)
-            
-            setAuthState(.authenticated)
-            await AppRepository.shared.userRepository.refreshCurrentUser()
-        } catch {
-            setAuthState(.unauthenticated)
-            throw error
-        }
+        let tokenResponse = try await APIClient.shared.authHandler.registerAccount(username: username, email: email, password: password, profilePicture: profilePicture)
+        
+        let keychainModel = try TokenKeychainModel(from: tokenResponse)
+        await TokenManager.shared.setTokens(keychainModel)
+        
+        await SyncManager.shared.clearSyncState()
+        await SyncManager.shared.syncWithServer(forceFull: true)
+        
+        setAuthState(.authenticated)
+        await AppRepository.shared.userRepository.refreshCurrentUser()
     }
     
     func sendVerificationEmail() async throws {
