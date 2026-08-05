@@ -32,6 +32,10 @@ class UserHandler {
         let body = try JSONEncoder().encode(payload)
         let request = try await APIClient.shared.createRequest(endpoint: "/users/me/email", method: .PATCH, body: body)
 
-        _ = try await APIClient.shared.executeRequest(request: request)
+        do {
+            _ = try await APIClient.shared.executeRequest(request: request)
+        } catch APIError.conflict(_, let key) {
+            throw AuthenticationError.forConflict(key: key)
+        }
     }
 }

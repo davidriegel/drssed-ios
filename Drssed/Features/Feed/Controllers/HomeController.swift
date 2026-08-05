@@ -408,7 +408,7 @@ public class HomeController: UIViewController {
         )
 
         for wear in day.wears {
-            let title = wear.outfitName ?? String(localized: "calendar.outfit.unknown")
+            let title = day.outfit(for: wear)?.name ?? String(localized: "calendar.outfit.unknown")
 
             sheet.addAction(UIAlertAction(title: title, style: .default) { _ in
                 self.openOutfit(with: wear.outfitID)
@@ -516,7 +516,8 @@ public class HomeController: UIViewController {
               let monthEnd = calendar.date(byAdding: .month, value: 1, to: monthStart) else { return }
 
         let wears = await wearRepo.fetchWears(from: monthStart, to: monthEnd)
-        let days = WearCalendarDay.month(for: anchorDate, wears: wears, calendar: calendar)
+        let outfits = await outfitsByID(for: wears)
+        let days = WearCalendarDay.month(for: anchorDate, wears: wears, outfits: outfits, calendar: calendar)
 
         await MainActor.run { self.days = days }
     }
@@ -526,6 +527,12 @@ public class HomeController: UIViewController {
             await reloadMonth()
             await refreshWornToday()
         }
+    }
+
+    private func outfitsByID(for wears: [OutfitWear]) async -> [String: Outfit] {
+        let outfits = await outfitRepo.fetchOutfits(ids: Array(Set(wears.map(\.outfitID))))
+
+        return Dictionary(uniqueKeysWithValues: outfits.map { ($0.id, $0) })
     }
 
     private func moveMonth(by months: Int) {

@@ -28,6 +28,19 @@ public enum AuthenticationError: Error {
     case unknown(Error? = nil)
 }
 
+extension AuthenticationError {
+    static func forConflict(key: String?) -> AuthenticationError {
+        switch key {
+        case "email":
+            return .emailAlreadyInUse
+        case "username":
+            return .usernameAlreadyInUse
+        default:
+            return .unknown()
+        }
+    }
+}
+
 extension AuthenticationError: LocalizedError {
     public var errorDescription: String? {
         switch self {

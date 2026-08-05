@@ -7,7 +7,6 @@
 
 import UIKit
 import CropViewController
-import SDWebImage
 import PhotosUI
 
 protocol OutfitDetailsDelegate: ModalPresentationDelegate {
@@ -475,13 +474,6 @@ final class OutfitDetailsController: UIViewController {
     
     func saveItemChanges() async {
         if await AppRepository.shared.outfitRepository.addOrUpdateOutfit(from: item) {
-            if savedItem.scene != item.scene {
-                if let cacheKey = SDWebImageManager.shared.cacheKey(for: URL(string: item.id, relativeTo: APIClient.outfitImagesURL)) {
-                    SDImageCache.shared.removeImageFromDisk(forKey: cacheKey)
-                    SDImageCache.shared.removeImageFromMemory(forKey: cacheKey)
-                }
-            }
-            
             savedItem = item
             didUpdate = true
         }

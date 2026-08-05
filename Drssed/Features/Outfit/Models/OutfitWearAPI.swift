@@ -14,7 +14,6 @@ public struct OutfitWearAPI: Codable, Hashable {
     let worn_on: Date
     let created_at: Date
     let updated_at: Date
-    let outfit_name: String?
     let feels_like: Double?
     let temperature: Double?
     let weather: String?

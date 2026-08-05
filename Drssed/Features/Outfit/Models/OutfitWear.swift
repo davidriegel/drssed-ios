@@ -15,7 +15,6 @@ public struct OutfitWear: Identifiable, Hashable, Sendable {
     var wornOn: Date
     let createdAt: Date
     var updatedAt: Date
-    var outfitName: String?
     var feelsLike: Double?
     var temperature: Double?
     var weather: WeatherCondition?
@@ -31,7 +30,6 @@ public struct OutfitWear: Identifiable, Hashable, Sendable {
         self.wornOn = local.wornOn
         self.createdAt = local.createdAt
         self.updatedAt = local.updatedAt
-        self.outfitName = local.outfitName
         self.feelsLike = local.feelsLike?.doubleValue
         self.temperature = local.temperature?.doubleValue
         self.weather = local.weather.flatMap { WeatherCondition(rawValue: $0) }
@@ -48,7 +46,6 @@ public struct OutfitWear: Identifiable, Hashable, Sendable {
         self.wornOn = api.worn_on
         self.createdAt = api.created_at
         self.updatedAt = api.updated_at
-        self.outfitName = api.outfit_name
         self.feelsLike = api.feels_like
         self.temperature = api.temperature
         self.weather = api.weather.flatMap { WeatherCondition(rawValue: $0.uppercased()) }
@@ -68,7 +65,6 @@ extension OutfitWear {
             worn_on: self.wornOn,
             created_at: self.createdAt,
             updated_at: self.updatedAt,
-            outfit_name: self.outfitName,
             feels_like: self.feelsLike,
             temperature: self.temperature,
             weather: self.weather?.rawValue,

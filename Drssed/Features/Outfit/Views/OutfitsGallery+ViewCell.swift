@@ -138,7 +138,7 @@ required init?(coder: NSCoder) {
         itemCountLabel.text = "● " + String(outfit.scene.count)
         itemFavoriteImageView.isHidden = !outfit.isFavorite
 
-        imageView.sd_setImage(with: URL(string: outfit.id, relativeTo: APIClient.outfitImagesURL))
+        imageView.sd_setImage(with: outfit.imageURL)
     }
 
     override func prepareForReuse() {
