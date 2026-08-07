@@ -18,6 +18,7 @@ actor TokenManager {
     func currentTokens() -> TokenKeychainModel? {
         if cachedTokens == nil {
             cachedTokens = loadFromKeychain()
+            ImageRequestAuthenticator.update(accessToken: cachedTokens?.accessToken)
         }
         return cachedTokens
     }
@@ -32,6 +33,7 @@ actor TokenManager {
 
     func setTokens(_ tokens: TokenKeychainModel) throws {
         cachedTokens = tokens
+        ImageRequestAuthenticator.update(accessToken: tokens.accessToken)
 
         let data = try JSONEncoder().encode(tokens)
         try KeychainHelper.save(data, service: service, account: account)
@@ -41,6 +43,7 @@ actor TokenManager {
         refreshTask?.cancel()
         refreshTask = nil
         cachedTokens = nil
+        ImageRequestAuthenticator.update(accessToken: nil)
         KeychainHelper.delete(service: service, account: account)
     }
 
