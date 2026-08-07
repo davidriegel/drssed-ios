@@ -5,6 +5,7 @@
 //  Created by David Riegel on 06.05.24.
 //
 
+import SDWebImage
 import XCTest
 @testable import Drssed
 
@@ -105,5 +106,45 @@ final class WearCalendarDayTests: XCTestCase {
         let days = WearCalendarDay.month(for: lastYear, wears: [], calendar: calendar)
 
         XCTAssertTrue(days.allSatisfy { !$0.isToday })
+    }
+}
+
+final class ImageRequestAuthenticatorTests: XCTestCase {
+    private var modifier: (any SDWebImageDownloaderRequestModifierProtocol)? {
+        SDWebImageDownloader.shared.requestModifier
+    }
+
+    override func setUp() {
+        super.setUp()
+        ImageRequestAuthenticator.install()
+        ImageRequestAuthenticator.update(accessToken: "test-token")
+    }
+
+    override func tearDown() {
+        ImageRequestAuthenticator.update(accessToken: nil)
+        super.tearDown()
+    }
+
+    private func authorization(for urlString: String) -> String? {
+        let request = URLRequest(url: URL(string: urlString)!)
+        return modifier?.modifiedRequest(with: request)?.value(forHTTPHeaderField: "Authorization")
+    }
+
+    func testAttachesTheTokenToOwnImageRequests() {
+        let host = APIClient.baseURL!.absoluteString
+
+        XCTAssertEqual(authorization(for: "\(host)/static/clothing_images/abc.webp"), "Bearer test-token")
+        XCTAssertEqual(authorization(for: "\(host)/static/outfit_images/abc.webp"), "Bearer test-token")
+    }
+
+    func testNeverLeaksTheTokenToOtherHosts() {
+        XCTAssertNil(authorization(for: "https://evil.example.com/static/clothing_images/abc.webp"))
+        XCTAssertNil(authorization(for: "https://cdn.other.app/a.webp"))
+    }
+
+    func testSendsNoHeaderWhileSignedOut() {
+        ImageRequestAuthenticator.update(accessToken: nil)
+
+        XCTAssertNil(authorization(for: "\(APIClient.baseURL!.absoluteString)/static/clothing_images/abc.webp"))
     }
 }
