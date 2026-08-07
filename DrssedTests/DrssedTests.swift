@@ -107,3 +107,35 @@ final class WearCalendarDayTests: XCTestCase {
         XCTAssertTrue(days.allSatisfy { !$0.isToday })
     }
 }
+
+final class RateLimitRetryTests: XCTestCase {
+    private func response(retryAfter: String?) -> HTTPURLResponse? {
+        var headers: [String: String] = [:]
+        if let retryAfter { headers["Retry-After"] = retryAfter }
+
+        return HTTPURLResponse(
+            url: URL(string: "https://api.drssed.app/users/me")!,
+            statusCode: 429,
+            httpVersion: "HTTP/1.1",
+            headerFields: headers
+        )
+    }
+
+    func testWaitsOutAShortLimit() {
+        XCTAssertEqual(APIClient.retryDelay(from: response(retryAfter: "2")), 2)
+        XCTAssertEqual(APIClient.retryDelay(from: response(retryAfter: " 5 ")), 5)
+    }
+
+    func testSurfacesALongLimitInsteadOfBlocking() {
+        XCTAssertNil(APIClient.retryDelay(from: response(retryAfter: "61")))
+        XCTAssertNil(APIClient.retryDelay(from: response(retryAfter: "3600")))
+    }
+
+    func testIgnoresMissingOrUnusableHeaders() {
+        XCTAssertNil(APIClient.retryDelay(from: response(retryAfter: nil)))
+        XCTAssertNil(APIClient.retryDelay(from: response(retryAfter: "0")))
+        XCTAssertNil(APIClient.retryDelay(from: response(retryAfter: "-3")))
+        XCTAssertNil(APIClient.retryDelay(from: response(retryAfter: "Wed, 21 Oct 2026 07:28:00 GMT")))
+        XCTAssertNil(APIClient.retryDelay(from: nil))
+    }
+}
