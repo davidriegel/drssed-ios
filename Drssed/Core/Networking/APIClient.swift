@@ -20,6 +20,8 @@ final public class APIClient {
     public static let profileImagesURL = URL(string: "/static/profile_pictures/", relativeTo: baseURL)
     public static let outfitImagesURL = URL(string: "/static/outfit_images/", relativeTo: baseURL)
     
+    static let maxAutomaticRetryDelay: TimeInterval = 5
+
     public let decoder: JSONDecoder
     private let session: URLSession
     
@@ -154,10 +156,10 @@ final public class APIClient {
     // MARK: -- Execute request
     
     public func executeRequest(request: URLRequest, ignoreError: [APIError] = []) async throws -> (Data, HTTPURLResponse?) {
-        try await executeRequest(request: request, ignoreError: ignoreError, isRetry: false)
+        try await executeRequest(request: request, ignoreError: ignoreError, isRetry: false, didWaitOutRateLimit: false)
     }
 
-    private func executeRequest(request: URLRequest, ignoreError: [APIError], isRetry: Bool) async throws -> (Data, HTTPURLResponse?) {
+    private func executeRequest(request: URLRequest, ignoreError: [APIError], isRetry: Bool, didWaitOutRateLimit: Bool) async throws -> (Data, HTTPURLResponse?) {
         guard NetworkManager.shared.isReachable else {
             throw APIError.offline
         }
@@ -170,7 +172,13 @@ final public class APIClient {
             } catch let error as APIError {
                 if error == .unauthorized, !isRetry, !ignoreError.contains(error),
                    let retried = await renewedRequest(from: request) {
-                    return try await executeRequest(request: retried, ignoreError: ignoreError, isRetry: true)
+                    return try await executeRequest(request: retried, ignoreError: ignoreError, isRetry: true, didWaitOutRateLimit: didWaitOutRateLimit)
+                }
+
+                if error == .tooManyRequests, !didWaitOutRateLimit, !ignoreError.contains(error),
+                   let delay = Self.retryDelay(from: response as? HTTPURLResponse) {
+                    try await Task.sleep(for: .seconds(delay))
+                    return try await executeRequest(request: request, ignoreError: ignoreError, isRetry: isRetry, didWaitOutRateLimit: true)
                 }
 
                 if !ignoreError.contains(error) {
@@ -182,6 +190,18 @@ final public class APIClient {
         } catch let error as URLError {
             throw mapURLError(error)
         }
+    }
+
+    /// Waits out a rate limit only when the server says it clears within `maxAutomaticRetryDelay`.
+    /// Longer limits are surfaced instead, so the user is told rather than left waiting.
+    static func retryDelay(from response: HTTPURLResponse?) -> TimeInterval? {
+        guard let header = response?.value(forHTTPHeaderField: "Retry-After"),
+              let seconds = TimeInterval(header.trimmingCharacters(in: .whitespaces)),
+              seconds > 0, seconds <= maxAutomaticRetryDelay else {
+            return nil
+        }
+
+        return seconds
     }
     
     private func renewedRequest(from request: URLRequest) async -> URLRequest? {
