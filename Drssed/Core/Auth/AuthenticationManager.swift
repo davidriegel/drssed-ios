@@ -154,7 +154,9 @@ class AuthenticationManager {
 
             let keychainModel = try TokenKeychainModel(from: tokenResponse)
             try await TokenManager.shared.setTokens(keychainModel)
-        } catch APIError.unauthorized {
+        } catch APIError.unauthorized, APIError.forbidden {
+            // Older deployments answer a wrong current password with 403 rather than
+            // 401, and both mean the same thing here.
             throw AuthenticationError.invalidCredentials
         }
     }
