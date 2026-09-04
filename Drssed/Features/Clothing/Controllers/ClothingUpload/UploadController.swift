@@ -569,6 +569,10 @@ extension UploadController: TOCropViewControllerDelegate {
             itemImageView.showAnimatedGradientSkeleton(usingGradient: SkeletonGradient(baseColor: .skeletonColor), animation: GradientDirection.topLeftBottomRight.slidingAnimation(), transition: .crossDissolve(0.25))
             cropViewController.dismiss(animated: true)
             
+            // Every path has to stop the shimmer. Without this an unexpected error left
+            // the tile animating for good, which reads as a hang rather than a failure.
+            defer { itemImageView.hideSkeleton() }
+
             do {
                 let (imageID, clothingURL, clothingColor, _, clothingSubCategory) = try await APIClient.shared.clothingHandler.removeClothingBackground(from: image)
                 
@@ -584,24 +588,27 @@ extension UploadController: TOCropViewControllerDelegate {
                 }
 
                 itemImageView.sd_setImage(with: clothingURL)
-                itemImageView.hideSkeleton()
             } catch APIError.payloadTooLarge {
-                self.imageID = ""
-                self.itemImageView.image = UIImage(named: "placeholder.upload")
-                self.itemImageView.hideSkeleton()
-                
+                discardPreparedImage()
+
                 ErrorHandler.handle(APIError.payloadTooLarge(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.error.tooLarge.suggestion")))
             } catch APIError.unprocessableContent {
-                self.imageID = ""
-                self.itemImageView.image = UIImage(named: "placeholder.upload")
-                self.itemImageView.hideSkeleton()
-                
-                
+                discardPreparedImage()
+
                 ErrorHandler.handle(APIError.unprocessableContent(message: String(localized: "imagepicker.backgroundRemoval.error"), suggestion: String(localized: "imagepicker.uploadimage.hint")))
             } catch {
+                discardPreparedImage()
+
                 ErrorHandler.handle(error)
             }
         }
+    }
+
+    /// Drops a half-finished pick, so the form cannot be submitted pointing at an image
+    /// the server never confirmed.
+    private func discardPreparedImage() {
+        imageID = ""
+        itemImageView.image = UIImage(named: "placeholder.upload")
     }
         
     func cropViewController(_ cropViewController: TOCropViewController,
