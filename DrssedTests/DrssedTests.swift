@@ -215,3 +215,32 @@ final class ConflictResponseTests: XCTestCase {
         XCTAssertNil(generic?.field)
     }
 }
+
+final class NameLimitsTests: XCTestCase {
+
+    func testAcceptsAnOrdinaryName() throws {
+        XCTAssertEqual(try NameLimits.validated("Blue hoodie"), "Blue hoodie")
+    }
+
+    func testTrimsBeforeMeasuring() throws {
+        XCTAssertEqual(try NameLimits.validated("  Coat  "), "Coat")
+    }
+
+    func testRejectsAnEmptyName() {
+        XCTAssertThrowsError(try NameLimits.validated(nil))
+        XCTAssertThrowsError(try NameLimits.validated(""))
+        XCTAssertThrowsError(try NameLimits.validated("   "))
+    }
+
+    /// The server refuses anything under three characters, so the form has to.
+    func testRejectsATooShortName() {
+        XCTAssertThrowsError(try NameLimits.validated("ab"))
+        XCTAssertThrowsError(try NameLimits.validated(" a "))
+    }
+
+    func testCapsAtTheLengthTheServerStores() throws {
+        let name = try NameLimits.validated(String(repeating: "a", count: 80))
+
+        XCTAssertEqual(name.count, NameLimits.maximum)
+    }
+}

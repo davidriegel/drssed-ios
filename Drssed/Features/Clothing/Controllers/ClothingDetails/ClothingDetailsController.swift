@@ -217,6 +217,12 @@ final class ClothingDetailsController: UIViewController {
     }
     
     func saveItemChanges() async -> Void {
+        do {
+            item.name = try NameLimits.validated(item.name)
+        } catch {
+            return ErrorHandler.handle(error)
+        }
+
         if await AppRepository.shared.clothingRepository.addOrUpdateClothing(from: item) {
             self.delegate?.didUpdateClothing()
             savedItem = item

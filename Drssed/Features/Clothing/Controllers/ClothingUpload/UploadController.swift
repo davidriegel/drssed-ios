@@ -292,12 +292,12 @@ class UploadController: UIViewController {
             errorAlert.message = String(localized: "clothingupload.error.missing.image")
         }
         
-        var name = ""
-        
-        if let clothingName = clothingNameField.fieldInput.text, clothingName != "" {
-            name = clothingName
-        } else {
-            return ErrorHandler.handle(CustomError.missingValue(field: String(localized: "common.name.title")))
+        let name: String
+
+        do {
+            name = try NameLimits.validated(clothingNameField.fieldInput.text)
+        } catch {
+            return ErrorHandler.handle(error)
         }
         
         var subCategory: ClothingSubCategories!

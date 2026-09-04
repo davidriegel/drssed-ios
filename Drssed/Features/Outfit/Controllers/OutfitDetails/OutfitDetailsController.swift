@@ -473,6 +473,12 @@ final class OutfitDetailsController: UIViewController {
     }
     
     func saveItemChanges() async {
+        do {
+            item.name = try NameLimits.validated(item.name)
+        } catch {
+            return ErrorHandler.handle(error)
+        }
+
         if await AppRepository.shared.outfitRepository.addOrUpdateOutfit(from: item) {
             savedItem = item
             didUpdate = true
