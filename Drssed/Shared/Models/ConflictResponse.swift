@@ -9,5 +9,7 @@ import Foundation
 
 public struct ConflictResp: Codable {
     let error: String
-    let key: String
+    /// Names the input that clashed. Absent when the conflict is not about one
+    /// particular input, so the whole body still decodes.
+    let field: String?
 }

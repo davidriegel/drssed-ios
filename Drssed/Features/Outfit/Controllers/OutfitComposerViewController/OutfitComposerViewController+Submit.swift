@@ -292,11 +292,19 @@ class OutfitComposerViewController_Submit: UIViewController {
         finishButton.addAction(UIAction(handler: { [weak self] _ in
             guard let self else { return }
 
+            let name: String
+
+            do {
+                name = try NameLimits.validated(self.outfitNameField.fieldInput.text)
+            } catch {
+                return ErrorHandler.handle(error)
+            }
+
             Task {
                 self.finishButton.isEnabled = false
                 
                 let outfit = Outfit(
-                    name: self.outfitNameField.fieldInput.text ?? "",
+                    name: name,
                     isPublic: false,
                     isFavorite: self.outfitFavoriteField.fieldInput.isOn,
                     seasons: self.selectedSeasonsArray,

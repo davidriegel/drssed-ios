@@ -150,8 +150,13 @@ class AuthenticationManager {
 
     func changePassword(currentPassword: String, newPassword: String) async throws {
         do {
-            try await APIClient.shared.userHandler.changePassword(currentPassword: currentPassword, newPassword: newPassword)
-        } catch APIError.unauthorized {
+            let tokenResponse = try await APIClient.shared.userHandler.changePassword(currentPassword: currentPassword, newPassword: newPassword)
+
+            let keychainModel = try TokenKeychainModel(from: tokenResponse)
+            try await TokenManager.shared.setTokens(keychainModel)
+        } catch APIError.unauthorized, APIError.forbidden {
+            // Older deployments answer a wrong current password with 403 rather than
+            // 401, and both mean the same thing here.
             throw AuthenticationError.invalidCredentials
         }
     }

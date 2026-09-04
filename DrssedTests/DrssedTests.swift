@@ -180,3 +180,67 @@ final class ImageRequestAuthenticatorTests: XCTestCase {
         XCTAssertNil(authorization(for: "\(APIClient.baseURL!.absoluteString)/static/clothing_images/abc.webp"))
     }
 }
+
+final class ConflictResponseTests: XCTestCase {
+
+    private func decode(_ json: String) -> ConflictResp? {
+        try? JSONDecoder().decode(ConflictResp.self, from: Data(json.utf8))
+    }
+
+    func testReadsTheFieldTheServerNames() {
+        let taken = decode(#"{"error":"The provided email is already in use.","field":"email"}"#)
+
+        XCTAssertEqual(taken?.field, "email")
+
+        guard case .emailAlreadyInUse = AuthenticationError.forConflict(key: taken?.field) else {
+            return XCTFail("an email conflict has to reach the user as .emailAlreadyInUse")
+        }
+    }
+
+    func testReadsAUsernameConflict() {
+        let taken = decode(#"{"error":"The provided username is already in use.","field":"username"}"#)
+
+        XCTAssertEqual(taken?.field, "username")
+
+        guard case .usernameAlreadyInUse = AuthenticationError.forConflict(key: taken?.field) else {
+            return XCTFail("a username conflict has to reach the user as .usernameAlreadyInUse")
+        }
+    }
+
+    /// Not every conflict is about a single input, so a body without `field` still decodes.
+    func testDecodesAConflictWithoutAField() {
+        let generic = decode(#"{"error":"Resource already exists"}"#)
+
+        XCTAssertNotNil(generic)
+        XCTAssertNil(generic?.field)
+    }
+}
+
+final class NameLimitsTests: XCTestCase {
+
+    func testAcceptsAnOrdinaryName() throws {
+        XCTAssertEqual(try NameLimits.validated("Blue hoodie"), "Blue hoodie")
+    }
+
+    func testTrimsBeforeMeasuring() throws {
+        XCTAssertEqual(try NameLimits.validated("  Coat  "), "Coat")
+    }
+
+    func testRejectsAnEmptyName() {
+        XCTAssertThrowsError(try NameLimits.validated(nil))
+        XCTAssertThrowsError(try NameLimits.validated(""))
+        XCTAssertThrowsError(try NameLimits.validated("   "))
+    }
+
+    /// The server refuses anything under three characters, so the form has to.
+    func testRejectsATooShortName() {
+        XCTAssertThrowsError(try NameLimits.validated("ab"))
+        XCTAssertThrowsError(try NameLimits.validated(" a "))
+    }
+
+    func testCapsAtTheLengthTheServerStores() throws {
+        let name = try NameLimits.validated(String(repeating: "a", count: 80))
+
+        XCTAssertEqual(name.count, NameLimits.maximum)
+    }
+}

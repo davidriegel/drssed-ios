@@ -22,6 +22,10 @@ final public class APIClient {
     
     static let maxAutomaticRetryDelay: TimeInterval = 5
 
+    /// The server rejects anything above this outright, so compressing any further
+    /// than it is pointless and stopping any sooner would upload a doomed request.
+    static let maxImageUploadMB: Double = 4
+
     public let decoder: JSONDecoder
     private let session: URLSession
     
@@ -81,7 +85,7 @@ final public class APIClient {
         case 405:
             throw APIError.methodNotAllowed
         case 409:
-            let conflictKey = data.flatMap { try? JSONDecoder().decode(ConflictResp.self, from: $0) }?.key
+            let conflictKey = data.flatMap { try? JSONDecoder().decode(ConflictResp.self, from: $0) }?.field
             throw APIError.conflict(message: errorMessage, key: conflictKey)
         case 413:
             throw APIError.payloadTooLarge(message: errorMessage, suggestion: nil)
@@ -116,7 +120,7 @@ final public class APIClient {
     }
     
     public func createRequest(withImage image: UIImage, endpoint: String, method: requestMethods) async throws -> URLRequest {
-        guard let imageData = image.compressedData(maxSizeMB: 4.8) else {
+        guard let imageData = image.compressedData(maxSizeMB: APIClient.maxImageUploadMB) else {
             throw APIError.payloadTooLarge(message: "Image compression failed", suggestion: "Please try a different image")
         }
         

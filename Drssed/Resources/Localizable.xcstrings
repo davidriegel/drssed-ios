@@ -4784,6 +4784,23 @@
         }
       }
     },
+    "subcategory_unknown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonstiges"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
     "subcategory_vest" : {
       "extractionState" : "manual",
       "localizations" : {

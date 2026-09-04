@@ -19,12 +19,16 @@ class UserHandler {
         return user.user
     }
 
-    func changePassword(currentPassword: String, newPassword: String) async throws {
+    /// Answers with the renewed token pair: changing the password revokes every
+    /// refresh token the account had, so the reply is the only way to stay signed in.
+    func changePassword(currentPassword: String, newPassword: String) async throws -> TokenAPIResponse {
         let payload = ["current_password": currentPassword, "new_password": newPassword]
         let body = try JSONEncoder().encode(payload)
         let request = try await APIClient.shared.createRequest(endpoint: "/users/me/password", method: .PATCH, body: body)
 
-        _ = try await APIClient.shared.executeRequest(request: request)
+        let wrapper: TokenWrapper = try await APIClient.shared.executeRequestAndDecode(request: request)
+
+        return wrapper.token
     }
 
     func changeEmail(currentPassword: String, newEmail: String) async throws {
