@@ -160,10 +160,10 @@ final public class APIClient {
     // MARK: -- Execute request
     
     public func executeRequest(request: URLRequest, ignoreError: [APIError] = []) async throws -> (Data, HTTPURLResponse?) {
-        try await executeRequest(request: request, ignoreError: ignoreError, isRetry: false, didWaitOutRateLimit: false)
+        try await executeRequest(request: request, ignoreError: ignoreError, isRetry: false, didWaitOutRateLimit: false, didRetryLostConnection: false)
     }
 
-    private func executeRequest(request: URLRequest, ignoreError: [APIError], isRetry: Bool, didWaitOutRateLimit: Bool) async throws -> (Data, HTTPURLResponse?) {
+    private func executeRequest(request: URLRequest, ignoreError: [APIError], isRetry: Bool, didWaitOutRateLimit: Bool, didRetryLostConnection: Bool) async throws -> (Data, HTTPURLResponse?) {
         guard NetworkManager.shared.isReachable else {
             throw APIError.offline
         }
@@ -176,13 +176,13 @@ final public class APIClient {
             } catch let error as APIError {
                 if error == .unauthorized, !isRetry, !ignoreError.contains(error),
                    let retried = await renewedRequest(from: request) {
-                    return try await executeRequest(request: retried, ignoreError: ignoreError, isRetry: true, didWaitOutRateLimit: didWaitOutRateLimit)
+                    return try await executeRequest(request: retried, ignoreError: ignoreError, isRetry: true, didWaitOutRateLimit: didWaitOutRateLimit, didRetryLostConnection: didRetryLostConnection)
                 }
 
                 if error == .tooManyRequests, !didWaitOutRateLimit, !ignoreError.contains(error),
                    let delay = Self.retryDelay(from: response as? HTTPURLResponse) {
                     try await Task.sleep(for: .seconds(delay))
-                    return try await executeRequest(request: request, ignoreError: ignoreError, isRetry: isRetry, didWaitOutRateLimit: true)
+                    return try await executeRequest(request: request, ignoreError: ignoreError, isRetry: isRetry, didWaitOutRateLimit: true, didRetryLostConnection: didRetryLostConnection)
                 }
 
                 if !ignoreError.contains(error) {
@@ -192,6 +192,13 @@ final public class APIClient {
 
             return (data, response as? HTTPURLResponse)
         } catch let error as URLError {
+            // A pooled connection the server closed in the meantime fails before the
+            // request is written, so it never reached anyone and sending it again on a
+            // fresh connection is safe. Happens most on the second request of a burst.
+            if error.code == .networkConnectionLost, !didRetryLostConnection {
+                return try await executeRequest(request: request, ignoreError: ignoreError, isRetry: isRetry, didWaitOutRateLimit: didWaitOutRateLimit, didRetryLostConnection: true)
+            }
+
             throw mapURLError(error)
         }
     }
