@@ -180,3 +180,38 @@ final class ImageRequestAuthenticatorTests: XCTestCase {
         XCTAssertNil(authorization(for: "\(APIClient.baseURL!.absoluteString)/static/clothing_images/abc.webp"))
     }
 }
+
+final class ConflictResponseTests: XCTestCase {
+
+    private func decode(_ json: String) -> ConflictResp? {
+        try? JSONDecoder().decode(ConflictResp.self, from: Data(json.utf8))
+    }
+
+    func testReadsTheFieldTheServerNames() {
+        let taken = decode(#"{"error":"The provided email is already in use.","field":"email"}"#)
+
+        XCTAssertEqual(taken?.field, "email")
+
+        guard case .emailAlreadyInUse = AuthenticationError.forConflict(key: taken?.field) else {
+            return XCTFail("an email conflict has to reach the user as .emailAlreadyInUse")
+        }
+    }
+
+    func testReadsAUsernameConflict() {
+        let taken = decode(#"{"error":"The provided username is already in use.","field":"username"}"#)
+
+        XCTAssertEqual(taken?.field, "username")
+
+        guard case .usernameAlreadyInUse = AuthenticationError.forConflict(key: taken?.field) else {
+            return XCTFail("a username conflict has to reach the user as .usernameAlreadyInUse")
+        }
+    }
+
+    /// Not every conflict is about a single input, so a body without `field` still decodes.
+    func testDecodesAConflictWithoutAField() {
+        let generic = decode(#"{"error":"Resource already exists"}"#)
+
+        XCTAssertNotNil(generic)
+        XCTAssertNil(generic?.field)
+    }
+}
