@@ -14,6 +14,10 @@ public struct TokenAPIResponse: Codable {
     let refresh_token: String
 }
 
+public struct TokenWrapper: Codable {
+    let token: TokenAPIResponse
+}
+
 public struct TokenKeychainModel: Codable {
     private static let expiryBuffer: TimeInterval = 60 * 5  // 5 minutes
     

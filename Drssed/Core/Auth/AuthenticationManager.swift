@@ -150,7 +150,10 @@ class AuthenticationManager {
 
     func changePassword(currentPassword: String, newPassword: String) async throws {
         do {
-            try await APIClient.shared.userHandler.changePassword(currentPassword: currentPassword, newPassword: newPassword)
+            let tokenResponse = try await APIClient.shared.userHandler.changePassword(currentPassword: currentPassword, newPassword: newPassword)
+
+            let keychainModel = try TokenKeychainModel(from: tokenResponse)
+            try await TokenManager.shared.setTokens(keychainModel)
         } catch APIError.unauthorized {
             throw AuthenticationError.invalidCredentials
         }
