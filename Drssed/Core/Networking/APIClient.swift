@@ -12,7 +12,7 @@ import UIKit
 final public class APIClient {
     public static let shared = APIClient()
     #if DEBUG
-    public static let baseURL = URL(string: "https://api.drssed.app") // Debug mode
+    public static let baseURL = URL(string: "http://127.0.0.1:8000") // Debug mode
     #else
     public static let baseURL = URL(string: "https://api.drssed.app") // Production mode
     #endif
