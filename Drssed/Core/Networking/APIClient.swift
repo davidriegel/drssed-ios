@@ -22,6 +22,10 @@ final public class APIClient {
     
     static let maxAutomaticRetryDelay: TimeInterval = 5
 
+    /// The ceiling the session puts on any single request. The image upload used to
+    /// ask for more than this, which the session silently ignored.
+    static let resourceTimeout: TimeInterval = 60
+
     /// The server rejects anything above this outright, so compressing any further
     /// than it is pointless and stopping any sooner would upload a doomed request.
     static let maxImageUploadMB: Double = 4
@@ -50,7 +54,7 @@ final public class APIClient {
         
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 20
-        config.timeoutIntervalForResource = 60
+        config.timeoutIntervalForResource = APIClient.resourceTimeout
         
         session = URLSession(configuration: config)
     }
@@ -134,7 +138,7 @@ final public class APIClient {
         data.append("\r\n".data(using: .utf8)!)
         data.append("--\(boundary)--".data(using: .utf8)!)
         
-        return try await createRequest(endpoint: endpoint, method: method, body: data, headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"], timeoutIntervall: 120)
+        return try await createRequest(endpoint: endpoint, method: method, body: data, headers: ["Content-Type": "multipart/form-data; boundary=\(boundary)"], timeoutIntervall: APIClient.resourceTimeout)
     }
 
     private func prepareHeaders(customHeaders: [String: String]? = nil, authentication: Bool = true) async throws -> [String: String] {
@@ -193,9 +197,13 @@ final public class APIClient {
             return (data, response as? HTTPURLResponse)
         } catch let error as URLError {
             // A pooled connection the server closed in the meantime fails before the
-            // request is written, so it never reached anyone and sending it again on a
-            // fresh connection is safe. Happens most on the second request of a burst.
+            // request is written, so it never reached anyone and sending it again is
+            // safe. Retrying alone is not enough: without dropping the pool first the
+            // retry picks the same dead connection and hangs until the resource
+            // timeout instead of failing, which is worse than the original error.
             if error.code == .networkConnectionLost, !didRetryLostConnection {
+                await session.dropPooledConnections()
+
                 return try await executeRequest(request: request, ignoreError: ignoreError, isRetry: isRetry, didWaitOutRateLimit: didWaitOutRateLimit, didRetryLostConnection: true)
             }
 
@@ -267,6 +275,15 @@ final public class APIClient {
             return .timeout
         default:
             return .unknown(statusCode: nil)
+        }
+    }
+}
+
+private extension URLSession {
+    /// Drops the kept-alive connections, so the next request opens a new one.
+    func dropPooledConnections() async {
+        await withCheckedContinuation { continuation in
+            flush { continuation.resume() }
         }
     }
 }
